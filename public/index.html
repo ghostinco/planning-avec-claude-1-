@@ -193,8 +193,13 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .sv2-ratio.empty{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2)}
 /* Drop hint */
 .sv2-drop-hint{font-size:10px;color:#2d5a7a;text-align:center;padding:6px 0;border:1px dashed rgba(56,189,248,.12);border-radius:5px;margin-top:2px}
-/* Srbtn */
-.srbtn{background:#0c1929;border:1px solid rgba(56,189,248,.2);color:#38bdf8;border-radius:5px;padding:3px 7px;font-size:10px;cursor:pointer;transition:all .15s}
+/* Cadre shift dans vue Créneaux */
+.sv2-shift-box{background:#0f2540;border:1px solid rgba(56,189,248,.18);border-radius:9px;padding:7px 8px;margin-bottom:4px}
+.sv2-shift-box:last-child{margin-bottom:0}
+/* Recherche vue Semaine */
+.sem-search{background:rgba(12,25,41,.7);border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:5px 10px;font-size:12px;outline:none;width:180px;transition:border-color .15s}
+.sem-search:focus{border-color:#38bdf8}
+.sem-search::placeholder{color:#2d5a7a}
 .srbtn:hover{background:rgba(56,189,248,.1)}
 .srbtn.d{color:#f87171;border-color:rgba(239,68,68,.25)}
 .nosv{text-align:center;padding:40px;color:#2d5a7a;background:#0f2540;border-radius:10px}
@@ -345,6 +350,9 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
         <div class="fdrop" id="fdrop" style="display:none"></div>
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap" id="chips"></div>
+      <div id="sem-search-wrap" style="display:none;margin-left:auto">
+        <input class="sem-search" id="sem-search" type="text" placeholder="Rechercher un bénévole..." oninput="semSearchChange(this.value)"/>
+      </div>
     </div>
     <div class="content" id="content"></div>
   </div>
@@ -514,7 +522,9 @@ function renderAll(){updMq();renderChips();renderContent();renderVbarR();}
 function updMq(){const m=totMq();const b=document.getElementById('mqb');b.textContent=m+' manquant'+(m!==1?'s':'');b.className='mqb'+(m===0?' ok':'');}
 
 // ═══ VUES ═══
-function setView(v){curView=v;['sem','jour','sv'].forEach(x=>document.getElementById('vb-'+x).classList.toggle('act',x===v));document.getElementById('dnav').style.display=v!=='sem'?'flex':'none';renderContent();renderVbarR();}
+let semSearch='';
+function setView(v){curView=v;['sem','jour','sv'].forEach(x=>document.getElementById('vb-'+x).classList.toggle('act',x===v));document.getElementById('dnav').style.display=v!=='sem'?'flex':'none';const ssw=document.getElementById('sem-search-wrap');if(ssw)ssw.style.display=v==='sem'?'block':'none';renderContent();renderVbarR();}
+function semSearchChange(val){semSearch=val.toLowerCase();renderSemaine();}
 function prevDay(){dayIdx=Math.max(0,dayIdx-1);document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;renderAll();}
 function nextDay(){dayIdx=Math.min(3,dayIdx+1);document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;renderAll();}
 function renderVbarR(){const r=document.getElementById('vbar-r');if(!isA()){r.innerHTML='<span style="font-size:11px;color:#2d5a7a">Observation</span>';return;}r.innerHTML=`<button type="button" class="tbtn hi" onclick="openNewSlot()">+ Nouveau créneau</button>`;}
@@ -532,17 +542,23 @@ function removeChip(k){sbSelected.delete(k);renderChips();renderContent();}
 
 // ═══ VUE SEMAINE ═══
 function renderSemaine(){
+  // Filtrer par recherche
+  const filterBens=b=>{
+    if(!semSearch)return true;
+    return(b.nom+' '+b.prenom).toLowerCase().includes(semSearch)||(b.prenom+' '+b.nom).toLowerCase().includes(semSearch);
+  };
+  const totalVisible=bens.filter(filterBens).length;
   let h='<div class="wk-wrap"><table class="wk-table"><thead><tr>';
-  h+=`<th class="wk-th-nm"><div style="font-size:11px;font-weight:700;color:#4d7fa0">Bénévole</div><div style="font-size:10px;color:#2d5a7a">${bens.length}</div></th>`;
+  h+=`<th class="wk-th-nm"><div style="font-size:11px;font-weight:700;color:#4d7fa0">Bénévole</div><div style="font-size:10px;color:#2d5a7a">${semSearch?totalVisible+'/'+bens.length:bens.length}</div></th>`;
   JOURS.forEach(j=>{const m=mqJ(j.lbl);h+=`<th class="wk-th-day"><div class="wk-th-day-in"><div class="wkwd">${j.wd}</div><div class="wkdt">${j.k} juin</div><div class="wkmq" style="color:${m>5?'#f87171':m>0?'#fbbf24':'#34d399'}">${m>0?'−'+m+' bén.':'✓ Complet'}</div></div></th>`;});
   h+='</tr></thead><tbody>';
-  SECS.forEach(sec=>{const sb=bens.filter(b=>b.sec===sec);if(!sb.length)return;const col=SCLR[sec];h+=`<tr class="wk-sec"><td colspan="${JOURS.length+1}"><span class="wk-sec-lbl" style="color:${col}">● ${sec}</span></td></tr>`;
+  SECS.forEach(sec=>{const sb=bens.filter(b=>b.sec===sec&&filterBens(b));if(!sb.length)return;const col=SCLR[sec];h+=`<tr class="wk-sec"><td colspan="${JOURS.length+1}"><span class="wk-sec-lbl" style="color:${col}">● ${sec}</span></td></tr>`;
   sb.forEach(b=>{const bc=bCol(b.id);h+=`<tr><td class="wk-nm"><div class="nn">${b.nom} ${b.prenom}</div><div class="np" style="color:${col}">${b.poste||sec}</div><span class="nty ${b.type==='fixe'?'nfix':'nrot'}">${b.type==='fixe'?'📌':'🔄'}</span>${isA()?`<button type="button" class="ned" onclick="openEditBen('${b.id}')">✏</button>`:''}</td>`;
   JOURS.forEach(j=>{const dis=(b.dispos||[]).includes(j.lbl);
-  // Chercher les slots où ce bénévole est assigné ce jour via _assignDays
   const mySlots=slots.filter(sl=>sl.jours.includes(j.lbl)&&assigns[sl.id]&&assigns[sl.id].includes(b.id)&&(_assignDays[sl.id]?.[b.id]||[]).includes(j.lbl));
   if(!dis){h+=`<td class="wk-td na"><div style="height:100%;display:flex;align-items:center;justify-content:center;opacity:.1">—</div></td>`;}
   else{h+=`<td class="wk-td">`;mySlots.forEach(sl=>{const nec=POSTES_NEC[sl.pid]||2;const nbJ=nbBensOnPosteJour(sl.pid,j.lbl);const rc=nbJ>=nec?'#34d399':nbJ>0?'#fbbf24':'#f87171';h+=`<div class="wk-blk" style="background:${bc}" onclick="openAssign('${sl.id}',event)"><div class="bt">${sl.start_time}–${sl.end_time}</div><div class="bp">${sl.pid}</div><div class="bct" style="color:${rc}">${nbJ}/${nec}</div></div>`;});if(isA())h+=`<button type="button" class="wk-add" onclick="openNewSlotDay('${j.lbl}',event)">+ créneau</button>`;h+=`</td>`;}});h+=`</tr>`;});});
+  if(semSearch&&totalVisible===0)h+=`<tr><td colspan="5" style="text-align:center;padding:30px;color:#2d5a7a">Aucun bénévole trouvé pour "${semSearch}"</td></tr>`;
   h+='</tbody></table></div>';document.getElementById('content').innerHTML=h;
 }
 
@@ -658,9 +674,10 @@ function renderSV(){
             const slNbJ=_assignDays[sl.id]?Object.entries(_assignDays[sl.id]).filter(([bid,jrs])=>jrs.includes(j.lbl)).length:0;
             const slNec=POSTES_NEC[sl.pid]||2;
             const slRc=slNbJ>=slNec?'full':slNbJ>0?'part':'empty';
-            grid+=`<div style="margin-bottom:4px">`;
-            grid+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">`;
-            grid+=`<span style="font-size:10px;color:#4d7fa0">${sl.start_time}–${sl.end_time}</span>`;
+            const borderCol=slNbJ>=slNec?'rgba(74,222,128,.3)':slNbJ>0?'rgba(251,191,36,.2)':'rgba(56,189,248,.18)';
+            grid+=`<div class="sv2-shift-box" style="border-color:${borderCol}">`;
+            grid+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">`;
+            grid+=`<span style="font-size:10px;font-weight:700;color:#7fb8d4">${sl.start_time}–${sl.end_time}</span>`;
             grid+=`<span class="sv2-ratio ${slRc}">${slNbJ}/${slNec}</span>`;
             if(isA())grid+=`<button type="button" class="srbtn" style="padding:1px 4px;font-size:9px;margin-left:auto" onclick="openAssign('${sl.id}',event)">👥</button><button type="button" class="srbtn" style="padding:1px 4px;font-size:9px" onclick="openEditSlot('${sl.id}',null)">✏</button>`;
             grid+=`</div>`;
@@ -675,6 +692,7 @@ function renderSV(){
                 ${isA()?'<span class="sv2-tag-x">✕</span>':''}
               </div>`;
             });
+            if(!bidsJ.length)grid+=`<div style="font-size:10px;color:#2d5a7a;font-style:italic">Aucun bénévole</div>`;
             grid+=`</div>`;
           });
         } else {
