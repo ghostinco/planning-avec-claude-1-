@@ -144,19 +144,56 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .slot-blk:hover .sl-sa{display:flex}
 .slab{background:rgba(0,0,0,.45);border:none;color:#fff;border-radius:3px;width:14px;height:14px;font-size:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 
-/* ── VUE CRÉNEAUX ── */
-.sv-wrap{padding:14px}
-.sv-filters{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap}
-.sf{background:#0f2540;border:1px solid rgba(56,189,248,.18);border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;color:#4d7fa0;transition:all .15s;font-weight:600}
-.sf:hover{color:#7fc8e8;border-color:rgba(56,189,248,.35)}
-.sf.act{background:rgba(56,189,248,.12);border-color:#38bdf8;color:#38bdf8}
-.srow{background:#0f2540;border:1px solid rgba(56,189,248,.12);border-radius:10px;padding:9px 12px;margin-bottom:6px;display:flex;align-items:flex-start;gap:9px;transition:border-color .15s}
-.srow:hover{border-color:rgba(56,189,248,.25)}
-.sr-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:4px}
-.sr-body{flex:1;min-width:0}
-.sr-nm{font-size:12px;font-weight:700;color:#f0f9ff}
-.sr-meta{font-size:11px;color:#4d7fa0;margin-top:2px}
-.sr-r{display:flex;align-items:center;gap:6px;flex-shrink:0}
+/* ── VUE CRÉNEAUX (nouveau layout) ── */
+.sv2-outer{display:flex;height:100%;overflow:hidden}
+.sv2-left{flex:1;overflow:auto;min-width:0}
+.sv2-right{width:220px;flex-shrink:0;background:#0d2137;border-left:1px solid rgba(56,189,248,.15);display:flex;flex-direction:column}
+.sv2-right-hdr{padding:10px 12px 8px;border-bottom:1px solid rgba(56,189,248,.12);flex-shrink:0}
+.sv2-right-hdr h3{font-size:12px;font-weight:800;color:#f0f9ff;margin-bottom:7px}
+.sv2-search{width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:6px 9px;font-size:12px;outline:none}
+.sv2-search:focus{border-color:#38bdf8}
+.sv2-ben-list{flex:1;overflow-y:auto;padding:8px}
+.sv2-ben-item{display:flex;align-items:center;gap:7px;padding:6px 8px;border-radius:7px;border:1px solid rgba(56,189,248,.1);background:#0c1929;margin-bottom:5px;cursor:grab;transition:all .15s;user-select:none}
+.sv2-ben-item:hover{border-color:rgba(56,189,248,.35);background:#0f2540}
+.sv2-ben-item.dragging{opacity:.4;cursor:grabbing}
+.sv2-ben-item.drag-over-panel{opacity:.4}
+.sv2-av{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0}
+.sv2-nm{font-size:11px;font-weight:600;color:#f0f9ff;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sv2-sec-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+/* Grille postes */
+.sv2-grid{min-width:680px}
+.sv2-grid-hdr{display:grid;grid-template-columns:160px repeat(4,1fr);border-bottom:2px solid rgba(56,189,248,.2);position:sticky;top:0;z-index:10;background:#0d2137}
+.sv2-hdr-poste{padding:8px 10px;font-size:10px;font-weight:800;color:#4d7fa0;text-transform:uppercase;letter-spacing:.4px;border-right:1px solid rgba(56,189,248,.1)}
+.sv2-hdr-jour{padding:8px 6px;text-align:center;border-right:1px solid rgba(56,189,248,.1)}
+.sv2-hdr-jour .hj-wd{font-size:10px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.5px}
+.sv2-hdr-jour .hj-dt{font-size:14px;font-weight:800;color:#f0f9ff}
+.sv2-hdr-jour .hj-mq{font-size:10px;font-weight:700;margin-top:2px}
+/* Ligne secteur */
+.sv2-sec-row{display:grid;grid-template-columns:160px repeat(4,1fr);background:#0d2137;border-top:2px solid rgba(56,189,248,.15)}
+.sv2-sec-lbl{grid-column:1/-1;padding:5px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+/* Ligne poste */
+.sv2-pos-row{display:grid;grid-template-columns:160px repeat(4,1fr);border-top:1px solid rgba(56,189,248,.1)}
+.sv2-pos-row:hover{background:rgba(56,189,248,.02)}
+.sv2-pos-nm-cell{padding:8px 10px;border-right:1px solid rgba(56,189,248,.12);display:flex;flex-direction:column;justify-content:center;background:#0d2137;position:sticky;left:0;z-index:5}
+.sv2-pos-nm-cell .pnm{font-size:12px;font-weight:700;color:#e2e8f0}
+.sv2-pos-nm-cell .pnec{font-size:10px;color:#4d7fa0;margin-top:2px}
+/* Cellule jour d'un poste */
+.sv2-cell{padding:5px 6px;border-right:1px solid rgba(56,189,248,.08);min-height:52px;transition:background .15s;position:relative}
+.sv2-cell.drag-over{background:rgba(56,189,248,.12);border:1.5px dashed #38bdf8}
+.sv2-cell-inner{display:flex;flex-direction:column;gap:3px}
+/* Tag bénévole dans cellule */
+.sv2-tag{display:flex;align-items:center;gap:4px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:5px;padding:2px 6px;font-size:11px;color:#f0f9ff;cursor:pointer;transition:all .15s}
+.sv2-tag:hover{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#fca5a5}
+.sv2-tag .sv2-tag-x{font-size:9px;color:#4d7fa0;margin-left:1px}
+.sv2-tag:hover .sv2-tag-x{color:#f87171}
+/* Ratio badge */
+.sv2-ratio{font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;display:inline-block;margin-bottom:3px}
+.sv2-ratio.full{background:rgba(74,222,128,.12);color:#4ade80;border:1px solid rgba(74,222,128,.25)}
+.sv2-ratio.part{background:rgba(251,191,36,.1);color:#fbbf24;border:1px solid rgba(251,191,36,.2)}
+.sv2-ratio.empty{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2)}
+/* Drop hint */
+.sv2-drop-hint{font-size:10px;color:#2d5a7a;text-align:center;padding:6px 0;border:1px dashed rgba(56,189,248,.12);border-radius:5px;margin-top:2px}
+/* Srbtn */
 .srbtn{background:#0c1929;border:1px solid rgba(56,189,248,.2);color:#38bdf8;border-radius:5px;padding:3px 7px;font-size:10px;cursor:pointer;transition:all .15s}
 .srbtn:hover{background:rgba(56,189,248,.1)}
 .srbtn.d{color:#f87171;border-color:rgba(239,68,68,.25)}
@@ -577,21 +614,153 @@ function renderJour(){
 
 function dvClick(pos,jour,ev){if(ev.target.closest('.slot-blk')||ev.target.closest('.slab'))return;if(!isA())return;const rect=ev.currentTarget.getBoundingClientRect();const pct=Math.max(0,Math.min(1,(ev.clientX-rect.left)/rect.width));const start=pctToTime(pct);const[h,m]=start.split(':').map(Number);const endMins=Math.min(h*60+m+360,23*60+30);const end=`${String(Math.floor(endMins/60)).padStart(2,'0')}:${String(endMins%60).padStart(2,'0')}`;_prepSlot(pos,JOURS[dayIdx].lbl,start,end,null,'');}
 
-// ═══ VUE CRÉNEAUX ═══
+// ═══ VUE CRÉNEAUX — layout EHRO-style ═══
+let svSearch='';
+
 function renderSV(){
-  let shown=slots;if(svDay)shown=shown.filter(s=>s.jours.includes(svDay));if(sbSelected.size>0)shown=shown.filter(s=>sbSelected.has('sec:'+secOfPos(s.pid))||sbSelected.has('pos:'+s.pid));shown=[...shown].sort((a,b)=>a.start_time.localeCompare(b.start_time));
-  let h=`<div class="sv-wrap"><div class="sv-filters"><button type="button" class="sf${!svDay?' act':''}" onclick="setSvD(null)">Tous</button>`;JOURS.forEach(j=>h+=`<button type="button" class="sf${svDay===j.lbl?' act':''}" onclick="setSvD('${j.lbl}')">${j.lbl}</button>`);h+=`</div>`;
-  if(!shown.length){h+=`<div class="nosv">Aucun créneau.</div></div>`;document.getElementById('content').innerHTML=h;return;}
-  shown.forEach(sl=>{const sec=secOfPos(sl.pid);const col=SCLR[sec]||'#94a3b8';
-  const bids=assigns[sl.id]||[];const nec=POSTES_NEC[sl.pid]||2;const dur=durH(sl.start_time,sl.end_time);
-  // Compter nb moyen de bénévoles par jour
-  const joursStr=sl.jours.map(j=>j.split(' ')[0]+'/06').join(', ');
-  const bensStr=bids.map(bid=>{const b=bens.find(x=>x.id===bid);return b?b.nom+' '+b.prenom:'?';}).join(', ');
-  const nbMax=Math.max(...sl.jours.map(j=>Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(j)).length),0);
-  const rc=nbMax>=nec?'#34d399':nbMax>0?'#fbbf24':'#f87171';
-  h+=`<div class="srow"><div class="sr-dot" style="background:${col}"></div><div class="sr-body"><div class="sr-nm">${sl.pid} <span style="color:${rc};font-size:10px;font-weight:700">${nbMax}/${nec}</span></div><div class="sr-meta">${joursStr}${bensStr?' · '+bensStr:''}</div></div><div class="sr-r"><span style="font-size:11px;font-weight:700;color:#7fb8d4">${sl.start_time}–${sl.end_time}</span><span style="font-size:11px;color:#2d5a7a">${fmtH(dur)}</span>${isA()?`<div style="display:flex;gap:3px"><button type="button" class="srbtn" onclick="openAssign('${sl.id}',null)">👥</button><button type="button" class="srbtn" onclick="openEditSlot('${sl.id}',null)">✏</button><button type="button" class="srbtn d" onclick="delSlotQ('${sl.id}',null)">✕</button></div>`:''}</div></div>`;});
-  h+=`</div>`;document.getElementById('content').innerHTML=h;
+  const c=document.getElementById('content');
+  // ── Colonne droite : liste bénévoles ──
+  const benFiltered=bens.filter(b=>{
+    if(!svSearch)return true;
+    const q=svSearch.toLowerCase();
+    return(b.nom+' '+b.prenom).toLowerCase().includes(q)||(b.prenom+' '+b.nom).toLowerCase().includes(q);
+  }).sort((a,b2)=>(a.nom+a.prenom).localeCompare(b2.nom+b2.prenom));
+
+  // ── Grille : postes × 4 jours ──
+  let grid=`<div class="sv2-grid">`;
+  // Header
+  grid+=`<div class="sv2-grid-hdr"><div class="sv2-hdr-poste">Poste</div>`;
+  JOURS.forEach(j=>{const m=mqJ(j.lbl);grid+=`<div class="sv2-hdr-jour"><div class="hj-wd">${j.wd}</div><div class="hj-dt">${j.k} juin</div><div class="hj-mq" style="color:${m>0?'#f87171':'#4ade80'}">${m>0?'−'+m+' bén.':'✓'}</div></div>`;});
+  grid+=`</div>`;
+
+  SECS.forEach(sec=>{
+    const col=SCLR[sec];
+    const postes=POSTES_DEF[sec]||[];
+    grid+=`<div class="sv2-sec-row"><div class="sv2-sec-lbl" style="color:${col}">● ${sec}</div></div>`;
+    postes.forEach(pos=>{
+      const nec=POSTES_NEC[pos]||2;
+      grid+=`<div class="sv2-pos-row">`;
+      grid+=`<div class="sv2-pos-nm-cell"><div class="pnm">${pos}</div><div class="pnec">${nec} bén. requis</div>`;
+      if(isA())grid+=`<div style="display:flex;gap:3px;margin-top:4px"><button type="button" class="srbtn" style="padding:2px 5px;font-size:9px" onclick="openNewSlotForPos('${pos}')">+ créneau</button></div>`;
+      grid+=`</div>`;
+      JOURS.forEach(j=>{
+        // Trouver les slots de ce poste ce jour
+        const posSlots=slotsForPJ(pos,j.lbl);
+        const nbJ=nbBensOnPosteJour(pos,j.lbl);
+        const rc=nbJ>=nec?'full':nbJ>0?'part':'empty';
+        grid+=`<div class="sv2-cell" id="cell-${pos.replace(/[^a-z0-9]/gi,'_')}-${j.k}"
+          ondragover="svDragOver(event,'${pos}','${j.lbl}')"
+          ondragleave="svDragLeave(event)"
+          ondrop="svDrop(event,'${pos}','${j.lbl}')">`;
+        grid+=`<div class="sv2-cell-inner">`;
+        if(posSlots.length>0){
+          posSlots.forEach(sl=>{
+            const slNbJ=_assignDays[sl.id]?Object.entries(_assignDays[sl.id]).filter(([bid,jrs])=>jrs.includes(j.lbl)).length:0;
+            const slNec=POSTES_NEC[sl.pid]||2;
+            const slRc=slNbJ>=slNec?'full':slNbJ>0?'part':'empty';
+            grid+=`<div style="margin-bottom:4px">`;
+            grid+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:3px">`;
+            grid+=`<span style="font-size:10px;color:#4d7fa0">${sl.start_time}–${sl.end_time}</span>`;
+            grid+=`<span class="sv2-ratio ${slRc}">${slNbJ}/${slNec}</span>`;
+            if(isA())grid+=`<button type="button" class="srbtn" style="padding:1px 4px;font-size:9px;margin-left:auto" onclick="openAssign('${sl.id}',event)">👥</button><button type="button" class="srbtn" style="padding:1px 4px;font-size:9px" onclick="openEditSlot('${sl.id}',null)">✏</button>`;
+            grid+=`</div>`;
+            // Tags bénévoles assignés ce jour
+            const bidsJ=(assigns[sl.id]||[]).filter(bid=>(_assignDays[sl.id]?.[bid]||[]).includes(j.lbl));
+            bidsJ.forEach(bid=>{
+              const b=bens.find(x=>x.id===bid);if(!b)return;
+              const bc=bCol(bid);
+              grid+=`<div class="sv2-tag" onclick="${isA()?`removeAssignDay('${sl.id}','${bid}','${j.lbl}')`:''}" title="${isA()?'Cliquer pour retirer':''}">
+                <div class="sv2-av" style="background:${bc};width:18px;height:18px;font-size:8px">${init(b)}</div>
+                <span style="font-size:11px">${b.prenom} ${b.nom}</span>
+                ${isA()?'<span class="sv2-tag-x">✕</span>':''}
+              </div>`;
+            });
+            grid+=`</div>`;
+          });
+        } else {
+          grid+=`<div class="sv2-drop-hint">—</div>`;
+        }
+        grid+=`</div></div>`;
+      });
+      grid+=`</div>`;
+    });
+  });
+  grid+=`</div>`;
+
+  // ── Colonne bénévoles ──
+  let benCol=`<div class="sv2-right">
+    <div class="sv2-right-hdr">
+      <h3>👥 Bénévoles (${bens.length})</h3>
+      <input class="sv2-search" type="text" placeholder="Rechercher..." value="${svSearch}" oninput="svSearch=this.value;renderSV()"/>
+    </div>
+    <div class="sv2-ben-list">`;
+  benFiltered.forEach(b=>{
+    const bc=bCol(b.id);const col=SCLR[b.sec]||'#94a3b8';
+    benCol+=`<div class="sv2-ben-item" draggable="true"
+      ondragstart="svDragStart(event,'${b.id}')"
+      ondragend="svDragEnd(event)">
+      <div class="sv2-av" style="background:${bc}">${init(b)}</div>
+      <div style="flex:1;min-width:0">
+        <div class="sv2-nm">${b.prenom} ${b.nom}</div>
+        <div style="font-size:9px;color:${col}">${b.poste||b.sec}</div>
+      </div>
+      <div class="sv2-sec-dot" style="background:${col}"></div>
+    </div>`;
+  });
+  benCol+=`</div></div>`;
+
+  c.innerHTML=`<div class="sv2-outer"><div class="sv2-left">${grid}</div>${isA()?benCol:''}</div>`;
 }
+
+// ── Drag & drop ──
+let _dragBenId=null;
+function svDragStart(ev,bid){_dragBenId=bid;ev.currentTarget.classList.add('dragging');ev.dataTransfer.effectAllowed='copy';}
+function svDragEnd(ev){ev.currentTarget.classList.remove('dragging');_dragBenId=null;document.querySelectorAll('.sv2-cell.drag-over').forEach(el=>el.classList.remove('drag-over'));}
+function svDragOver(ev,pos,jour){ev.preventDefault();ev.dataTransfer.dropEffect='copy';ev.currentTarget.classList.add('drag-over');}
+function svDragLeave(ev){ev.currentTarget.classList.remove('drag-over');}
+function svDrop(ev,pos,jour){
+  ev.preventDefault();ev.currentTarget.classList.remove('drag-over');
+  if(!_dragBenId)return;
+  // Trouver les slots de ce poste ce jour
+  const posSlots=slotsForPJ(pos,jour);
+  if(!posSlots.length){
+    // Pas de créneau sur ce poste ce jour — proposer d'en créer un
+    if(confirm('Aucun créneau pour '+pos+' le '+jour+'.\nCréer un créneau par défaut (15:00–21:00) ?')){
+      _prepSlot(pos,jour,'15:00','21:00',null,'');
+    }
+    return;
+  }
+  // S'il y a plusieurs slots sur ce poste ce jour, prendre le premier (cas rare)
+  const sl=posSlots[0];
+  // Ouvrir le sélecteur de jours comme pour une assignation normale
+  openAssign(sl.id,null);
+  // Pré-sélectionner ce bénévole et ce jour dans le tmp
+  setTimeout(()=>{
+    if(!window._assignTmpDays[_dragBenId])window._assignTmpDays[_dragBenId]=[];
+    if(!window._assignTmpDays[_dragBenId].includes(jour))window._assignTmpDays[_dragBenId].push(jour);
+    // Ouvrir le panel de ce bénévole
+    const el=document.getElementById('ba-'+_dragBenId);
+    if(el){el.classList.add('open');refreshBaItem(_dragBenId,sl.id);}
+  },80);
+}
+
+async function removeAssignDay(sid,bid,jour){
+  if(!confirm('Retirer ce bénévole le '+jour+' ?'))return;
+  // Mise à jour locale
+  if(_assignDays[sid]&&_assignDays[sid][bid]){
+    _assignDays[sid][bid]=_assignDays[sid][bid].filter(j=>j!==jour);
+    if(_assignDays[sid][bid].length===0){delete _assignDays[sid][bid];assigns[sid]=(assigns[sid]||[]).filter(b=>b!==bid);}
+  }
+  renderSV();updMq();
+  setSync('syncing','Suppression...');
+  try{
+    const aid=window._assignIds?.[sid+'|'+bid+'|'+jour];
+    if(aid)await apiDel('/assigns/'+aid);
+    setSync('ok','Synchronisé');
+  }catch(e){setSync('err','Erreur');console.error(e);}
+}
+
+function openNewSlotForPos(pos){_prepSlot(pos,JOURS[0].lbl,'15:00','21:00',null,'');}
 const setSvD=j=>{svDay=j;renderSV();};
 
 // ═══ CRÉNEAUX CRUD ═══
