@@ -3,20 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Planning avec Claude</title>
+<title>Planning by LFMR</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;min-height:100vh}
 
 /* ── LOGIN ── */
-#login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:linear-gradient(160deg,#0c1929 0%,#0d2137 60%,#0c1929 100%)}
+#login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;background:linear-gradient(175deg,#0d0a1a 0%,#1a0a2e 20%,#2d1240 35%,#7b2d5e 50%,#c95c2b 68%,#e8852a 80%,#f5c842 92%,#fff8c0 100%)}
+#login::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Cellipse cx='400' cy='420' rx='420' ry='80' fill='rgba(255,180,0,.08)'/%3E%3Ccircle cx='400' cy='320' r='120' fill='rgba(255,140,0,.12)'/%3E%3Ccircle cx='400' cy='320' r='60' fill='rgba(255,200,50,.18)'/%3E%3C/svg%3E") center 60%/cover no-repeat;pointer-events:none;z-index:0}
+#login::after{content:'';position:absolute;bottom:0;left:0;right:0;height:220px;background:linear-gradient(0deg,rgba(10,5,20,.85) 0%,transparent 100%);pointer-events:none;z-index:0}
+#login>*{position:relative;z-index:1}
 .login-logo{font-size:52px;text-align:center;margin-bottom:6px;filter:drop-shadow(0 0 18px rgba(56,189,248,.35))}
 .login-title{font-size:22px;font-weight:800;color:#f0f9ff;text-align:center;margin-bottom:3px;letter-spacing:-.3px}
-.login-title b{color:#38bdf8}
+.login-title b{color:#f5a623}
 .login-sub{font-size:12px;color:#64748b;text-align:center;margin-bottom:18px}
-.lcard{background:rgba(30,58,80,.55);border:2px solid rgba(56,189,248,.15);border-radius:14px;width:100%;max-width:320px;padding:14px 16px;cursor:pointer;margin-bottom:9px;transition:all .18s}
-.lcard:hover,.lcard.sel{border-color:#38bdf8;background:rgba(56,189,248,.12);box-shadow:0 0 20px rgba(56,189,248,.15)}
+.lcard{background:rgba(20,10,35,.7);border:2px solid rgba(245,166,35,.2);border-radius:14px;width:100%;max-width:320px;padding:14px 16px;cursor:pointer;margin-bottom:9px;transition:all .18s}
+.lcard:hover,.lcard.sel{border-color:#f5a623;background:rgba(245,166,35,.1);box-shadow:0 0 24px rgba(245,166,35,.2)}
 .lcard .ct{font-size:14px;font-weight:700;color:#f0f9ff;margin-bottom:2px}
 .lcard .cs{font-size:11px;color:#7fb8d4}
 .lpin{width:100%;max-width:320px;display:none;margin-bottom:11px}
@@ -24,23 +27,23 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .lpini{width:100%;background:rgba(12,25,41,.8);border:2px solid #1e3a50;color:#f0f9ff;border-radius:10px;padding:10px;font-size:22px;text-align:center;letter-spacing:10px;outline:none}
 .lpini:focus{border-color:#38bdf8;box-shadow:0 0 0 3px rgba(56,189,248,.15)}
 .lperr{font-size:11px;color:#f87171;text-align:center;margin-top:3px;display:none}
-.lgo{width:100%;max-width:320px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 14px rgba(14,165,233,.3);transition:all .18s}
-.lgo:hover{background:linear-gradient(135deg,#38bdf8,#0ea5e9);box-shadow:0 6px 20px rgba(14,165,233,.4)}
+.lgo{width:100%;max-width:320px;background:linear-gradient(135deg,#f5a623,#e8652a);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.3px;box-shadow:0 4px 14px rgba(245,166,35,.4);transition:all .18s}
+.lgo:hover{background:linear-gradient(135deg,#fbbf24,#f5a623);box-shadow:0 6px 20px rgba(245,166,35,.5)}
 .lgo:disabled{opacity:.3;cursor:not-allowed;box-shadow:none}
-.sync-badge{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);border-radius:8px;padding:5px 14px;font-size:11px;color:#34d399;text-align:center;max-width:320px;width:100%;margin-bottom:18px}
+.sync-badge{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.3);border-radius:8px;padding:5px 14px;font-size:11px;color:#f5a623;text-align:center;max-width:320px;width:100%;margin-bottom:18px}
 
 /* ── APP ── */
-#AP{display:none;flex-direction:column;min-height:100vh;background:#0c1929}
+#AP{display:none;flex-direction:column;min-height:100vh;background:#0f0a1e}
 #AP.vis{display:flex}
 
 /* TOPBAR */
-.topbar{background:linear-gradient(90deg,#0d2137,#0f2744);border-bottom:1px solid rgba(56,189,248,.18);padding:0 14px;height:50px;display:flex;align-items:center;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.topbar{background:linear-gradient(90deg,#150a2a,#2a1040,#3d1a20);border-bottom:1px solid rgba(56,189,248,.18);padding:0 14px;height:50px;display:flex;align-items:center;flex-shrink:0;box-shadow:0 2px 12px rgba(0,0,0,.3)}
 .brand{font-size:15px;font-weight:800;color:#f0f9ff;margin-right:16px;letter-spacing:-.2px}
-.brand b{color:#38bdf8}
+.brand b{color:#f5a623}
 .navtabs{display:flex;height:100%}
 .nt{background:none;border:none;cursor:pointer;padding:0 12px;font-size:12px;font-weight:700;color:#4d7fa0;border-bottom:3px solid transparent;height:100%;transition:all .15s}
 .nt:hover{color:#7fc8e8}
-.nt.act{color:#38bdf8;border-bottom-color:#38bdf8}
+.nt.act{color:#f5a623;border-bottom-color:#f5a623}
 .tb-r{margin-left:auto;display:flex;align-items:center;gap:8px}
 .mqb{border-radius:6px;padding:3px 10px;font-size:11px;font-weight:700;background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25)}
 .mqb.ok{background:rgba(16,185,129,.1);color:#34d399;border-color:rgba(16,185,129,.25)}
@@ -53,11 +56,11 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .rpill:hover{border-color:#38bdf8;color:#38bdf8}
 
 /* VBAR */
-.vbar{background:#0d2137;border-bottom:1px solid rgba(56,189,248,.12);padding:7px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.vbar{background:#120a22;border-bottom:1px solid rgba(56,189,248,.12);padding:7px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
 .vbg{display:flex;background:rgba(12,25,41,.7);border:1px solid rgba(56,189,248,.15);border-radius:8px;overflow:hidden}
 .vb{background:none;border:none;cursor:pointer;padding:5px 13px;font-size:11px;font-weight:700;color:#4d7fa0;transition:all .15s}
 .vb:hover{color:#7fc8e8}
-.vb.act{background:rgba(56,189,248,.15);color:#38bdf8}
+.vb.act{background:rgba(245,166,35,.12);color:#f5a623}
 .dnav{display:flex;align-items:center;gap:6px}
 .dnb{background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);color:#7fc8e8;border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer;transition:all .15s}
 .dnb:hover{background:rgba(56,189,248,.18);color:#f0f9ff}
@@ -65,10 +68,10 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .vbar-r{margin-left:auto;display:flex;gap:6px}
 .tbtn{background:rgba(12,25,41,.6);border:1px solid rgba(56,189,248,.18);border-radius:6px;padding:4px 11px;font-size:11px;color:#7fb8d4;cursor:pointer;white-space:nowrap;transition:all .15s}
 .tbtn:hover{background:rgba(56,189,248,.12);color:#f0f9ff}
-.tbtn.hi{background:linear-gradient(135deg,#0ea5e9,#0284c7);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(14,165,233,.3)}
+.tbtn.hi{background:linear-gradient(135deg,#f5a623,#e8652a);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(245,166,35,.35)}
 
 /* FILTER BAR */
-.filter-bar{background:#0d2137;border-bottom:1px solid rgba(56,189,248,.1);padding:6px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.filter-bar{background:#120a22;border-bottom:1px solid rgba(56,189,248,.1);padding:6px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
 .fw{position:relative}
 .filter-btn{background:rgba(12,25,41,.6);border:1px solid rgba(56,189,248,.18);border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;color:#7fb8d4;cursor:pointer;transition:all .15s}
 .filter-btn:hover{background:rgba(56,189,248,.1);color:#f0f9ff}
@@ -106,7 +109,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .nfix{background:#1e3a5f;color:#60a5fa}.nrot{background:#1c1917;color:#a8a29e}
 .ned{display:none;float:right;background:rgba(56,189,248,.15);border:none;color:#7fc8e8;border-radius:3px;width:18px;height:18px;font-size:10px;cursor:pointer;align-items:center;justify-content:center;margin-top:1px}
 .wk-nm:hover .ned{display:flex}
-.wk-td{border:1px solid rgba(56,189,248,.07);vertical-align:top;padding:3px;min-height:50px;cursor:pointer;background:#0c1929;min-width:148px}
+.wk-td{border:1px solid rgba(245,166,35,.08);vertical-align:top;padding:3px;min-height:50px;cursor:pointer;background:#0f0a1e;min-width:148px}
 .wk-td:hover{background:#0d2137}
 .wk-td.na{background:#090f18;cursor:default}
 .wk-td.na:hover{background:#090f18}
@@ -209,7 +212,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .ben-pg{padding:14px;background:#0c1929}
 .ben-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap}
 .ben-hdr h2{font-size:14px;font-weight:800;color:#f0f9ff}
-.bpri{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(14,165,233,.3)}
+.bpri{background:linear-gradient(135deg,#f5a623,#e8652a);color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(245,166,35,.3)}
 .sec-grp{margin-bottom:14px}
 .sec-gh{display:flex;align-items:center;gap:6px;margin-bottom:7px;padding:6px 10px;background:#0d2137;border-radius:8px;border-left:3px solid}
 .bcard{background:#0f2540;border:1px solid rgba(56,189,248,.1);border-radius:10px;padding:10px 12px;margin-bottom:6px;display:flex;gap:9px;align-items:flex-start;transition:border-color .15s}
@@ -226,7 +229,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .bcbtn.d{color:#f87171;border-color:rgba(239,68,68,.25)}
 .noben{text-align:center;padding:40px;color:#2d5a7a;background:#0f2540;border-radius:10px}
 /* ── FILTRES BÉNÉVOLES ── */
-.ben-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:#0d2137;border:1px solid rgba(56,189,248,.12);border-radius:10px;margin-bottom:12px}
+.ben-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:#1a0e2e;border:1px solid rgba(245,166,35,.15);border-radius:10px;margin-bottom:12px}
 .ben-search-inp{background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:6px 10px;font-size:12px;outline:none;width:200px;transition:border-color .15s}
 .ben-search-inp:focus{border-color:#38bdf8}
 .ben-search-inp::placeholder{color:#2d5a7a}
@@ -234,7 +237,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .ben-filter-lbl{font-size:10px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.3px}
 .bfbtn{background:#0c1929;border:1.5px solid rgba(56,189,248,.18);color:#4d7fa0;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
 .bfbtn:hover{border-color:#38bdf8;color:#7fc8e8}
-.bfbtn.act{background:rgba(56,189,248,.12);border-color:#38bdf8;color:#38bdf8}
+.bfbtn.act{background:rgba(245,166,35,.12);border-color:#f5a623;color:#f5a623}
 .ben-sort-sel{background:#0c1929;border:1.5px solid rgba(56,189,248,.18);color:#f0f9ff;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;cursor:pointer}
 .ben-sort-sel option{background:#0d2137}
 .ben-filter-count{font-size:11px;color:#4d7fa0;margin-left:auto}
@@ -256,7 +259,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 /* ── MODALS ── */
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
 .ov.open{display:flex}
-.sht{background:#0d2137;border-top:3px solid #38bdf8;border-radius:18px 18px 0 0;padding:20px 20px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto}
+.sht{background:#0d2137;border-top:3px solid #f5a623;border-radius:18px 18px 0 0;padding:20px 20px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto}
 .sh-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .sh-ttl{font-weight:800;font-size:15px;color:#f0f9ff}
 .xb{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);color:#7fb8d4;cursor:pointer;border-radius:50%;width:28px;height:28px;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
@@ -264,19 +267,19 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .fl{margin-bottom:12px}
 .fl label{display:block;font-size:11px;color:#7fb8d4;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
 .fl input,.fl select,.fl textarea{width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:8px 11px;font-size:13px;outline:none;transition:border-color .15s}
-.fl input:focus,.fl select:focus,.fl textarea:focus{border-color:#38bdf8;box-shadow:0 0 0 2px rgba(56,189,248,.1)}
+.fl input:focus,.fl select:focus,.fl textarea:focus{border-color:#f5a623;box-shadow:0 0 0 2px rgba(245,166,35,.12)}
 .fl input:disabled{opacity:.35;cursor:not-allowed;background:#0c1929}
 .fl select option{background:#0d2137}
 .flrow{display:flex;gap:8px}.flrow .fl{flex:1}
 .dbtns{display:flex;gap:5px;flex-wrap:wrap}
 .dbtn{background:#0c1929;color:#4d7fa0;border:2px solid rgba(56,189,248,.18);border-radius:8px;padding:6px 11px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
 .dbtn:hover{border-color:#38bdf8;color:#7fc8e8}
-.dbtn.sel{background:rgba(56,189,248,.12);color:#38bdf8;border-color:#38bdf8}
+.dbtn.sel{background:rgba(245,166,35,.12);color:#f5a623;border-color:#f5a623}
 .sep{border-top:1px solid rgba(56,189,248,.1);margin:12px 0}
 .btn{border:1px solid rgba(56,189,248,.2);border-radius:8px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;width:100%;background:#0c1929;color:#f0f9ff;transition:all .15s}
 .btn:hover{background:#0d2137;border-color:rgba(56,189,248,.35)}
-.btn-p{background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(14,165,233,.3)}
-.btn-p:hover{background:linear-gradient(135deg,#38bdf8,#0ea5e9);box-shadow:0 4px 14px rgba(14,165,233,.4)}
+.btn-p{background:linear-gradient(135deg,#f5a623,#e8652a);color:#fff;border-color:transparent;box-shadow:0 3px 10px rgba(245,166,35,.3)}
+.btn-p:hover{background:linear-gradient(135deg,#fbbf24,#f5a623);box-shadow:0 4px 14px rgba(245,166,35,.45)}
 .btn-d{background:rgba(127,29,29,.4);color:#fca5a5;border-color:rgba(239,68,68,.3)}
 .btn-d:hover{background:rgba(127,29,29,.6)}
 .brow{display:flex;gap:8px}.brow .btn{flex:1}
@@ -315,9 +318,44 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 <body>
 
 <div id="login">
-  <div class="login-logo">🎪</div>
-  <div class="login-title"><b>Planning</b> avec Claude</div>
-  <div class="login-sub">Caribana 2026 · 17–20 juin</div>
+  <!-- Silhouettes foule festival en bas de page -->
+  <svg style="position:absolute;bottom:0;left:0;right:0;width:100%;pointer-events:none;z-index:0" viewBox="0 0 1200 180" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+    <!-- Foule dense -->
+    <g fill="rgba(10,5,20,0.85)">
+      <ellipse cx="50" cy="180" rx="28" ry="60"/><ellipse cx="95" cy="180" rx="22" ry="50"/><ellipse cx="135" cy="180" rx="25" ry="70"/>
+      <ellipse cx="175" cy="180" rx="20" ry="45"/><ellipse cx="210" cy="180" rx="28" ry="65"/><ellipse cx="255" cy="180" rx="22" ry="55"/>
+      <ellipse cx="295" cy="180" rx="26" ry="72"/><ellipse cx="338" cy="180" rx="20" ry="48"/><ellipse cx="372" cy="180" rx="30" ry="68"/>
+      <ellipse cx="415" cy="180" rx="22" ry="52"/><ellipse cx="455" cy="180" rx="28" ry="75"/><ellipse cx="498" cy="180" rx="20" ry="50"/>
+      <ellipse cx="535" cy="180" rx="25" ry="62"/><ellipse cx="578" cy="180" rx="22" ry="58"/><ellipse cx="618" cy="180" rx="30" ry="70"/>
+      <ellipse cx="660" cy="180" rx="20" ry="46"/><ellipse cx="695" cy="180" rx="27" ry="65"/><ellipse cx="738" cy="180" rx="22" ry="55"/>
+      <ellipse cx="778" cy="180" rx="26" ry="72"/><ellipse cx="820" cy="180" rx="20" ry="50"/><ellipse cx="858" cy="180" rx="30" ry="68"/>
+      <ellipse cx="900" cy="180" rx="22" ry="54"/><ellipse cx="940" cy="180" rx="28" ry="74"/><ellipse cx="982" cy="180" rx="20" ry="48"/>
+      <ellipse cx="1018" cy="180" rx="25" ry="63"/><ellipse cx="1060" cy="180" rx="22" ry="57"/><ellipse cx="1100" cy="180" rx="30" ry="70"/>
+      <ellipse cx="1142" cy="180" rx="20" ry="47"/><ellipse cx="1175" cy="180" rx="28" ry="65"/>
+      <!-- Bras levés -->
+      <rect x="48" y="115" width="5" height="30" rx="2"/><rect x="133" y="105" width="5" height="35" rx="2"/>
+      <rect x="210" y="112" width="5" height="28" rx="2"/><rect x="372" y="108" width="5" height="32" rx="2"/>
+      <rect x="455" y="102" width="5" height="38" rx="2"/><rect x="618" y="110" width="5" height="30" rx="2"/>
+      <rect x="695" y="106" width="5" height="34" rx="2"/><rect x="858" y="103" width="5" height="36" rx="2"/>
+      <rect x="940" y="108" width="5" height="30" rx="2"/><rect x="1100" y="105" width="5" height="34" rx="2"/>
+    </g>
+    <!-- Halo lumières scène -->
+    <ellipse cx="600" cy="90" rx="350" ry="70" fill="rgba(245,166,35,.06)"/>
+    <ellipse cx="600" cy="110" rx="200" ry="40" fill="rgba(232,101,42,.07)"/>
+  </svg>
+  <!-- Étoiles/confettis -->
+  <div style="position:absolute;inset:0;pointer-events:none;z-index:0;overflow:hidden">
+    <div style="position:absolute;top:8%;left:12%;width:3px;height:3px;border-radius:50%;background:#fbbf24;opacity:.7"></div>
+    <div style="position:absolute;top:15%;left:30%;width:2px;height:2px;border-radius:50%;background:#f87171;opacity:.6"></div>
+    <div style="position:absolute;top:6%;left:55%;width:3px;height:3px;border-radius:50%;background:#a78bfa;opacity:.8"></div>
+    <div style="position:absolute;top:20%;left:70%;width:2px;height:2px;border-radius:50%;background:#fbbf24;opacity:.5"></div>
+    <div style="position:absolute;top:10%;left:85%;width:3px;height:3px;border-radius:50%;background:#fb923c;opacity:.7"></div>
+    <div style="position:absolute;top:30%;left:5%;width:2px;height:2px;border-radius:50%;background:#34d399;opacity:.5"></div>
+    <div style="position:absolute;top:12%;left:45%;width:4px;height:4px;border-radius:50%;background:#fbbf24;opacity:.9"></div>
+  </div>
+  <div style="font-size:48px;text-align:center;margin-bottom:4px;filter:drop-shadow(0 0 20px rgba(245,166,35,.6))">🎪</div>
+  <div style="font-size:26px;font-weight:900;color:#fff;text-align:center;margin-bottom:2px;letter-spacing:-.5px;text-shadow:0 2px 20px rgba(245,166,35,.5)"><b style="color:#f5a623">Planning</b> by LFMR</div>
+  <div style="font-size:13px;color:rgba(255,220,150,.7);text-align:center;margin-bottom:16px;letter-spacing:.5px;text-shadow:0 1px 8px rgba(0,0,0,.5)">Caribana 2026 · 17–20 juin</div>
   <div class="sync-badge">✓ Données synchronisées via Supabase</div>
   <div class="lcard" id="rc-admin" onclick="selR('admin')"><div class="ct">🔑 Administrateur</div><div class="cs">Accès complet</div></div>
   <div class="lcard" id="rc-obs" onclick="selR('obs')"><div class="ct">👁 Observation</div><div class="cs">Lecture seule — sans code</div></div>
@@ -331,7 +369,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 
 <div id="AP">
   <div class="topbar">
-    <div class="brand">🎪 <b>Planning</b> avec Claude</div>
+    <div class="brand">🎪 <b>Planning</b> <span style="color:rgba(255,220,150,.6);font-weight:400;font-size:12px">by</span> <span style="color:#f5a623">LFMR</span></div>
     <div class="navtabs">
       <button type="button" class="nt act" onclick="stab('planning')">Planning</button>
       <button type="button" class="nt" onclick="stab('benevoles')">Bénévoles</button>
