@@ -941,18 +941,20 @@ function openAssign(sid,ev){
 
 function renderAssignList(sid,sl){
   const allDays=sl.jours;
-  // Trier : fixe sur poste > dispo sur ce créneau > même secteur > alpha
-  const sorted=[...bens].filter(b=>{
-    const hasDays=(b.dispos||[]).some(d=>allDays.includes(d));
-    const alreadyAssigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
-    return hasDays||alreadyAssigned;
-  }).sort((a,b)=>{
+  const sorted=[...bens].sort((a,b)=>{
     const aD=(a.dispos||[]).some(d=>allDays.includes(d));
     const bD=(b.dispos||[]).some(d=>allDays.includes(d));
-    const aFix=a.type==='fixe'&&a.poste===sl.pid&&aD;
-    const bFix=b.type==='fixe'&&b.poste===sl.pid&&bD;
+    const aAssigned=!!(window._assignTmpDays[a.id]&&window._assignTmpDays[a.id].length>0);
+    const bAssigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
+    // Déjà assigné en premier
+    if(aAssigned&&!bAssigned)return-1;if(!aAssigned&&bAssigned)return 1;
+    // Fixe sur ce poste
+    const aFix=a.type==='fixe'&&a.poste===sl.pid;
+    const bFix=b.type==='fixe'&&b.poste===sl.pid;
     if(aFix&&!bFix)return-1;if(!aFix&&bFix)return 1;
+    // Disponible ce créneau
     if(aD&&!bD)return-1;if(!aD&&bD)return 1;
+    // Même secteur
     const aSec=a.sec===sl.sec;const bSec=b.sec===sl.sec;
     if(aSec&&!bSec)return-1;if(!aSec&&bSec)return 1;
     return(a.nom+a.prenom).localeCompare(b.nom+b.prenom);
