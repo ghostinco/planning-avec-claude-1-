@@ -360,7 +360,11 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
   <div id="pg-benevoles" style="display:none;overflow:auto">
     <div class="ben-pg">
       <div class="ben-hdr"><h2 id="ben-title">Bénévoles</h2>
-        <button type="button" class="bpri" id="btn-nb" onclick="openNewBen()" style="display:none">+ Nouveau</button>
+        <div style="display:flex;gap:6px">
+          <button type="button" class="bpri" id="btn-import" onclick="document.getElementById('csv-input').click()" style="display:none;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);color:#38bdf8;box-shadow:none">📥 Importer</button>
+          <input type="file" id="csv-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleImportFile(this)"/>
+          <button type="button" class="bpri" id="btn-nb" onclick="openNewBen()" style="display:none">+ Nouveau</button>
+        </div>
       </div>
       <div id="ben-list"></div>
     </div>
@@ -420,7 +424,21 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
   </div>
 </div>
 
-<script>
+<!-- Modal import -->
+<div class="ov" id="m-import">
+  <div class="sht">
+    <div class="sh-hdr"><div class="sh-ttl">📥 Importer des bénévoles</div><button type="button" class="xb" onclick="cm('m-import')">✕</button></div>
+    <div style="font-size:11px;color:#7fb8d4;margin-bottom:12px">Colonnes détectées — vérifie la correspondance avant d'importer.</div>
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <div class="fl" style="flex:1;margin:0"><label>Colonne Prénom</label><select id="imp-prenom" style="width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:13px;outline:none"></select></div>
+      <div class="fl" style="flex:1;margin:0"><label>Colonne Nom</label><select id="imp-nom" style="width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:13px;outline:none"></select></div>
+    </div>
+    <div style="font-size:11px;color:#4d7fa0;margin-bottom:6px" id="imp-count"></div>
+    <div id="imp-preview" style="max-height:240px;overflow-y:auto;margin-bottom:12px;border:1px solid rgba(56,189,248,.12);border-radius:8px"></div>
+    <div class="ae" id="imp-err"></div>
+    <button type="button" class="btn btn-p" onclick="confirmImport()">Importer <span id="imp-btn-count"></span></button>
+  </div>
+</div>
 const PIN='1234';
 const POSTES_DEF={Parking:["P1","P premium","P3-PMR-Buvette","P COF","Moto","STEP"],Circulation:["Rond-point","Levant","Landes","Piscine","Navette TPN","Station service","Port Vidoli","Passage piéton"],Entretien:["Montage+Démontage","Démontage"]};
 // Rond-point → 3, Levant → 2
@@ -454,7 +472,7 @@ function setSync(s,t){const d=document.getElementById('sdot'),tx=document.getEle
 function selR(r){rSel=r;document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('rc-'+r).classList.add('sel');if(r==='admin'){document.getElementById('pz').classList.add('show');document.getElementById('pi').value='';document.getElementById('pe').style.display='none';document.getElementById('be').disabled=true;setTimeout(()=>document.getElementById('pi').focus(),60);}else{document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=false;}}
 document.getElementById('pi').addEventListener('input',function(){const v=this.value;document.getElementById('pe').style.display='none';if(v.length===4){const ok=v===PIN;document.getElementById('be').disabled=!ok;if(!ok)document.getElementById('pe').style.display='block';}else document.getElementById('be').disabled=true;});
 document.getElementById('pi').addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('be').disabled)goIn();});
-function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';loadAll();}
+function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';loadAll();}
 function deco(){role=null;rSel=null;document.getElementById('AP').className='';document.getElementById('AP').style.display='none';document.getElementById('login').style.display='flex';document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=true;}
 const isA=()=>role==='admin';
 function stab(n){document.querySelectorAll('.nt').forEach((t,i)=>t.classList.toggle('act',['planning','benevoles','stats'][i]===n));document.getElementById('pg-planning').style.display=n==='planning'?'flex':'none';document.getElementById('pg-benevoles').style.display=n==='benevoles'?'block':'none';document.getElementById('pg-stats').style.display=n==='stats'?'block':'none';if(n==='stats')renderStats();if(n==='benevoles')renderBens();}
@@ -1040,6 +1058,144 @@ function renderStats(){
   let h=`<div class="kpis"><div class="kpi"><div class="kpi-v">${bens.length}</div><div class="kpi-l">Bénévoles</div></div><div class="kpi"><div class="kpi-v">${slots.length}</div><div class="kpi-l">Créneaux</div></div><div class="kpi" style="border-color:${tm>0?'rgba(239,68,68,.3)':'rgba(16,185,129,.3)'}"><div class="kpi-v" style="color:${tm>0?'#f87171':'#34d399'}">${tm}</div><div class="kpi-l">Manquants</div></div></div>`;
   h+=`<div class="scard"><h3>Remplissage par jour</h3>`;JOURS.forEach(j=>{const totalNec=Object.values(POSTES_NEC).reduce((s,n)=>s+n,0);const totalOk=Object.entries(POSTES_NEC).reduce((s,[pos,nec])=>s+Math.min(nbBensOnPosteJour(pos,j.lbl),nec),0);const pct=totalNec>0?Math.round(totalOk/totalNec*100):0;const m=mqJ(j.lbl);h+=`<div class="srow2"><div class="slbl2">${j.lbl}</div><div class="sbar2"><div class="sbfill2" style="width:${pct}%;background:${m===0?'#34d399':'#38bdf8'}"></div></div><div class="sval2" style="color:${m>0?'#f87171':'#34d399'}">${pct}%</div></div>`;});
   h+=`</div><div class="scard"><h3>Bénévoles par secteur</h3>`;SECS.forEach(sec=>{const n=bens.filter(b=>b.sec===sec).length;const col=SCLR[sec];const a=bens.filter(b=>b.sec===sec&&Object.values(assigns).some(arr=>arr.includes(b.id))).length;const pct=n>0?Math.round(a/n*100):0;h+=`<div class="srow2"><div class="slbl2" style="color:${col}">${sec}</div><div class="sbar2"><div class="sbfill2" style="width:${pct}%;background:${col}"></div></div><div class="sval2" style="color:#4d7fa0">${n}</div></div>`;});h+=`</div>`;c.innerHTML=h;
+}
+
+// ═══ IMPORT CSV/EXCEL ═══
+let _importRows=[];let _importHeaders=[];
+
+function handleImportFile(input){
+  const file=input.files[0];if(!file)return;
+  input.value='';// reset pour permettre re-upload même fichier
+  const ext=file.name.split('.').pop().toLowerCase();
+  if(ext==='csv'){
+    const reader=new FileReader();
+    reader.onload=e=>parseImportCSV(e.target.result);
+    reader.readAsText(file,'UTF-8');
+  } else if(ext==='xlsx'||ext==='xls'){
+    const reader=new FileReader();
+    reader.onload=e=>parseImportXLSX(e.target.result);
+    reader.readAsArrayBuffer(file);
+  } else {
+    alert('Format non supporté. Utilise un fichier .csv ou .xlsx');
+  }
+}
+
+function parseImportCSV(text){
+  // Détecter séparateur : ; ou ,
+  const firstLine=text.split('\n')[0]||'';
+  const sep=firstLine.includes(';')?';':',';
+  const lines=text.split('\n').filter(l=>l.trim());
+  if(lines.length<2){alert('Fichier vide ou invalide.');return;}
+  _importHeaders=lines[0].split(sep).map(h=>h.trim().replace(/^"|"$/g,''));
+  _importRows=lines.slice(1).map(l=>l.split(sep).map(c=>c.trim().replace(/^"|"$/g,'')));
+  openImportModal();
+}
+
+function parseImportXLSX(buf){
+  // Parser XLSX minimal sans librairie externe — lire comme CSV si possible
+  // On utilise une approche simple : chercher le contenu texte
+  try{
+    const bytes=new Uint8Array(buf);
+    // Vérifier signature ZIP (XLSX = ZIP)
+    if(bytes[0]===0x50&&bytes[1]===0x4B){
+      // Extraire le fichier xl/worksheets/sheet1.xml depuis le ZIP
+      const text=new TextDecoder('utf-8',{fatal:false}).decode(bytes);
+      // Chercher les cellules <v> dans le XML
+      const sharedStrMatch=text.match(/<sst[^>]*>([\s\S]*?)<\/sst>/);
+      const sheetMatch=text.match(/<sheetData>([\s\S]*?)<\/sheetData>/);
+      if(sharedStrMatch&&sheetMatch){
+        // Extraire shared strings
+        const ss=[];const siRe=/<si>([\s\S]*?)<\/si>/g;let m;
+        while((m=siRe.exec(sharedStrMatch[1]))!==null){
+          ss.push(m[1].replace(/<[^>]+>/g,'').trim());
+        }
+        // Extraire lignes
+        const rows=[];const rowRe=/<row[^>]*>([\s\S]*?)<\/row>/g;
+        while((m=rowRe.exec(sheetMatch[1]))!==null){
+          const cells=[];const cellRe=/<c[^>]*t="s"[^>]*><v>(\d+)<\/v>/g;
+          const cellReInline=/<c[^>]*><v>([^<]*)<\/v>/g;
+          const rowHtml=m[1];
+          // Reconstruire les cellules dans l'ordre (tenir compte des colonnes manquantes)
+          const allCells=[];const cRe=/<c r="([A-Z]+)(\d+)"([^>]*)>([\s\S]*?)<\/c>/g;
+          while((m2=cRe.exec(rowHtml))!==null){
+            const col=m2[1];const attrs=m2[3];const inner=m2[4];
+            let val='';
+            if(attrs.includes('t="s"')){const vi=inner.match(/<v>(\d+)<\/v>/);if(vi)val=ss[parseInt(vi[1])]||'';}
+            else if(attrs.includes('t="inlineStr"')){const vi=inner.match(/<t>([^<]*)<\/t>/);if(vi)val=vi[1]||'';}
+            else{const vi=inner.match(/<v>([^<]*)<\/v>/);if(vi)val=vi[1]||'';}
+            // Convertir colonne lettres en index
+            let colIdx=0;for(let i=0;i<col.length;i++)colIdx=colIdx*26+(col.charCodeAt(i)-64);
+            allCells[colIdx-1]=val;
+          }
+          // Remplir les trous
+          for(let i=0;i<allCells.length;i++)if(allCells[i]===undefined)allCells[i]='';
+          rows.push(allCells);
+        }
+        if(rows.length>=2){
+          _importHeaders=rows[0].map(h=>String(h).trim());
+          _importRows=rows.slice(1).map(r=>r.map(c=>String(c).trim()));
+          openImportModal();return;
+        }
+      }
+    }
+    alert('Impossible de lire ce fichier Excel. Essaie de l\'enregistrer en .csv depuis Excel.');
+  }catch(e){console.error(e);alert('Erreur lecture fichier. Essaie le format .csv.');}
+}
+
+function openImportModal(){
+  if(!_importHeaders.length){alert('Fichier vide.');return;}
+  const opts=_importHeaders.map((h,i)=>`<option value="${i}">${h||'Colonne '+(i+1)}</option>`).join('');
+  // Auto-détecter les colonnes
+  const guessIdx=(keywords)=>_importHeaders.findIndex(h=>keywords.some(k=>h.toLowerCase().includes(k)));
+  const pIdx=Math.max(0,guessIdx(['prenom','prénom','first','fname','given']));
+  const nIdx=Math.max(0,guessIdx(['nom','last','name','surname','family']));
+  document.getElementById('imp-prenom').innerHTML=opts;
+  document.getElementById('imp-nom').innerHTML=opts;
+  document.getElementById('imp-prenom').value=pIdx;
+  document.getElementById('imp-nom').value=nIdx;
+  updateImportPreview();
+  document.getElementById('m-import').classList.add('open');
+  document.getElementById('imp-prenom').onchange=updateImportPreview;
+  document.getElementById('imp-nom').onchange=updateImportPreview;
+}
+
+function updateImportPreview(){
+  const pi=parseInt(document.getElementById('imp-prenom').value);
+  const ni=parseInt(document.getElementById('imp-nom').value);
+  const valid=_importRows.filter(r=>(r[pi]||'').trim()||(r[ni]||'').trim()).map(r=>({prenom:(r[pi]||'').trim(),nom:(r[ni]||'').trim()})).filter(r=>r.prenom||r.nom);
+  document.getElementById('imp-count').textContent=valid.length+' bénévoles détectés';
+  document.getElementById('imp-btn-count').textContent='('+valid.length+')';
+  // Aperçu — 8 premières lignes
+  const preview=valid.slice(0,8);
+  let h='<table style="width:100%;border-collapse:collapse">';
+  h+=`<tr style="background:#0c1929;position:sticky;top:0"><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0;font-weight:700">Prénom</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0;font-weight:700">Nom</th></tr>`;
+  preview.forEach((r,i)=>{h+=`<tr style="background:${i%2===0?'#0c1929':'#0d2137'}"><td style="padding:5px 10px;font-size:12px;color:#e2e8f0">${r.prenom}</td><td style="padding:5px 10px;font-size:12px;color:#e2e8f0">${r.nom}</td></tr>`;});
+  if(valid.length>8)h+=`<tr><td colspan="2" style="padding:5px 10px;font-size:11px;color:#4d7fa0;font-style:italic">... et ${valid.length-8} autres</td></tr>`;
+  h+='</table>';
+  document.getElementById('imp-preview').innerHTML=h;
+}
+
+async function confirmImport(){
+  const pi=parseInt(document.getElementById('imp-prenom').value);
+  const ni=parseInt(document.getElementById('imp-nom').value);
+  const toImport=_importRows.filter(r=>(r[pi]||'').trim()||(r[ni]||'').trim()).map(r=>({prenom:(r[pi]||'').trim(),nom:(r[ni]||'').trim()})).filter(r=>r.prenom||r.nom);
+  if(!toImport.length){sA('imp-err','Aucun bénévole valide trouvé.');return;}
+  // Dédoublonner avec existants
+  const nouveaux=toImport.filter(r=>!bens.some(b=>b.nom.toLowerCase()===r.nom.toLowerCase()&&b.prenom.toLowerCase()===r.prenom.toLowerCase()));
+  if(!nouveaux.length){sA('imp-err','Tous ces bénévoles existent déjà.');return;}
+  cm('m-import');
+  setSync('syncing',`Import ${nouveaux.length} bén...`);
+  let ok=0;
+  for(const r of nouveaux){
+    try{
+      const d={nom:r.nom,prenom:r.prenom,tel:'',email:'',sec:'Parking',poste:'P1',type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:''};
+      const res=await apiPost('/bens',d);
+      bens.push({id:res.id,...d});ok++;
+    }catch(e){console.error(e);}
+  }
+  setSync('ok',`${ok} importés`);
+  renderBens();updMq();
+  if(toImport.length-nouveaux.length>0)alert(`${ok} bénévoles importés.\n${toImport.length-nouveaux.length} ignorés (déjà existants).`);
 }
 
 // ═══ UTILS ═══
