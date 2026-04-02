@@ -225,6 +225,19 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .bcbtn:hover{background:rgba(56,189,248,.1)}
 .bcbtn.d{color:#f87171;border-color:rgba(239,68,68,.25)}
 .noben{text-align:center;padding:40px;color:#2d5a7a;background:#0f2540;border-radius:10px}
+/* ── FILTRES BÉNÉVOLES ── */
+.ben-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:#0d2137;border:1px solid rgba(56,189,248,.12);border-radius:10px;margin-bottom:12px}
+.ben-search-inp{background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:6px 10px;font-size:12px;outline:none;width:200px;transition:border-color .15s}
+.ben-search-inp:focus{border-color:#38bdf8}
+.ben-search-inp::placeholder{color:#2d5a7a}
+.ben-filter-group{display:flex;align-items:center;gap:5px}
+.ben-filter-lbl{font-size:10px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.3px}
+.bfbtn{background:#0c1929;border:1.5px solid rgba(56,189,248,.18);color:#4d7fa0;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+.bfbtn:hover{border-color:#38bdf8;color:#7fc8e8}
+.bfbtn.act{background:rgba(56,189,248,.12);border-color:#38bdf8;color:#38bdf8}
+.ben-sort-sel{background:#0c1929;border:1.5px solid rgba(56,189,248,.18);color:#f0f9ff;border-radius:6px;padding:5px 8px;font-size:11px;outline:none;cursor:pointer}
+.ben-sort-sel option{background:#0d2137}
+.ben-filter-count{font-size:11px;color:#4d7fa0;margin-left:auto}
 
 /* ── STATS ── */
 .sta-pg{padding:14px;background:#0c1929}
@@ -367,6 +380,29 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
           <button type="button" class="bpri" id="btn-nb" onclick="openNewBen()" style="display:none">+ Nouveau</button>
         </div>
       </div>
+      <!-- Barre filtres/tri -->
+      <div class="ben-filters" id="ben-filters">
+        <input class="ben-search-inp" id="ben-search" type="text" placeholder="🔍 Rechercher nom ou prénom..." oninput="benFilterChange()"/>
+        <div class="ben-filter-group">
+          <span class="ben-filter-lbl">Type :</span>
+          <button type="button" class="bfbtn act" id="bft-all" onclick="setBenType('all')">Tous</button>
+          <button type="button" class="bfbtn" id="bft-rot" onclick="setBenType('rotatif')">🔄 Rotatif</button>
+          <button type="button" class="bfbtn" id="bft-fix" onclick="setBenType('fixe')">📌 Fixe</button>
+        </div>
+        <div class="ben-filter-group">
+          <span class="ben-filter-lbl">Trier :</span>
+          <select class="ben-sort-sel" id="ben-sort" onchange="benFilterChange()">
+            <option value="sec">Par secteur</option>
+            <option value="nom-az">Nom A→Z</option>
+            <option value="nom-za">Nom Z→A</option>
+            <option value="prenom-az">Prénom A→Z</option>
+            <option value="prenom-za">Prénom Z→A</option>
+            <option value="ddn-asc">Naissance ↑</option>
+            <option value="ddn-desc">Naissance ↓</option>
+          </select>
+        </div>
+        <span class="ben-filter-count" id="ben-filter-count"></span>
+      </div>
       <div id="ben-list"></div>
     </div>
   </div>
@@ -411,6 +447,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
     <div class="sh-hdr"><div class="sh-ttl" id="mb-ttl">Bénévole</div><button type="button" class="xb" onclick="cm('m-ben')">✕</button></div>
     <div class="flrow"><div class="fl"><label>Nom *</label><input id="mb-n" placeholder="Dupont"/></div><div class="fl"><label>Prénom *</label><input id="mb-p" placeholder="Marie"/></div></div>
     <div class="flrow"><div class="fl"><label>Téléphone</label><input id="mb-t" type="tel"/></div><div class="fl"><label>Email</label><input id="mb-e" type="email"/></div></div>
+    <div class="fl"><label>Date de naissance</label><input id="mb-ddn" type="date"/></div>
     <div class="flrow">
       <div class="fl"><label>Secteur</label><select id="mb-sec" onchange="updMbPostes()"><option>Parking</option><option>Circulation</option><option>Entretien</option></select></div>
       <div class="fl"><label>Poste</label><select id="mb-pos"></select></div>
@@ -1017,14 +1054,14 @@ async function saveAssign(){
 // ═══ BÉNÉVOLES CRUD ═══
 function selType(t){bTypeCur=t;document.getElementById('t-rot').classList.toggle('sel',t==='rotatif');document.getElementById('t-fix').classList.toggle('sel',t==='fixe');}
 function updMbPostes(){const sec=document.getElementById('mb-sec').value;document.getElementById('mb-pos').innerHTML=(POSTES_DEF[sec]||[]).map(p=>`<option>${p}</option>`).join('');}
-function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);document.getElementById('mb-sec').value='Parking';updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
-function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-rmq').value=b.rmq||'';document.getElementById('mb-sec').value=b.sec||'Parking';document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);document.getElementById('mb-sec').value='Parking';updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';document.getElementById('mb-sec').value=b.sec||'Parking';document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
 
 async function saveBen(){
   const nom=document.getElementById('mb-n').value.trim(),prenom=document.getElementById('mb-p').value.trim();
   if(!nom||!prenom){sA('mb-e2','Nom et prénom obligatoires.');return;}
   const dispos=[...document.querySelectorAll('#mb-dis .dbtn.sel')].map(b=>b.dataset.j);
-  const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,sec:document.getElementById('mb-sec').value,poste:document.getElementById('mb-pos').value,type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value};
+  const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:document.getElementById('mb-sec').value,poste:document.getElementById('mb-pos').value,type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value};
   cm('m-ben');setSync('syncing','Sauvegarde...');
   try{
     if(eBid){Object.assign(bens.find(x=>x.id===eBid),d);await apiPatch('/bens/'+eBid,d);}
@@ -1045,14 +1082,66 @@ async function delBen(){
   requestAnimationFrame(()=>{renderBens();renderContent();updMq();});
 }
 
+let benFilterType='all';
+function setBenType(t){benFilterType=t;['all','rot','fix'].forEach(x=>document.getElementById('bft-'+x)?.classList.toggle('act',x===t));benFilterChange();}
+function benFilterChange(){renderBens();}
+
+function applyBenFilters(list){
+  const q=(document.getElementById('ben-search')?.value||'').toLowerCase();
+  const sort=document.getElementById('ben-sort')?.value||'sec';
+  let out=list.filter(b=>{
+    if(q&&!(b.nom+' '+b.prenom).toLowerCase().includes(q)&&!(b.prenom+' '+b.nom).toLowerCase().includes(q))return false;
+    if(benFilterType==='rotatif'&&b.type!=='rotatif')return false;
+    if(benFilterType==='fixe'&&b.type!=='fixe')return false;
+    return true;
+  });
+  if(sort==='nom-az')out.sort((a,b2)=>a.nom.localeCompare(b2.nom));
+  else if(sort==='nom-za')out.sort((a,b2)=>b2.nom.localeCompare(a.nom));
+  else if(sort==='prenom-az')out.sort((a,b2)=>a.prenom.localeCompare(b2.prenom));
+  else if(sort==='prenom-za')out.sort((a,b2)=>b2.prenom.localeCompare(a.prenom));
+  else if(sort==='ddn-asc')out.sort((a,b2)=>(a.ddn||'9999').localeCompare(b2.ddn||'9999'));
+  else if(sort==='ddn-desc')out.sort((a,b2)=>(b2.ddn||'').localeCompare(a.ddn||''));
+  return out;
+}
+
 function renderBens(){
-  const tot=bens.length;document.getElementById('ben-title').textContent=tot+' bénévole'+(tot!==1?'s':'');
-  const c=document.getElementById('ben-list');if(!tot){c.innerHTML='<div class="noben">Aucun bénévole. Clique sur "+ Nouveau" pour en ajouter.</div>';return;}
-  const bySec={};bens.forEach(b=>{const s=b.sec||'?';if(!bySec[s])bySec[s]=[];bySec[s].push(b);});
-  c.innerHTML=Object.entries(bySec).map(([sec,list])=>{const col=SCLR[sec]||'#94a3b8';
-  return`<div class="sec-grp"><div class="sec-gh" style="border-color:${col}"><span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:${col}">${sec}</span><span style="font-size:11px;color:#2d5a7a;margin-left:6px">${list.length}</span></div>
-  ${list.map(b=>{const bc=bCol(b.id);const dh=(b.dispos||[]).map(d=>`<span class="dtag" style="background:${col}22;color:${col}">${d.split(' ')[0]}/06</span>`).join('');const eb=isA()?`<button type="button" class="bcbtn" onclick="openEditBen('${b.id}')">Modifier</button>`:'';const db=isA()?`<button type="button" class="bcbtn d" onclick="openEditBen('${b.id}')">Suppr.</button>`:'';
-  return`<div class="bcard"><div class="bcav" style="background:${bc}">${init(b)}</div><div class="bcb"><div class="bcnm">${b.nom} ${b.prenom}</div><div class="bcme">${b.poste||sec} · <span class="${b.type==='fixe'?'nfix':'nrot'}" style="border-radius:3px;padding:1px 4px;font-size:9px;font-weight:700">${b.type==='fixe'?'📌':'🔄'}</span></div>${b.tel?`<div class="bcme">📞 ${b.tel}</div>`:''}<div class="bctg">${dh||'<span style="font-size:10px;color:#f87171">Aucune dispo</span>'}</div>${b.rmq?`<div style="font-size:11px;color:#2d5a7a;margin-top:3px;font-style:italic">"${b.rmq}"</div>`:''} ${eb||db?`<div class="bcact">${eb}${db}</div>`:''}</div></div>`;}).join('')}</div>`;}).join('');
+  const sort=document.getElementById('ben-sort')?.value||'sec';
+  const filtered=applyBenFilters(bens);
+  const tot=bens.length;
+  document.getElementById('ben-title').textContent=tot+' bénévole'+(tot!==1?'s':'');
+  const countEl=document.getElementById('ben-filter-count');
+  if(countEl)countEl.textContent=filtered.length<tot?filtered.length+' résultat'+(filtered.length!==1?'s':''):'';
+  const c=document.getElementById('ben-list');
+  if(!tot){c.innerHTML='<div class="noben">Aucun bénévole.</div>';return;}
+  if(!filtered.length){c.innerHTML='<div class="noben">Aucun résultat pour ces filtres.</div>';return;}
+
+  // Si tri par secteur : grouper par secteur
+  if(sort==='sec'){
+    const bySec={};filtered.forEach(b=>{const s=b.sec||'?';if(!bySec[s])bySec[s]=[];bySec[s].push(b);});
+    c.innerHTML=Object.entries(bySec).map(([sec,list])=>{const col=SCLR[sec]||'#94a3b8';
+    return`<div class="sec-grp"><div class="sec-gh" style="border-color:${col}"><span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:${col}">${sec}</span><span style="font-size:11px;color:#2d5a7a;margin-left:6px">${list.length}</span></div>
+    ${list.map(b=>benCard(b,col)).join('')}</div>`;}).join('');
+  } else {
+    // Tri plat sans groupement secteur
+    c.innerHTML=`<div class="sec-grp">${filtered.map(b=>benCard(b,SCLR[b.sec]||'#94a3b8')).join('')}</div>`;
+  }
+}
+
+function benCard(b,col){
+  const bc=bCol(b.id);
+  const dh=(b.dispos||[]).map(d=>`<span class="dtag" style="background:${col}22;color:${col}">${d.split(' ')[0]}/06</span>`).join('');
+  const eb=isA()?`<button type="button" class="bcbtn" onclick="openEditBen('${b.id}')">Modifier</button>`:'';
+  const db=isA()?`<button type="button" class="bcbtn d" onclick="openEditBen('${b.id}')">Suppr.</button>`:'';
+  const ddnStr=b.ddn?`<div class="bcme">🎂 ${b.ddn.split('-').reverse().join('/')}</div>`:'';
+  return`<div class="bcard"><div class="bcav" style="background:${bc}">${init(b)}</div><div class="bcb">
+    <div class="bcnm">${b.nom} ${b.prenom}</div>
+    <div class="bcme">${b.poste||b.sec} · <span style="color:${col};font-size:10px;font-weight:700">${b.sec}</span> · <span class="${b.type==='fixe'?'nfix':'nrot'}" style="border-radius:3px;padding:1px 4px;font-size:9px;font-weight:700">${b.type==='fixe'?'📌 Fixe':'🔄 Rotatif'}</span></div>
+    ${ddnStr}
+    ${b.tel?`<div class="bcme">📞 ${b.tel}</div>`:''}
+    <div class="bctg">${dh||'<span style="font-size:10px;color:#f87171">Aucune dispo</span>'}</div>
+    ${b.rmq?`<div style="font-size:11px;color:#2d5a7a;margin-top:3px;font-style:italic">"${b.rmq}"</div>`:''}
+    ${eb||db?`<div class="bcact">${eb}${db}</div>`:''}
+  </div></div>`;
 }
 
 // ═══ STATS ═══
