@@ -290,7 +290,10 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .dur-info{font-size:11px;color:#4d7fa0;margin-bottom:9px}
 
 /* ── ASSIGNATION PAR JOUR ── */
-.ba-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:340px;overflow-y:auto}
+.ba-list{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;max-height:55vh;overflow-y:auto}
+.ba-search{width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:6px 10px;font-size:12px;outline:none;margin-bottom:10px;transition:border-color .15s}
+.ba-search:focus{border-color:#f5a623}
+.ba-search::placeholder{color:#2d5a7a}
 .ba-item{background:#0c1929;border:1.5px solid rgba(56,189,248,.15);border-radius:9px;overflow:hidden;transition:border-color .15s}
 .ba-item.has-days{border-color:rgba(16,185,129,.45);background:rgba(16,185,129,.04)}
 .ba-item.unavail{opacity:.3;pointer-events:none}
@@ -467,7 +470,8 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
   <div class="sht">
     <div class="sh-hdr"><div class="sh-ttl" id="ma-ttl">Assigner des bénévoles</div><button type="button" class="xb" onclick="cm('m-assign')">✕</button></div>
     <div class="slot-info-box" id="ma-info"></div>
-    <div style="font-size:11px;color:#4d7fa0;margin-bottom:10px">Développer un bénévole pour choisir ses jours</div>
+    <div style="font-size:11px;color:#4d7fa0;margin-bottom:8px">Développer un bénévole pour choisir ses jours</div>
+    <input class="ba-search" id="ba-search" type="text" placeholder="🔍 Rechercher un bénévole..." oninput="filterBaList()"/>
     <div class="ba-list" id="ma-list"></div>
     <div class="aw" id="ma-w"></div>
     <button type="button" class="btn btn-p" onclick="saveAssign()">Confirmer</button>
@@ -936,7 +940,18 @@ function openAssign(sid,ev){
   const sec=secOfPos(sl.pid);const col=SCLR[sec]||'#94a3b8';const nec=POSTES_NEC[sl.pid]||2;
   document.getElementById('ma-ttl').textContent=sl.pid+' · '+sl.start_time+'–'+sl.end_time;
   document.getElementById('ma-info').innerHTML=`<b>${sl.pid}</b> · <span style="color:${col}">${sec}</span> · ${sl.start_time}–${sl.end_time} (${fmtH(durH(sl.start_time,sl.end_time))}) · ${sl.jours.map(j=>j.split(' ')[0]+'/06').join(', ')} · Besoin : <b>${nec}</b>`;
-  renderAssignList(sid,sl);hA('ma-w');document.getElementById('m-assign').classList.add('open');
+  renderAssignList(sid,sl);hA('ma-w');
+  // Reset recherche
+  const bs=document.getElementById('ba-search');if(bs)bs.value='';
+  document.getElementById('m-assign').classList.add('open');
+}
+
+function filterBaList(){
+  const q=(document.getElementById('ba-search')?.value||'').toLowerCase();
+  document.querySelectorAll('#ma-list .ba-item').forEach(el=>{
+    const nm=el.querySelector('.ba-nm')?.textContent.toLowerCase()||'';
+    el.style.display=(!q||nm.includes(q))?'':'none';
+  });
 }
 
 function renderAssignList(sid,sl){
