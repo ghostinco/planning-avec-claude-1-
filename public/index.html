@@ -138,6 +138,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .slot-blk:not(.empty) .sl-time{color:#fff}
 .sl-ratio{font-size:10px;font-weight:800;flex-shrink:0}
 .sl-bens{font-size:9px;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.sl-ben-nm{font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.45;padding:0 2px}
 .sl-sa{display:none;position:absolute;top:2px;right:2px;gap:1px}
 .slot-blk:hover .sl-sa{display:flex}
 .slab{background:rgba(0,0,0,.45);border:none;color:#fff;border-radius:3px;width:14px;height:14px;font-size:8px;cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -508,8 +509,16 @@ function renderSemaine(){
 }
 
 // ═══ VUE JOUR ═══
+// Chaque poste = une ligne. Les créneaux sont placés en position absolute (gauche/largeur = horaire)
+// mais la cellule a une hauteur min auto pour que les noms s'affichent en entier.
+// On calcule d'abord la hauteur nécessaire par slot (en px), puis la hauteur max de la ligne.
+const BEN_LINE_H=16; // px par bénévole dans un créneau
+const SLOT_HDR_H=22; // px pour la ligne heure+ratio
+const SLOT_PAD=6;    // padding top+bottom
+function slotNeededH(nbJ){return SLOT_PAD+SLOT_HDR_H+(nbJ>0?nbJ*BEN_LINE_H:0);}
+
 function renderJour(){
-  const jour=JOURS[dayIdx].lbl;const rows=filteredRows();const LANE_H=32;
+  const jour=JOURS[dayIdx].lbl;const rows=filteredRows();
   let h=`<div class="dv-outer"><table class="dv-table" style="table-layout:fixed;width:100%"><thead><tr><td class="dv-corner" style="width:158px;min-width:158px">${jour}</td>`;
   for(let hr=0;hr<24;hr++){const major=hr%6===0;h+=`<td class="dv-hdr-h ${major?'major':'minor'}" style="width:calc((100% - 158px)/24);min-width:30px">${hr}h</td>`;}
   h+=`</tr></thead><tbody>`;
@@ -517,28 +526,49 @@ function renderJour(){
   rows.forEach(({sec,pos})=>{
     const col=SCLR[sec]||'#94a3b8';
     if(sec!==lastSec){lastSec=sec;h+=`<tr class="dv-sec-tr"><td colspan="25" style="color:${col}">● ${sec}</td></tr>`;}
-    const nec=POSTES_NEC[pos]||2;const shs=slotsForPJ(pos,jour);
-    const lanes=computeLanes(shs);const nLanes=Math.max(1,lanes.length);const rowH=nLanes*LANE_H;
+    const nec=POSTES_NEC[pos]||2;
+    const shs=slotsForPJ(pos,jour);
+    // Calculer hauteur nécessaire pour chaque slot
+    const slotH={};
+    shs.forEach(sl=>{
+      const nbJ=_assignDays[sl.id]?Object.entries(_assignDays[sl.id]).filter(([bid,jrs])=>jrs.includes(jour)).length:0;
+      slotH[sl.id]=slotNeededH(nbJ);
+    });
+    const lanes=computeLanes(shs);
+    // Hauteur de chaque lane = max des slots qu'elle contient
+    const laneHeights=lanes.map(lane=>Math.max(40,...lane.map(sl=>slotH[sl.id]||40)));
+    const rowH=laneHeights.reduce((a,b)=>a+b,0)||40;
+
     h+=`<tr><td class="dv-pos-hdr" style="height:${rowH}px;vertical-align:top"><div class="dv-pos-nm">${pos}</div><div class="dv-pos-sec" style="color:${col}">${sec}</div></td>`;
     const ca=isA()?`onclick="dvClick('${pos}','${jour}',event)"`:'' ;
     h+=`<td colspan="24" style="height:${rowH}px;padding:0;position:relative;background:#0c1929;border:1px solid rgba(56,189,248,.07);cursor:${isA()?'crosshair':'default'}" ${ca}>`;
+    // Grilles verticales
     for(let hr=0;hr<=24;hr++){const pct=(hr/24)*100;const major=hr%6===0;h+=`<div style="position:absolute;top:0;bottom:0;left:${pct}%;width:${major?'1.5':'1'}px;background:${major?'rgba(56,189,248,.1)':'rgba(56,189,248,.04)'};pointer-events:none;z-index:1"></div>`;}
-    for(let li=1;li<nLanes;li++)h+=`<div style="position:absolute;left:0;right:0;top:${li*LANE_H}px;height:1px;background:rgba(56,189,248,.06);z-index:2;pointer-events:none"></div>`;
-    lanes.forEach((lane,li)=>{lane.forEach(sl=>{
-      const bids=assigns[sl.id]||[];
-      // Nb bénévoles assignés ce jour précisément
-      const nbJ=(_assignDays[sl.id]?Object.entries(_assignDays[sl.id]).filter(([bid,jrs])=>jrs.includes(jour)).length:0);
-      const isEmpty=nbJ===0;
-      const left=toPct(sl.start_time);const w=Math.max(0.4,widthPct(sl.start_time,sl.end_time));
-      const dur=durH(sl.start_time,sl.end_time);const top=li*LANE_H+2;const ht=LANE_H-4;
-      const rc=nbJ>=nec?'#34d399':nbJ>0?'#fbbf24':'#f87171';
-      const bensStr=bids.map(bid=>{const b=bens.find(x=>x.id===bid);if(!b)return'?';const jrs=(_assignDays[sl.id]?.[bid]||[]);return jrs.includes(jour)?b.nom:'';}).filter(Boolean).join(', ');
-      h+=`<div class="slot-blk ${isEmpty?'empty':''}" style="left:${left}%;width:${w}%;top:${top}px;height:${ht}px;${isEmpty?'':'background:'+col}" onclick="openAssign('${sl.id}',event)">
-        <div class="sl-row"><div class="sl-time">${sl.start_time}–${sl.end_time} ${fmtH(dur)}</div><div class="sl-ratio" style="color:${rc}">${nbJ}/${nec}</div></div>
-        ${!isEmpty&&bensStr?`<div class="sl-bens">${bensStr}</div>`:''}
-        ${isA()?`<div class="sl-sa"><button type="button" class="slab" onclick="openEditSlot('${sl.id}',event)">✏</button><button type="button" class="slab" onclick="delSlotQ('${sl.id}',event)">✕</button></div>`:''}
-      </div>`;
-    });});
+    // Séparateurs de lanes
+    let laneTop=0;
+    lanes.forEach((lane,li)=>{
+      if(li>0)h+=`<div style="position:absolute;left:0;right:0;top:${laneTop}px;height:1px;background:rgba(56,189,248,.06);z-index:2;pointer-events:none"></div>`;
+      lane.forEach(sl=>{
+        const nbJ=_assignDays[sl.id]?Object.entries(_assignDays[sl.id]).filter(([bid,jrs])=>jrs.includes(jour)).length:0;
+        const isEmpty=nbJ===0;
+        const left=toPct(sl.start_time);const w=Math.max(0.4,widthPct(sl.start_time,sl.end_time));
+        const dur=durH(sl.start_time,sl.end_time);
+        const ht=slotH[sl.id]||40;
+        const top=laneTop+2;
+        // Couleur ratio : vert vif si complet, orange si partiel, rouge si vide
+        const rc=nbJ>=nec?'#4ade80':nbJ>0?'#fbbf24':'#f87171';
+        // Couleur fond slot : plus pale/neutre pour laisser le vert ressortir
+        const bgCol=isEmpty?null:col;
+        // Liste noms complets (prénom + nom)
+        const bensList=assigns[sl.id]?assigns[sl.id].map(bid=>{const b=bens.find(x=>x.id===bid);if(!b)return null;if(!(_assignDays[sl.id]?.[bid]||[]).includes(jour))return null;return b.prenom+' '+b.nom;}).filter(Boolean):[];
+        h+=`<div class="slot-blk ${isEmpty?'empty':''}" style="left:${left}%;width:calc(${w}% - 3px);top:${top}px;height:${ht-4}px;${bgCol?'background:'+bgCol+';opacity:.92':''}" onclick="openAssign('${sl.id}',event)">
+          <div class="sl-row"><div class="sl-time">${sl.start_time}–${sl.end_time} <span style="opacity:.7">${fmtH(dur)}</span></div><div class="sl-ratio" style="color:${rc};font-size:11px;font-weight:800">${nbJ}/${nec}</div></div>
+          ${bensList.map(nm=>`<div class="sl-ben-nm">${nm}</div>`).join('')}
+          ${isA()?`<div class="sl-sa"><button type="button" class="slab" onclick="openEditSlot('${sl.id}',event)">✏</button><button type="button" class="slab" onclick="delSlotQ('${sl.id}',event)">✕</button></div>`:''}
+        </div>`;
+      });
+      laneTop+=laneHeights[li];
+    });
     h+=`</td></tr>`;
   });
   h+=`</tbody></table></div>`;document.getElementById('content').innerHTML=h;
