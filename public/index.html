@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Planning avec Claude</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;min-height:100vh}
@@ -362,7 +363,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
       <div class="ben-hdr"><h2 id="ben-title">Bénévoles</h2>
         <div style="display:flex;gap:6px">
           <button type="button" class="bpri" id="btn-import" onclick="document.getElementById('csv-input').click()" style="display:none;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);color:#38bdf8;box-shadow:none">📥 Importer</button>
-          <input type="file" id="csv-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleImportFile(this)"/>
+          <input type="file" id="csv-input" accept=".csv,.xlsx,.xls,.ods,.numbers" style="display:none" onchange="handleImportFile(this)"/>
           <button type="button" class="bpri" id="btn-nb" onclick="openNewBen()" style="display:none">+ Nouveau</button>
         </div>
       </div>
@@ -1067,19 +1068,28 @@ let _importRows=[];let _importHeaders=[];
 
 function handleImportFile(input){
   const file=input.files[0];if(!file)return;
-  input.value='';// reset pour permettre re-upload même fichier
+  input.value='';
   const ext=file.name.split('.').pop().toLowerCase();
+  const reader=new FileReader();
   if(ext==='csv'){
-    const reader=new FileReader();
     reader.onload=e=>parseImportCSV(e.target.result);
     reader.readAsText(file,'UTF-8');
-  } else if(ext==='xlsx'||ext==='xls'){
-    const reader=new FileReader();
-    reader.onload=e=>parseImportXLSX(e.target.result);
-    reader.readAsArrayBuffer(file);
   } else {
-    alert('Format non supporté. Utilise un fichier .csv ou .xlsx');
+    reader.onload=e=>parseImportSheetJS(e.target.result);
+    reader.readAsArrayBuffer(file);
   }
+}
+
+function parseImportSheetJS(buf){
+  try{
+    const wb=XLSX.read(buf,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    if(!data||data.length<2){alert('Fichier vide ou invalide.');return;}
+    _importHeaders=data[0].map(h=>String(h).trim());
+    _importRows=data.slice(1).map(r=>_importHeaders.map((_,i)=>String(r[i]||'').trim()));
+    openImportModal();
+  }catch(e){console.error(e);alert('Impossible de lire ce fichier : '+e.message);}
 }
 
 function parseImportCSV(text){
@@ -1093,56 +1103,6 @@ function parseImportCSV(text){
   openImportModal();
 }
 
-function parseImportXLSX(buf){
-  // Parser XLSX minimal sans librairie externe — lire comme CSV si possible
-  // On utilise une approche simple : chercher le contenu texte
-  try{
-    const bytes=new Uint8Array(buf);
-    // Vérifier signature ZIP (XLSX = ZIP)
-    if(bytes[0]===0x50&&bytes[1]===0x4B){
-      // Extraire le fichier xl/worksheets/sheet1.xml depuis le ZIP
-      const text=new TextDecoder('utf-8',{fatal:false}).decode(bytes);
-      // Chercher les cellules <v> dans le XML
-      const sharedStrMatch=text.match(/<sst[^>]*>([\s\S]*?)<\/sst>/);
-      const sheetMatch=text.match(/<sheetData>([\s\S]*?)<\/sheetData>/);
-      if(sharedStrMatch&&sheetMatch){
-        // Extraire shared strings
-        const ss=[];const siRe=/<si>([\s\S]*?)<\/si>/g;let m;
-        while((m=siRe.exec(sharedStrMatch[1]))!==null){
-          ss.push(m[1].replace(/<[^>]+>/g,'').trim());
-        }
-        // Extraire lignes
-        const rows=[];const rowRe=/<row[^>]*>([\s\S]*?)<\/row>/g;
-        while((m=rowRe.exec(sheetMatch[1]))!==null){
-          const cells=[];const cellRe=/<c[^>]*t="s"[^>]*><v>(\d+)<\/v>/g;
-          const cellReInline=/<c[^>]*><v>([^<]*)<\/v>/g;
-          const rowHtml=m[1];
-          // Reconstruire les cellules dans l'ordre (tenir compte des colonnes manquantes)
-          const allCells=[];const cRe=/<c r="([A-Z]+)(\d+)"([^>]*)>([\s\S]*?)<\/c>/g;
-          let m2;while((m2=cRe.exec(rowHtml))!==null){
-            const col=m2[1];const attrs=m2[3];const inner=m2[4];
-            let val='';
-            if(attrs.includes('t="s"')){const vi=inner.match(/<v>(\d+)<\/v>/);if(vi)val=ss[parseInt(vi[1])]||'';}
-            else if(attrs.includes('t="inlineStr"')){const vi=inner.match(/<t>([^<]*)<\/t>/);if(vi)val=vi[1]||'';}
-            else{const vi=inner.match(/<v>([^<]*)<\/v>/);if(vi)val=vi[1]||'';}
-            // Convertir colonne lettres en index
-            let colIdx=0;for(let i=0;i<col.length;i++)colIdx=colIdx*26+(col.charCodeAt(i)-64);
-            allCells[colIdx-1]=val;
-          }
-          // Remplir les trous
-          for(let i=0;i<allCells.length;i++)if(allCells[i]===undefined)allCells[i]='';
-          rows.push(allCells);
-        }
-        if(rows.length>=2){
-          _importHeaders=rows[0].map(h=>String(h).trim());
-          _importRows=rows.slice(1).map(r=>r.map(c=>String(c).trim()));
-          openImportModal();return;
-        }
-      }
-    }
-    alert('Impossible de lire ce fichier Excel. Essaie de l\'enregistrer en .csv depuis Excel.');
-  }catch(e){console.error(e);alert('Erreur lecture fichier. Essaie le format .csv.');}
-}
 
 function openImportModal(){
   if(!_importHeaders.length){alert('Fichier vide.');return;}
