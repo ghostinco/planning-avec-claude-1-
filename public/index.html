@@ -125,7 +125,8 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .dv-hdr-h.major{color:#7fb8d4;font-weight:700;border-left:1.5px solid rgba(56,189,248,.2);background:#112c4a}
 .dv-hdr-h.minor{color:#2d5a7a;border-left:1px dashed rgba(56,189,248,.07)}
 .dv-sec-tr td{background:#0d2137;border:1px solid rgba(56,189,248,.08);padding:3px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
-.dv-pos-hdr{background:#0d2137;border:1px solid rgba(56,189,248,.12);border-right:2px solid rgba(56,189,248,.25);padding:7px 9px;vertical-align:middle;position:sticky;left:0;z-index:15;min-width:158px;width:158px}
+.dv-pos-hdr{background:#0d2137;border:1px solid rgba(56,189,248,.12);border-right:2px solid rgba(56,189,248,.25);border-bottom:2px solid rgba(56,189,248,.35);padding:7px 9px;vertical-align:middle;position:sticky;left:0;z-index:15;min-width:158px;width:158px}
+.dv-row-sep{border-bottom:2px solid rgba(56,189,248,.25) !important}
 .dv-pos-nm{font-size:12px;font-weight:700;color:#e2e8f0}
 .dv-pos-sec{font-size:10px;color:#4d7fa0;margin-top:1px}
 .slot-blk{position:absolute;border-radius:5px;padding:2px 5px;cursor:pointer;overflow:hidden;z-index:3;display:flex;flex-direction:column;box-shadow:0 2px 6px rgba(0,0,0,.3)}
@@ -539,9 +540,9 @@ function renderJour(){
     const laneHeights=lanes.map(lane=>Math.max(40,...lane.map(sl=>slotH[sl.id]||40)));
     const rowH=laneHeights.reduce((a,b)=>a+b,0)||40;
 
-    h+=`<tr><td class="dv-pos-hdr" style="height:${rowH}px;vertical-align:top"><div class="dv-pos-nm">${pos}</div><div class="dv-pos-sec" style="color:${col}">${sec}</div></td>`;
+    h+=`<tr class="dv-row-sep"><td class="dv-pos-hdr" style="height:${rowH}px;vertical-align:top"><div class="dv-pos-nm">${pos}</div><div class="dv-pos-sec" style="color:${col}">${sec}</div></td>`;
     const ca=isA()?`onclick="dvClick('${pos}','${jour}',event)"`:'' ;
-    h+=`<td colspan="24" style="height:${rowH}px;padding:0;position:relative;background:#0c1929;border:1px solid rgba(56,189,248,.07);cursor:${isA()?'crosshair':'default'}" ${ca}>`;
+    h+=`<td colspan="24" style="height:${rowH}px;padding:0;position:relative;background:#0c1929;border:1px solid rgba(56,189,248,.07);border-bottom:2px solid rgba(56,189,248,.25);cursor:${isA()?'crosshair':'default'}" ${ca}>`;
     // Grilles verticales
     for(let hr=0;hr<=24;hr++){const pct=(hr/24)*100;const major=hr%6===0;h+=`<div style="position:absolute;top:0;bottom:0;left:${pct}%;width:${major?'1.5':'1'}px;background:${major?'rgba(56,189,248,.1)':'rgba(56,189,248,.04)'};pointer-events:none;z-index:1"></div>`;}
     // Séparateurs de lanes
