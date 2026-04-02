@@ -330,8 +330,8 @@ body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 
 <script>
 const PIN='1234';
-const POSTES_DEF={Parking:["P1","P premium","P3-PMR-Buvette","P COF","Moto"],Circulation:["Rond-point","Levant","Landes","Piscine","Navette TPN","Station service","Port Vidoli","Passage piéton"],Entretien:["Montage+Démontage","Démontage"]};
-const POSTES_NEC={"P1":9,"P premium":4,"P3-PMR-Buvette":2,"P COF":2,"Moto":1,"Rond-point":5,"Levant":4,"Landes":2,"Piscine":2,"Navette TPN":2,"Station service":2,"Port Vidoli":2,"Passage piéton":2,"Montage+Démontage":7,"Démontage":3};
+const POSTES_DEF={Parking:["P1","P premium","P3-PMR-Buvette","P COF","Moto","STEP"],Circulation:["Rond-point","Levant","Landes","Piscine","Navette TPN","Station service","Port Vidoli","Passage piéton"],Entretien:["Montage+Démontage","Démontage"]};
+const POSTES_NEC={"P1":9,"P premium":4,"P3-PMR-Buvette":2,"P COF":2,"Moto":1,"STEP":2,"Rond-point":5,"Levant":4,"Landes":2,"Piscine":2,"Navette TPN":2,"Station service":2,"Port Vidoli":2,"Passage piéton":2,"Montage+Démontage":7,"Démontage":3};
 const JOURS=[{k:"17",lbl:"17 juin",wd:"Mer."},{k:"18",lbl:"18 juin",wd:"Jeu."},{k:"19",lbl:"19 juin",wd:"Ven."},{k:"20",lbl:"20 juin",wd:"Sam."}];
 const SECS=["Parking","Circulation","Entretien"];
 const SCLR={Parking:"#3b82f6",Circulation:"#f97316",Entretien:"#22c55e"};
@@ -552,11 +552,24 @@ function openAssign(sid,ev){
 }
 function renderAssignList(sid,sl){
   const cur=assignTmp[sid]||[];
-  const sorted=[...bens].sort((a,b)=>{const aD=(a.dispos||[]).some(d=>sl.jours.includes(d));const bD=(b.dispos||[]).some(d=>sl.jours.includes(d));if(aD&&!bD)return-1;if(!aD&&bD)return 1;return 0;});
-  document.getElementById('ma-list').innerHTML=sorted.map(b=>{const isA2=cur.includes(b.id);const isAvail=(b.dispos||[]).some(d=>sl.jours.includes(d));const bc=bCol(b.id);const col=SCLR[b.sec]||'#94a3b8';
+  const sorted=[...bens].filter(b=>(b.dispos||[]).some(d=>sl.jours.includes(d))||cur.includes(b.id)).sort((a,b)=>{
+    const aD=(a.dispos||[]).some(d=>sl.jours.includes(d));
+    const bD=(b.dispos||[]).some(d=>sl.jours.includes(d));
+    // Priorité 1 : fixe sur ce poste exact ET disponible
+    const aFix=a.type==='fixe'&&a.poste===sl.pid&&aD;
+    const bFix=b.type==='fixe'&&b.poste===sl.pid&&bD;
+    if(aFix&&!bFix)return-1;if(!aFix&&bFix)return 1;
+    // Priorité 2 : disponible ce jour
+    if(aD&&!bD)return-1;if(!aD&&bD)return 1;
+    // Priorité 3 : même secteur
+    const aSec=a.sec===sl.sec;const bSec=b.sec===sl.sec;
+    if(aSec&&!bSec)return-1;if(!aSec&&bSec)return 1;
+    return 0;
+  });
+  document.getElementById('ma-list').innerHTML=sorted.map(b=>{const isA2=cur.includes(b.id);const isAvail=(b.dispos||[]).some(d=>sl.jours.includes(d));const bc=bCol(b.id);const col=SCLR[b.sec]||'#94a3b8';const isHab=b.type==='fixe'&&b.poste===sl.pid;
   return`<div class="ba-item ${isA2?'assigned':''} ${!isAvail?'unavail':''}" onclick="${isAvail||isA2?`toggleAssign('${b.id}','${sid}')`:''}" >
     <div class="ba-av" style="background:${bc}">${init(b)}</div>
-    <div style="flex:1;min-width:0"><div class="ba-nm">${b.nom} ${b.prenom}</div><div class="ba-meta">${b.poste||b.sec} · <span style="color:${col}">${b.sec}</span>${!isAvail?' · ⚠ indisponible':''}</div></div>
+    <div style="flex:1;min-width:0"><div class="ba-nm">${b.nom} ${b.prenom}${isHab?' <span style="font-size:9px;background:#1e3a5f;color:#60a5fa;border-radius:3px;padding:1px 5px">poste habituel</span>':''}</div><div class="ba-meta">${b.poste||b.sec} &middot; <span style="color:${col}">${b.sec}</span></div></div>
     <div class="ba-chk">${isA2?'✅':isAvail?'☐':'—'}</div>
   </div>`;}).join('');
 }
