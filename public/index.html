@@ -1117,7 +1117,7 @@ function parseImportXLSX(buf){
           const rowHtml=m[1];
           // Reconstruire les cellules dans l'ordre (tenir compte des colonnes manquantes)
           const allCells=[];const cRe=/<c r="([A-Z]+)(\d+)"([^>]*)>([\s\S]*?)<\/c>/g;
-          while((m2=cRe.exec(rowHtml))!==null){
+          let m2;while((m2=cRe.exec(rowHtml))!==null){
             const col=m2[1];const attrs=m2[3];const inner=m2[4];
             let val='';
             if(attrs.includes('t="s"')){const vi=inner.match(/<v>(\d+)<\/v>/);if(vi)val=ss[parseInt(vi[1])]||'';}
