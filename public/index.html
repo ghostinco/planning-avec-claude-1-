@@ -1647,14 +1647,16 @@ function benCard2(b,col,byPrenom){
   const roleMap={team_leader:'👑 TL',comite:'🎪 Comité',direction:'🎯 Direction'};
   const nm1=byPrenom?b.prenom:b.nom;
   const nm2=byPrenom?b.nom:b.prenom;
-  const ddnStr=b.ddn?`<div style="font-size:10px;color:#94a3b8;margin-top:2px">🎂 ${b.ddn.split('-').reverse().join('/')}</div>`:'';
+  let ageStr='';
+  if(b.ddn){const[y,m,d]=b.ddn.split('-').map(Number);const today=new Date();let age=today.getFullYear()-y;if(today.getMonth()+1<m||(today.getMonth()+1===m&&today.getDate()<d))age--;ageStr=`<div style="font-size:10px;color:#94a3b8;margin-top:2px">${age} ans</div>`;}
+
   const typeBadge=b.type_ben?`<span style="background:rgba(255,255,255,.1);color:#fff;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${tbMap[b.type_ben]||b.type_ben}</span>`:'';
   const rolesBadges=(b.roles||[]).map(r=>`<span style="background:rgba(255,255,255,.15);color:#fff;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${roleMap[r]||r}</span>`).join('');
   return`<div class="bcard2" onclick="openBenDetail('${b.id}')" style="border-color:${gc.border};background:#0f2540">
     <div class="bcard2-av" style="background:${gc.bg};box-shadow:0 3px 12px ${gc.border}">${init(b)}</div>
     <div class="bcard2-nm" style="color:${gc.text}">${nm1}</div>
     <div style="font-size:11px;color:#94a3b8;font-weight:500">${nm2}</div>
-    ${ddnStr}
+    ${ageStr}
     ${typeBadge||rolesBadges?`<div class="bcard2-badges" style="margin-top:4px">${typeBadge}${rolesBadges}</div>`:''}
   </div>`;
 }
