@@ -228,7 +228,24 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .bcbtn:hover{background:rgba(56,189,248,.1)}
 .bcbtn.d{color:#f87171;border-color:rgba(239,68,68,.25)}
 .noben{text-align:center;padding:40px;color:#2d5a7a;background:#0f2540;border-radius:10px}
-/* ── PAGE PARAMÈTRES ── */
+/* ── CALENDRIER ── */
+.cal-wrap{position:relative}
+.cal-display{background:#0c1929;border:1.5px solid rgba(245,166,35,.25);color:#f0f9ff;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;transition:border-color .15s}
+.cal-display:hover{border-color:#f5a623}
+.cal-popup{position:absolute;top:calc(100% + 6px);left:0;background:#0d2137;border:1px solid rgba(245,166,35,.25);border-radius:12px;padding:14px;z-index:200;box-shadow:0 12px 32px rgba(0,0,0,.5);min-width:280px}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.cal-nav-btn{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.2);color:#f5a623;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center}
+.cal-nav-btn:hover{background:rgba(245,166,35,.2)}
+.cal-month-lbl{font-size:13px;font-weight:700;color:#f0f9ff}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-wd{font-size:9px;font-weight:700;color:#4d7fa0;text-align:center;text-transform:uppercase;padding:2px 0 6px}
+.cal-day{font-size:12px;text-align:center;padding:6px 2px;border-radius:6px;cursor:pointer;color:#e2e8f0;transition:all .12s}
+.cal-day:hover{background:rgba(245,166,35,.15);color:#f5a623}
+.cal-day.other-month{color:#2d5a7a}
+.cal-day.today{border:1px solid rgba(245,166,35,.3);color:#f5a623}
+.cal-day.selected{background:#f5a623;color:#0c1929;font-weight:800}
+.cal-day.in-range{background:rgba(245,166,35,.1);color:#f5a623}
+.cal-day.empty{cursor:default}
 .par-pg{padding:16px;max-width:860px;margin:0 auto}
 .par-section{background:#0f0a1e;border:1px solid rgba(245,166,35,.15);border-radius:12px;padding:16px;margin-bottom:14px}
 .par-sh{font-size:13px;font-weight:800;color:#f5a623;margin-bottom:14px;display:flex;align-items:center;gap:8px}
@@ -485,8 +502,20 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
           <div class="fl"><label>Description</label><input id="par-desc" type="text" placeholder="Festival annuel..."/></div>
         </div>
         <div class="par-grid">
-          <div class="fl"><label>Date début</label><input id="par-deb" type="date"/></div>
-          <div class="fl"><label>Date fin</label><input id="par-fin" type="date"/></div>
+          <div class="fl"><label>Date début</label>
+            <div class="cal-wrap" id="cal-deb-wrap">
+              <div class="cal-display" onclick="toggleCal('deb')" id="cal-deb-display">Sélectionner</div>
+              <div class="cal-popup" id="cal-deb-popup" style="display:none"></div>
+            </div>
+            <input type="hidden" id="par-deb"/>
+          </div>
+          <div class="fl"><label>Date fin</label>
+            <div class="cal-wrap" id="cal-fin-wrap">
+              <div class="cal-display" onclick="toggleCal('fin')" id="cal-fin-display">Sélectionner</div>
+              <div class="cal-popup" id="cal-fin-popup" style="display:none"></div>
+            </div>
+            <input type="hidden" id="par-fin"/>
+          </div>
         </div>
         <button type="button" class="par-btn" onclick="saveEventParams()">💾 Sauvegarder l'événement</button>
       </div>
@@ -1723,6 +1752,68 @@ async function confirmImport(){
   if(toImport.length-nouveaux.length>0)alert(`${ok} bénévoles importés.\n${toImport.length-nouveaux.length} ignorés (déjà existants).`);
 }
 
+// ═══ CALENDRIER PARAMÈTRES ═══
+const MOIS_FR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+const MOIS_FR_COURT=['jan','fév','mar','avr','mai','juin','juil','août','sep','oct','nov','déc'];
+let calState={deb:{y:2026,m:5},fin:{y:2026,m:5}};
+
+function toggleCal(which){
+  const popup=document.getElementById('cal-'+which+'-popup');
+  const other=which==='deb'?'fin':'deb';
+  document.getElementById('cal-'+other+'-popup').style.display='none';
+  if(popup.style.display==='none'){renderCal(which);popup.style.display='block';document.addEventListener('click',closeCalOut,{once:true});}
+  else popup.style.display='none';
+}
+function closeCalOut(e){
+  ['deb','fin'].forEach(w=>{
+    const wrap=document.getElementById('cal-'+w+'-wrap');
+    if(wrap&&!wrap.contains(e.target))document.getElementById('cal-'+w+'-popup').style.display='none';
+  });
+}
+function renderCal(which){
+  const st=calState[which];
+  const y=st.y,m=st.m;
+  const firstDay=new Date(y,m,1);
+  const lastDay=new Date(y,m+1,0);
+  // Lundi=0
+  let startWd=(firstDay.getDay()+6)%7;
+  const debVal=document.getElementById('par-deb').value;
+  const finVal=document.getElementById('par-fin').value;
+  let h=`<div class="cal-nav">
+    <button type="button" class="cal-nav-btn" onclick="calPrev('${which}')">◀</button>
+    <div class="cal-month-lbl">${MOIS_FR[m]} ${y}</div>
+    <button type="button" class="cal-nav-btn" onclick="calNext('${which}')">▶</button>
+  </div>
+  <div class="cal-grid">
+    <div class="cal-wd">Lu</div><div class="cal-wd">Ma</div><div class="cal-wd">Me</div>
+    <div class="cal-wd">Je</div><div class="cal-wd">Ve</div><div class="cal-wd">Sa</div><div class="cal-wd">Di</div>`;
+  // Cases vides début
+  for(let i=0;i<startWd;i++)h+=`<div class="cal-day empty"></div>`;
+  const today=new Date();
+  for(let d=1;d<=lastDay.getDate();d++){
+    const dateStr=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const isToday=today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d;
+    const isSel=dateStr===debVal||dateStr===finVal;
+    const inRange=debVal&&finVal&&dateStr>debVal&&dateStr<finVal;
+    h+=`<div class="cal-day${isToday?' today':''}${isSel?' selected':''}${inRange?' in-range':''}" onclick="calSelect('${which}','${dateStr}')">${d}</div>`;
+  }
+  h+=`</div>`;
+  document.getElementById('cal-'+which+'-popup').innerHTML=h;
+}
+function calPrev(which){calState[which].m--;if(calState[which].m<0){calState[which].m=11;calState[which].y--;}renderCal(which);}
+function calNext(which){calState[which].m++;if(calState[which].m>11){calState[which].m=0;calState[which].y++;}renderCal(which);}
+function calSelect(which,dateStr){
+  document.getElementById('par-'+which).value=dateStr;
+  const[y,m,d]=dateStr.split('-').map(Number);
+  const mois=new Date(y,m-1,d).toLocaleString('fr',{month:'long'});
+  document.getElementById('cal-'+which+'-display').textContent=`${d} ${mois} ${y}`;
+  document.getElementById('cal-'+which+'-popup').style.display='none';
+  // Re-render l'autre pour mettre à jour in-range
+  const other=which==='deb'?'fin':'deb';
+  const otherPopup=document.getElementById('cal-'+other+'-popup');
+  if(otherPopup.style.display!=='none')renderCal(other);
+}
+
 // ═══ PARAMÈTRES ═══
 const JOURS_WD=['Dim.','Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.'];
 const COLS_PALETTE=['#38bdf8','#fb923c','#34d399','#a78bfa','#f87171','#fbbf24','#4ade80','#60a5fa','#e879f9','#f472b6'];
@@ -1777,8 +1868,13 @@ function renderParams(){
   // Pré-remplir infos événement
   document.getElementById('par-nom').value=currentEvent.nom||'';
   document.getElementById('par-desc').value=currentEvent.description||currentEvent.desc||'';
-  document.getElementById('par-deb').value=currentEvent.deb||'';
-  document.getElementById('par-fin').value=currentEvent.fin||'';
+  // Initialiser calendriers
+  const deb=currentEvent.deb||'';
+  const fin=currentEvent.fin||'';
+  document.getElementById('par-deb').value=deb;
+  document.getElementById('par-fin').value=fin;
+  if(deb){const[y,m,d]=deb.split('-').map(Number);const mois=new Date(y,m-1,d).toLocaleString('fr',{month:'long'});document.getElementById('cal-deb-display').textContent=`${d} ${mois} ${y}`;calState.deb={y,m:m-1};}
+  if(fin){const[y,m,d]=fin.split('-').map(Number);const mois=new Date(y,m-1,d).toLocaleString('fr',{month:'long'});document.getElementById('cal-fin-display').textContent=`${d} ${mois} ${y}`;calState.fin={y,m:m-1};}
 }
 
 async function saveEventParams(){
@@ -1816,18 +1912,26 @@ async function saveEventParams(){
 function renderParamsJours(){
   const el=document.getElementById('par-jours-list');
   if(!JOURS.length){el.innerHTML='<div style="color:#4d7fa0;font-size:12px;padding:8px">Aucun jour. Renseigne les dates début/fin et sauvegarde.</div>';return;}
-  // Grouper par semaine pour lisibilité
-  const semaines=[];
-  for(let i=0;i<JOURS.length;i+=7)semaines.push(JOURS.slice(i,i+7));
+  const semaines=getSemainesCalendaires();
   el.innerHTML=semaines.map((sem,si)=>`
-    <div style="margin-bottom:8px">
-      ${semaines.length>1?`<div style="font-size:10px;font-weight:800;color:#f5a623;text-transform:uppercase;margin-bottom:4px">Semaine ${si+1}</div>`:''}
-      <div style="display:flex;flex-wrap:wrap;gap:5px">
-        ${sem.map((j,i)=>`<div class="par-row" style="flex:none;width:auto;padding:5px 10px;gap:6px">
-          <span style="font-size:10px;color:#4d7fa0;font-weight:700">${j.wd}</span>
-          <span class="par-row-nm" style="font-size:12px">${j.lbl}</span>
-          <button type="button" class="par-row-del" onclick="delJour(${si*7+i})" title="Supprimer">✕</button>
-        </div>`).join('')}
+    <div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:800;color:#f5a623;text-transform:uppercase;margin-bottom:6px;letter-spacing:.4px">
+        Semaine ${si+1} &nbsp;·&nbsp; <span style="color:#4d7fa0;font-weight:400;text-transform:none">${sem[0]?.lbl} → ${sem[sem.length-1]?.lbl}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:5px">
+        ${['Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.','Dim.'].map(wd=>{
+          const j=sem.find(x=>x.wd===wd);
+          if(!j)return`<div style="background:rgba(56,189,248,.03);border:1px dashed rgba(56,189,248,.08);border-radius:7px;padding:5px;text-align:center;opacity:.3">
+            <div style="font-size:9px;color:#4d7fa0">${wd}</div>
+            <div style="font-size:11px;color:#2d5a7a">—</div>
+          </div>`;
+          const idx=JOURS.findIndex(x=>x.lbl===j.lbl);
+          return`<div class="par-row" style="flex-direction:column;align-items:center;padding:6px 4px;gap:2px;text-align:center">
+            <div style="font-size:9px;color:#4d7fa0;font-weight:700">${wd}</div>
+            <div style="font-size:12px;font-weight:700;color:#f0f9ff">${j.k}</div>
+            <button type="button" class="par-row-del" onclick="delJour(${idx})" title="Supprimer" style="margin:0;font-size:11px">✕</button>
+          </div>`;
+        }).join('')}
       </div>
     </div>`).join('');
 }
