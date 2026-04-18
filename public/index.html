@@ -922,24 +922,37 @@ function renderSV(){
     return(b.nom+' '+b.prenom).toLowerCase().includes(q)||(b.prenom+' '+b.nom).toLowerCase().includes(q);
   }).sort((a,b2)=>(a.nom+a.prenom).localeCompare(b2.nom+b2.prenom));
 
-  // ── Grille : postes × 4 jours ──
-  let grid=`<div class="sv2-grid">`;
+  // ── Grille : postes × jours de la semaine courante ──
+  const joursVis=getJoursSemaine();
+  const semaines=getSemainesCalendaires();
+  const totalSem=semaines.length;
+  let grid=`<div class="sv2-grid" style="grid-template-columns:160px repeat(${joursVis.length},1fr)">`;
+  // Navigation semaine
+  let navHtml='';
+  if(totalSem>1){
+    navHtml=`<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:#120a22;border-bottom:1px solid rgba(245,166,35,.1)">
+      <button type="button" class="dnb" onclick="weekOffset=Math.max(0,weekOffset-1);renderSV()" ${weekOffset===0?'disabled style="opacity:.3"':''}>◀</button>
+      <span style="font-size:12px;font-weight:700;color:#f5a623">Semaine ${weekOffset+1}/${totalSem}</span>
+      <button type="button" class="dnb" onclick="weekOffset=Math.min(${totalSem-1},weekOffset+1);renderSV()" ${weekOffset>=totalSem-1?'disabled style="opacity:.3"':''}>▶</button>
+      <span style="font-size:11px;color:#4d7fa0">${joursVis[0]?.lbl} → ${joursVis[joursVis.length-1]?.lbl}</span>
+    </div>`;
+  }
   // Header
-  grid+=`<div class="sv2-grid-hdr"><div class="sv2-hdr-poste">Poste</div>`;
-  JOURS.forEach(j=>{const m=mqJ(j.lbl);grid+=`<div class="sv2-hdr-jour"><div class="hj-wd">${j.wd}</div><div class="hj-dt">${j.k} juin</div><div class="hj-mq" style="color:${m>0?'#f87171':'#4ade80'}">${m>0?'−'+m+' bén.':'✓'}</div></div>`;});
+  grid+=`<div class="sv2-grid-hdr" style="grid-template-columns:160px repeat(${joursVis.length},1fr)"><div class="sv2-hdr-poste">Poste</div>`;
+  joursVis.forEach(j=>{const m=mqJ(j.lbl);grid+=`<div class="sv2-hdr-jour"><div class="hj-wd">${j.wd}</div><div class="hj-dt">${j.k}</div><div class="hj-mq" style="color:${m>0?'#f87171':'#4ade80'}">${m>0?'−'+m+' bén.':'✓'}</div></div>`;});
   grid+=`</div>`;
 
   SECS.forEach(sec=>{
     const col=SCLR[sec];
     const postes=POSTES_DEF[sec]||[];
-    grid+=`<div class="sv2-sec-row"><div class="sv2-sec-lbl" style="color:${col}">● ${sec}</div></div>`;
+    grid+=`<div class="sv2-sec-row" style="grid-template-columns:160px repeat(${joursVis.length},1fr)"><div class="sv2-sec-lbl" style="color:${col}">● ${sec}</div></div>`;
     postes.forEach(pos=>{
       const nec=POSTES_NEC[pos]||2;
-      grid+=`<div class="sv2-pos-row">`;
+      grid+=`<div class="sv2-pos-row" style="grid-template-columns:160px repeat(${joursVis.length},1fr)">`; 
       grid+=`<div class="sv2-pos-nm-cell"><div class="pnm">${pos}</div><div class="pnec">${nec} bén. requis</div>`;
       if(isA())grid+=`<div style="display:flex;gap:3px;margin-top:4px"><button type="button" class="srbtn" style="padding:2px 5px;font-size:9px" onclick="openNewSlotForPos('${pos}')">+ créneau</button></div>`;
       grid+=`</div>`;
-      JOURS.forEach(j=>{
+      joursVis.forEach(j=>{
         // Trouver les slots de ce poste ce jour
         const posSlots=slotsForPJ(pos,j.lbl);
         const nbJ=nbBensOnPosteJour(pos,j.lbl);
@@ -1007,7 +1020,7 @@ function renderSV(){
   });
   benCol+=`</div></div>`;
 
-  c.innerHTML=`<div class="sv2-outer"><div class="sv2-left">${grid}</div>${isA()?benCol:''}</div>`;
+  c.innerHTML=navHtml+`<div class="sv2-outer"><div class="sv2-left">${grid}</div>${isA()?benCol:''}</div>`;
 }
 
 // ── Drag & drop ──
