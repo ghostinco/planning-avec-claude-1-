@@ -807,18 +807,56 @@ textarea.mbe-inp{font-family:inherit}
 </div>
 
 <!-- Modal auto-assign -->
-<div class="ov" id="m-auto">
-  <div class="sht">
-    <div class="sh-hdr"><div class="sh-ttl">🎲 Placement automatique</div><button type="button" class="xb" onclick="cm('m-auto')">✕</button></div>
-    <div style="font-size:12px;color:#7fb8d4;margin-bottom:12px;line-height:1.6">
-      Place les bénévoles non assignés sur les postes manquants.<br>
-      <span style="color:#4d7fa0;font-size:11px">⚠ Les bénévoles déjà placés manuellement ne sont pas touchés.</span>
+<div class="ov" id="m-auto" style="align-items:center;padding:16px">
+  <div style="background:#080e1a;border-radius:20px;width:100%;max-width:600px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.7)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid rgba(56,189,248,.1);flex-shrink:0">
+      <div style="font-size:18px;font-weight:900;color:#f0f9ff">🎲 Placement automatique</div>
+      <button type="button" class="xb" onclick="cm('m-auto')">✕</button>
     </div>
-    <div id="auto-preview" style="background:#0c1929;border:1px solid rgba(56,189,248,.15);border-radius:8px;padding:10px;max-height:320px;overflow-y:auto;margin-bottom:12px;font-size:12px"></div>
-    <div class="ae" id="auto-err"></div>
-    <div class="brow">
-      <button type="button" class="btn" onclick="runAutoAssign(true)">🔄 Simuler</button>
-      <button type="button" class="btn btn-p" id="auto-confirm-btn" onclick="runAutoAssign(false)" style="display:none">✅ Confirmer et sauvegarder</button>
+    <div style="overflow-y:auto;flex:1;padding:20px 24px;display:flex;flex-direction:column;gap:18px">
+      <!-- Jours -->
+      <div>
+        <div class="mbe-lbl" style="margin-bottom:8px">📅 Jours à planifier</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button type="button" class="dbtn sel" id="aa-days-all" onclick="aaSelectDays('all')">Tous les jours</button>
+          <button type="button" class="dbtn" id="aa-days-pick" onclick="aaSelectDays('pick')">Choisir...</button>
+        </div>
+        <div id="aa-days-grid" style="display:none;flex-wrap:wrap;gap:5px"></div>
+      </div>
+      <!-- Secteurs -->
+      <div>
+        <div class="mbe-lbl" style="margin-bottom:8px">🏷 Secteurs à planifier</div>
+        <div id="aa-secs-grid" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      </div>
+      <!-- Postes -->
+      <div id="aa-postes-section">
+        <div class="mbe-lbl" style="margin-bottom:8px">📍 Postes à planifier</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px">
+          <button type="button" class="dbtn sel" id="aa-postes-all-btn" onclick="aaSelectPostes('all')">Tous les postes</button>
+          <button type="button" class="dbtn" id="aa-postes-pick-btn" onclick="aaSelectPostes('pick')">Choisir...</button>
+        </div>
+        <div id="aa-postes-grid" style="display:none;flex-wrap:wrap;gap:5px"></div>
+      </div>
+      <!-- Options -->
+      <div>
+        <div class="mbe-lbl" style="margin-bottom:8px">⚙ Options</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#e2e8f0">
+            <input type="checkbox" id="aa-keep-existing" checked style="width:16px;height:16px;accent-color:#f5a623">
+            🔒 Ne pas modifier les assignations existantes
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:#e2e8f0">
+            <input type="checkbox" id="aa-respect-dispos" checked style="width:16px;height:16px;accent-color:#f5a623">
+            📅 Respecter les disponibilités des bénévoles
+          </label>
+        </div>
+      </div>
+      <div class="ae" id="auto-err"></div>
+      <div id="auto-preview" style="background:#0c1929;border:1px solid rgba(56,189,248,.15);border-radius:10px;padding:12px;font-size:12px;display:none;max-height:200px;overflow-y:auto"></div>
+    </div>
+    <div style="display:flex;gap:10px;padding:16px 24px;border-top:1px solid rgba(56,189,248,.1);flex-shrink:0">
+      <button type="button" class="btn btn-p" onclick="runAutoAssign(false)" style="flex:1;padding:13px;font-size:14px">🎲 Lancer le placement</button>
+      <button type="button" class="btn" onclick="cm('m-auto')" style="padding:13px 20px">Annuler</button>
     </div>
   </div>
 </div>
@@ -1751,12 +1789,64 @@ function openEditFromDetail(){
 // Résultat de la simulation pour pouvoir confirmer
 let _autoResult=null;
 
+let _aaDays='all', _aaPostes='all', _aaSelDays=new Set(), _aaSelSecs=new Set(), _aaSelPostes=new Set();
+
 function openAutoAssign(){
   _autoResult=null;
-  document.getElementById('auto-preview').innerHTML='<div style="color:#4d7fa0">Clique sur "Simuler" pour voir le plan de placement.</div>';
-  document.getElementById('auto-confirm-btn').style.display='none';
+  _aaDays='all'; _aaPostes='all';
+  _aaSelDays=new Set(JOURS.map(j=>j.lbl));
+  _aaSelSecs=new Set(SECS);
+  _aaSelPostes=new Set(Object.values(POSTES_DEF).flat());
   hA('auto-err');
+  document.getElementById('auto-preview').style.display='none';
+  // Rendre la grille des jours
+  document.getElementById('aa-days-grid').innerHTML=JOURS.map(j=>`
+    <button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="aaToggleDay(this)">${j.k}/06</button>`).join('');
+  document.getElementById('aa-days-grid').style.display='none';
+  document.getElementById('aa-days-all').classList.add('sel');
+  document.getElementById('aa-days-pick').classList.remove('sel');
+  // Rendre les secteurs
+  document.getElementById('aa-secs-grid').innerHTML=SECS.map(sec=>`
+    <button type="button" class="dbtn sel" data-s="${sec}" onclick="aaToggleSec(this)" style="border-color:${SCLR[sec]}20;color:${SCLR[sec]}">● ${sec}</button>`).join('');
+  // Rendre les postes
+  document.getElementById('aa-postes-grid').innerHTML=SECS.map(sec=>(POSTES_DEF[sec]||[]).map(p=>`
+    <button type="button" class="dbtn sel" data-p="${p}" onclick="aaTogglePoste(this)">${p}</button>`).join('')).join('');
+  document.getElementById('aa-postes-grid').style.display='none';
+  document.getElementById('aa-postes-all-btn').classList.add('sel');
+  document.getElementById('aa-postes-pick-btn').classList.remove('sel');
   document.getElementById('m-auto').classList.add('open');
+}
+
+function aaSelectDays(mode){
+  _aaDays=mode;
+  document.getElementById('aa-days-all').classList.toggle('sel',mode==='all');
+  document.getElementById('aa-days-pick').classList.toggle('sel',mode==='pick');
+  const grid=document.getElementById('aa-days-grid');
+  grid.style.display=mode==='pick'?'flex':'none';
+  if(mode==='all')_aaSelDays=new Set(JOURS.map(j=>j.lbl));
+}
+function aaToggleDay(btn){
+  const j=btn.dataset.j;
+  if(_aaSelDays.has(j)){_aaSelDays.delete(j);btn.classList.remove('sel');}
+  else{_aaSelDays.add(j);btn.classList.add('sel');}
+}
+function aaToggleSec(btn){
+  const s=btn.dataset.s;
+  if(_aaSelSecs.has(s)){_aaSelSecs.delete(s);btn.classList.remove('sel');}
+  else{_aaSelSecs.add(s);btn.classList.add('sel');}
+}
+function aaSelectPostes(mode){
+  _aaPostes=mode;
+  document.getElementById('aa-postes-all-btn').classList.toggle('sel',mode==='all');
+  document.getElementById('aa-postes-pick-btn').classList.toggle('sel',mode==='pick');
+  const grid=document.getElementById('aa-postes-grid');
+  grid.style.display=mode==='pick'?'flex':'none';
+  if(mode==='all')_aaSelPostes=new Set(Object.values(POSTES_DEF).flat());
+}
+function aaTogglePoste(btn){
+  const p=btn.dataset.p;
+  if(_aaSelPostes.has(p)){_aaSelPostes.delete(p);btn.classList.remove('sel');}
+  else{_aaSelPostes.add(p);btn.classList.add('sel');}
 }
 
 // Calcule l'âge à partir d'une date "YYYY-MM-DD"
@@ -1802,30 +1892,29 @@ function isManuallPlaced(bid){
 
 function runAutoAssign(simOnly){
   hA('auto-err');
-  const proposals=[];// {sid, bid, jour}
+  const proposals=[];
+  const keepExisting=document.getElementById('aa-keep-existing').checked;
+  const respectDispos=document.getElementById('aa-respect-dispos').checked;
 
-  // Postes Rond-point : règle spéciale 2x3h avec 3h de pause
-  // Un bénévole peut faire max 2 créneaux Rond-point par jour, pas consécutifs
-  const rpSlots=slots.filter(s=>s.pid==='Rond-point');
+  // Jours sélectionnés
+  const joursActifs=_aaDays==='all'?JOURS:JOURS.filter(j=>_aaSelDays.has(j.lbl));
+  // Slots filtrés par secteurs et postes sélectionnés
+  const slotsFiltres=slots.filter(sl=>{
+    const sec=bens.find(b=>b.poste===sl.pid)?.sec||SECS.find(s=>(POSTES_DEF[s]||[]).includes(sl.pid));
+    if(_aaSelSecs.size<SECS.length&&sec&&!_aaSelSecs.has(sec))return false;
+    if(_aaPostes==='pick'&&!_aaSelPostes.has(sl.pid))return false;
+    return true;
+  });
 
-  // Shuffle helper
   const shuffle=arr=>{const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
-
-  // Pour le tournus : index de rotation par bénévole (incrémenté chaque jour)
-  // On récupère tous les postes (liste plate)
   const allPostes=[];SECS.forEach(sec=>(POSTES_DEF[sec]||[]).forEach(p=>allPostes.push(p)));
-
-  // Index de départ aléatoire pour J1, puis rotation pour J2/J3/J4
   const benStartIdx={};
   bens.forEach((b,i)=>{benStartIdx[b.id]=Math.floor(Math.random()*allPostes.length);});
 
-  JOURS.forEach((j,jIdx)=>{
+  joursActifs.forEach((j,jIdx)=>{
     const jour=j.lbl;
-
-    // Construire la liste des slots qui manquent des bénévoles ce jour
-    // Trier par priorité : slots les plus vides en premier
     const slotsNeedingBens=[];
-    slots.forEach(sl=>{
+    slotsFiltres.forEach(sl=>{
       if(!(sl.jours||[]).includes(jour))return;
       const nec=POSTES_NEC[sl.pid]||2;
       const nbActuel=Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(jour)).length
@@ -1834,17 +1923,17 @@ function runAutoAssign(simOnly){
     });
     slotsNeedingBens.sort((a,b)=>b.manque-a.manque);
 
-    // Bénévoles disponibles ce jour (dispos vide = disponible tous les jours)
     const bensDispo=bens.filter(b=>{
-      const dispos=b.dispos||[];
-      return dispos.length===0||dispos.includes(jour);
+      if(respectDispos){
+        const dispos=b.dispos||[];
+        if(dispos.length>0&&!dispos.includes(jour))return false;
+      }
+      return true;
     });
 
-    // Mélanger pour le jour 1, rotation pour les suivants
     const bensSorted=jIdx===0
       ? shuffle(bensDispo)
       : [...bensDispo].sort((a,b2)=>{
-          // Rotation : décaler l'index de départ de jIdx positions
           const ai=(benStartIdx[a.id]+jIdx)%bens.length;
           const bi=(benStartIdx[b2.id]+jIdx)%bens.length;
           return ai-bi;
@@ -1852,50 +1941,42 @@ function runAutoAssign(simOnly){
 
     slotsNeedingBens.forEach(({sl,nec})=>{
       const finH=tToMin(sl.end_time);
-      const isLateShift=finH>22*60;// se termine après 22h
+      const isLateShift=finH>22*60;
 
       for(const b of bensSorted){
-        // Vérifier combien il en manque encore
         const nbActuel=Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(jour)).length
           +proposals.filter(p=>p.sid===sl.id&&p.jour===jour).length;
         if(nbActuel>=nec)break;
 
-        // Ne pas toucher les bénévoles déjà placés manuellement
-        if(isManuallPlaced(b.id))continue;
+        // 🔒 Respecter les assignations existantes si option cochée
+        if(keepExisting&&isManuallPlaced(b.id))continue;
 
-        // Pas déjà sur ce slot ce jour
         if(isAlreadyOnSlotJour(b.id,sl.id,jour,proposals))continue;
 
-        // Max 6h par jour (360 min)
         const hDejaFaites=getHeuresTotalJour(b.id,jour,proposals);
         const dureeSlot=tToMin(sl.end_time)-tToMin(sl.start_time);
 
-        // Règle Rond-point : max 2 créneaux (2x3h = 6h), pas consécutifs
         if(sl.pid==='Rond-point'){
           const rpDejaFaits=proposals.filter(p=>p.bid===b.id&&p.jour===jour&&slots.find(s=>s.id===p.sid)?.pid==='Rond-point');
           if(rpDejaFaits.length>=2)continue;
-          // Vérifier pause 3h entre 2 créneaux Rond-point
           if(rpDejaFaits.length===1){
             const autreSlot=slots.find(s=>s.id===rpDejaFaits[0].sid);
             if(autreSlot){
               const fin1=tToMin(autreSlot.end_time);const deb2=tToMin(sl.start_time);
               const fin2=tToMin(sl.end_time);const deb1=tToMin(autreSlot.start_time);
-              // Pause min 3h entre les 2 créneaux
               const pause=Math.max(deb2-fin1,deb1-fin2);
               if(pause<180)continue;
             }
           }
         }
 
-        if(hDejaFaites+dureeSlot>360)continue;// dépasserait 6h
+        if(hDejaFaites+dureeSlot>360)continue;
 
-        // Règle âge : si créneau finit après 22h, pas de moins de 18 ans
         if(isLateShift){
           const age=getAge(b.ddn);
           if(age!==null&&age<18)continue;
         }
 
-        // Pas déjà sur un autre slot qui chevauche ce jour
         const slotsDuJour=proposals.filter(p=>p.bid===b.id&&p.jour===jour);
         const chevauchement=slotsDuJour.some(p=>{
           const autre=slots.find(s=>s.id===p.sid);
@@ -1909,21 +1990,21 @@ function runAutoAssign(simOnly){
     });
   });
 
-  // Afficher le résultat
+  // Afficher résumé
   _autoResult=proposals;
   const preview=document.getElementById('auto-preview');
+  preview.style.display='block';
   if(!proposals.length){
-    preview.innerHTML='<div style="color:#fbbf24">Aucun placement possible — tous les postes sont déjà complets ou aucun bénévole disponible.</div>';
-    document.getElementById('auto-confirm-btn').style.display='none';
+    preview.innerHTML='<div style="color:#fbbf24;padding:8px">Aucun placement possible — postes déjà complets ou aucun bénévole disponible.</div>';
     return;
   }
 
-  // Grouper par jour
-  let h='';
-  JOURS.forEach(j=>{
+  // Résumé groupé par jour
+  let h=`<div style="font-size:12px;color:#34d399;font-weight:700;margin-bottom:10px">✅ ${proposals.length} placements prêts</div>`;
+  joursActifs.forEach(j=>{
     const pj=proposals.filter(p=>p.jour===j.lbl);
     if(!pj.length)return;
-    h+=`<div style="font-size:11px;font-weight:800;color:#f5a623;text-transform:uppercase;margin:8px 0 4px">${j.lbl} — ${pj.length} placement${pj.length>1?'s':''}</div>`;
+    h+=`<div style="font-size:11px;font-weight:800;color:#f5a623;margin:8px 0 4px">${j.lbl} — ${pj.length} placement${pj.length>1?'s':''}</div>`;
     pj.forEach(p=>{
       const b=bens.find(x=>x.id===p.bid);
       const sl=slots.find(x=>x.id===p.sid);
@@ -1937,13 +2018,8 @@ function runAutoAssign(simOnly){
     });
   });
   preview.innerHTML=h;
-
-  if(simOnly){
-    document.getElementById('auto-confirm-btn').style.display='block';
-  } else {
-    // Confirmer : sauvegarder en base
-    saveAutoAssign(proposals);
-  }
+  // Lancer directement si pas simOnly
+  if(!simOnly)saveAutoAssign(proposals);
 }
 
 async function saveAutoAssign(proposals){
