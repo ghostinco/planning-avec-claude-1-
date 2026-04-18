@@ -100,6 +100,17 @@ exports.handler = async (event) => {
     const body = event.body ? JSON.parse(event.body) : {};
     const params = event.queryStringParameters || {};
 
+    // DEBUG SHEETS — retourne les données brutes
+    if (path === '/debug-sheets' && method === 'POST') {
+      const { sheet_id } = body;
+      const token = await getGoogleToken();
+      const sr = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheet_id}/values/A1:Z5?valueRenderOption=FORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await sr.json();
+      return ok({ raw: data.values || [] });
+    }
+
     // SYNC GOOGLE SHEETS
     if (path === '/sync-sheets' && method === 'POST') {
       const { sheet_id, event_id } = body;
