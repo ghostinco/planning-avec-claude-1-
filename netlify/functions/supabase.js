@@ -164,8 +164,10 @@ exports.handler = async (event) => {
         try {
           if (b) {
             const upd={};
-            if (ddn&&!b.ddn)upd.ddn=ddn; if(tel&&!b.tel)upd.tel=tel;
-            if(taille)upd.taille=taille; if(dispos.length>0)upd.dispos=dispos;
+            if(ddn&&!b.ddn)upd.ddn=ddn;
+            if(tel&&!b.tel)upd.tel=tel;
+            if(taille)upd.taille=taille;
+            if(dispos.length>0)upd.dispos=dispos;
             if(rmq&&!b.rmq)upd.rmq=rmq;
             if(Object.keys(upd).length>0)await supa(`bens?id=eq.${b.id}`,'PATCH',upd);
             updated++;
