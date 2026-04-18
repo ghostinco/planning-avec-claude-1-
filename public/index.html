@@ -521,6 +521,23 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
   </div>
 </div>
 
+<!-- Modal auto-assign -->
+<div class="ov" id="m-auto">
+  <div class="sht">
+    <div class="sh-hdr"><div class="sh-ttl">🎲 Placement automatique</div><button type="button" class="xb" onclick="cm('m-auto')">✕</button></div>
+    <div style="font-size:12px;color:#7fb8d4;margin-bottom:12px;line-height:1.6">
+      Place les bénévoles non assignés sur les postes manquants.<br>
+      <span style="color:#4d7fa0;font-size:11px">⚠ Les bénévoles déjà placés manuellement ne sont pas touchés.</span>
+    </div>
+    <div id="auto-preview" style="background:#0c1929;border:1px solid rgba(56,189,248,.15);border-radius:8px;padding:10px;max-height:320px;overflow-y:auto;margin-bottom:12px;font-size:12px"></div>
+    <div class="ae" id="auto-err"></div>
+    <div class="brow">
+      <button type="button" class="btn" onclick="runAutoAssign(true)">🔄 Simuler</button>
+      <button type="button" class="btn btn-p" id="auto-confirm-btn" onclick="runAutoAssign(false)" style="display:none">✅ Confirmer et sauvegarder</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const PIN='1234';
 const POSTES_DEF={Parking:["P1","P premium","P3-PMR-Buvette","P COF","Moto","STEP"],Circulation:["Rond-point","Levant","Landes","Piscine","Navette TPN","Station service","Port Vidoli","Passage piéton"],Entretien:["Montage+Démontage","Démontage"]};
@@ -628,7 +645,7 @@ function setView(v){curView=v;['sem','jour','sv'].forEach(x=>document.getElement
 function semSearchChange(val){semSearch=val.toLowerCase();renderSemaine();}
 function prevDay(){dayIdx=Math.max(0,dayIdx-1);document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;renderAll();}
 function nextDay(){dayIdx=Math.min(3,dayIdx+1);document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;renderAll();}
-function renderVbarR(){const r=document.getElementById('vbar-r');if(!isA()){r.innerHTML='<span style="font-size:11px;color:#2d5a7a">Observation</span>';return;}r.innerHTML=`<button type="button" class="tbtn hi" onclick="openNewSlot()">+ Nouveau créneau</button>`;}
+function renderVbarR(){const r=document.getElementById('vbar-r');if(!isA()){r.innerHTML='<span style="font-size:11px;color:#2d5a7a">Observation</span>';return;}r.innerHTML=`<button type="button" class="tbtn" onclick="openAutoAssign()" title="Placement automatique">🎲 Auto-assign</button><button type="button" class="tbtn hi" onclick="openNewSlot()">+ Nouveau créneau</button>`;}
 function renderContent(){if(curView==='sem')renderSemaine();else if(curView==='jour')renderJour();else renderSV();}
 
 // ═══ FILTRE ═══
@@ -1198,6 +1215,232 @@ function benCard(b,col){
     ${b.rmq?`<div style="font-size:11px;color:#2d5a7a;margin-top:3px;font-style:italic">"${b.rmq}"</div>`:''}
     ${eb||db?`<div class="bcact">${eb}${db}</div>`:''}
   </div></div>`;
+}
+
+// ═══ AUTO-ASSIGN ═══
+// Résultat de la simulation pour pouvoir confirmer
+let _autoResult=null;
+
+function openAutoAssign(){
+  _autoResult=null;
+  document.getElementById('auto-preview').innerHTML='<div style="color:#4d7fa0">Clique sur "Simuler" pour voir le plan de placement.</div>';
+  document.getElementById('auto-confirm-btn').style.display='none';
+  hA('auto-err');
+  document.getElementById('m-auto').classList.add('open');
+}
+
+// Calcule l'âge à partir d'une date "YYYY-MM-DD"
+function getAge(ddn){
+  if(!ddn)return null;
+  const[y,m,d]=ddn.split('-').map(Number);
+  const now=new Date();
+  let age=now.getFullYear()-y;
+  if(now.getMonth()+1<m||(now.getMonth()+1===m&&now.getDate()<d))age--;
+  return age;
+}
+
+// Renvoie les minutes totales travaillées par un bénévole un jour donné (selon _assignDays + propositions)
+function getHeuresTotalJour(bid,jour,proposals){
+  let mins=0;
+  // Déjà assigné en base
+  Object.entries(_assignDays).forEach(([sid,days])=>{
+    if((days[bid]||[]).includes(jour)){
+      const sl=slots.find(x=>x.id===sid);
+      if(sl)mins+=tToMin(sl.end_time)-tToMin(sl.start_time);
+    }
+  });
+  // Propositions en cours
+  (proposals||[]).forEach(p=>{
+    if(p.bid===bid&&p.jour===jour){
+      const sl=slots.find(x=>x.id===p.sid);
+      if(sl)mins+=tToMin(sl.end_time)-tToMin(sl.start_time);
+    }
+  });
+  return mins;
+}
+
+// Vérifie si ce bénévole a déjà travaillé sur ce créneau exact ce jour (assigné manuellement ou par proposition)
+function isAlreadyOnSlotJour(bid,sid,jour,proposals){
+  if((_assignDays[sid]?.[bid]||[]).includes(jour))return true;
+  return(proposals||[]).some(p=>p.bid===bid&&p.sid===sid&&p.jour===jour);
+}
+
+// Bénévoles déjà placés manuellement (ont au moins 1 assignation dans _assignDays)
+function isManuallPlaced(bid){
+  return Object.values(_assignDays).some(days=>(days[bid]||[]).length>0);
+}
+
+function runAutoAssign(simOnly){
+  hA('auto-err');
+  const proposals=[];// {sid, bid, jour}
+
+  // Postes Rond-point : règle spéciale 2x3h avec 3h de pause
+  // Un bénévole peut faire max 2 créneaux Rond-point par jour, pas consécutifs
+  const rpSlots=slots.filter(s=>s.pid==='Rond-point');
+
+  // Shuffle helper
+  const shuffle=arr=>{const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+
+  // Pour le tournus : index de rotation par bénévole (incrémenté chaque jour)
+  // On récupère tous les postes (liste plate)
+  const allPostes=[];SECS.forEach(sec=>(POSTES_DEF[sec]||[]).forEach(p=>allPostes.push(p)));
+
+  // Index de départ aléatoire pour J1, puis rotation pour J2/J3/J4
+  const benStartIdx={};
+  bens.forEach((b,i)=>{benStartIdx[b.id]=Math.floor(Math.random()*allPostes.length);});
+
+  JOURS.forEach((j,jIdx)=>{
+    const jour=j.lbl;
+
+    // Construire la liste des slots qui manquent des bénévoles ce jour
+    // Trier par priorité : slots les plus vides en premier
+    const slotsNeedingBens=[];
+    slots.forEach(sl=>{
+      if(!(sl.jours||[]).includes(jour))return;
+      const nec=POSTES_NEC[sl.pid]||2;
+      const nbActuel=Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(jour)).length
+        +(proposals.filter(p=>p.sid===sl.id&&p.jour===jour).length);
+      if(nbActuel<nec)slotsNeedingBens.push({sl,nec,nbActuel,manque:nec-nbActuel});
+    });
+    slotsNeedingBens.sort((a,b)=>b.manque-a.manque);
+
+    // Bénévoles disponibles ce jour (dispos vide = disponible tous les jours)
+    const bensDispo=bens.filter(b=>{
+      const dispos=b.dispos||[];
+      return dispos.length===0||dispos.includes(jour);
+    });
+
+    // Mélanger pour le jour 1, rotation pour les suivants
+    const bensSorted=jIdx===0
+      ? shuffle(bensDispo)
+      : [...bensDispo].sort((a,b2)=>{
+          // Rotation : décaler l'index de départ de jIdx positions
+          const ai=(benStartIdx[a.id]+jIdx)%bens.length;
+          const bi=(benStartIdx[b2.id]+jIdx)%bens.length;
+          return ai-bi;
+        });
+
+    slotsNeedingBens.forEach(({sl,nec})=>{
+      const finH=tToMin(sl.end_time);
+      const isLateShift=finH>22*60;// se termine après 22h
+
+      for(const b of bensSorted){
+        // Vérifier combien il en manque encore
+        const nbActuel=Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(jour)).length
+          +proposals.filter(p=>p.sid===sl.id&&p.jour===jour).length;
+        if(nbActuel>=nec)break;
+
+        // Ne pas toucher les bénévoles déjà placés manuellement
+        if(isManuallPlaced(b.id))continue;
+
+        // Pas déjà sur ce slot ce jour
+        if(isAlreadyOnSlotJour(b.id,sl.id,jour,proposals))continue;
+
+        // Max 6h par jour (360 min)
+        const hDejaFaites=getHeuresTotalJour(b.id,jour,proposals);
+        const dureeSlot=tToMin(sl.end_time)-tToMin(sl.start_time);
+
+        // Règle Rond-point : max 2 créneaux (2x3h = 6h), pas consécutifs
+        if(sl.pid==='Rond-point'){
+          const rpDejaFaits=proposals.filter(p=>p.bid===b.id&&p.jour===jour&&slots.find(s=>s.id===p.sid)?.pid==='Rond-point');
+          if(rpDejaFaits.length>=2)continue;
+          // Vérifier pause 3h entre 2 créneaux Rond-point
+          if(rpDejaFaits.length===1){
+            const autreSlot=slots.find(s=>s.id===rpDejaFaits[0].sid);
+            if(autreSlot){
+              const fin1=tToMin(autreSlot.end_time);const deb2=tToMin(sl.start_time);
+              const fin2=tToMin(sl.end_time);const deb1=tToMin(autreSlot.start_time);
+              // Pause min 3h entre les 2 créneaux
+              const pause=Math.max(deb2-fin1,deb1-fin2);
+              if(pause<180)continue;
+            }
+          }
+        }
+
+        if(hDejaFaites+dureeSlot>360)continue;// dépasserait 6h
+
+        // Règle âge : si créneau finit après 22h, pas de moins de 18 ans
+        if(isLateShift){
+          const age=getAge(b.ddn);
+          if(age!==null&&age<18)continue;
+        }
+
+        // Pas déjà sur un autre slot qui chevauche ce jour
+        const slotsDuJour=proposals.filter(p=>p.bid===b.id&&p.jour===jour);
+        const chevauchement=slotsDuJour.some(p=>{
+          const autre=slots.find(s=>s.id===p.sid);
+          if(!autre)return false;
+          return tToMin(autre.start_time)<tToMin(sl.end_time)&&tToMin(autre.end_time)>tToMin(sl.start_time);
+        });
+        if(chevauchement)continue;
+
+        proposals.push({sid:sl.id,bid:b.id,jour});
+      }
+    });
+  });
+
+  // Afficher le résultat
+  _autoResult=proposals;
+  const preview=document.getElementById('auto-preview');
+  if(!proposals.length){
+    preview.innerHTML='<div style="color:#fbbf24">Aucun placement possible — tous les postes sont déjà complets ou aucun bénévole disponible.</div>';
+    document.getElementById('auto-confirm-btn').style.display='none';
+    return;
+  }
+
+  // Grouper par jour
+  let h='';
+  JOURS.forEach(j=>{
+    const pj=proposals.filter(p=>p.jour===j.lbl);
+    if(!pj.length)return;
+    h+=`<div style="font-size:11px;font-weight:800;color:#f5a623;text-transform:uppercase;margin:8px 0 4px">${j.lbl} — ${pj.length} placement${pj.length>1?'s':''}</div>`;
+    pj.forEach(p=>{
+      const b=bens.find(x=>x.id===p.bid);
+      const sl=slots.find(x=>x.id===p.sid);
+      if(!b||!sl)return;
+      h+=`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid rgba(56,189,248,.06)">
+        <span style="color:#f0f9ff;font-weight:600">${b.prenom} ${b.nom}</span>
+        <span style="color:#4d7fa0">→</span>
+        <span style="color:#fb923c">${sl.pid}</span>
+        <span style="color:#4d7fa0;font-size:10px">${sl.start_time}–${sl.end_time}</span>
+      </div>`;
+    });
+  });
+  preview.innerHTML=h;
+
+  if(simOnly){
+    document.getElementById('auto-confirm-btn').style.display='block';
+  } else {
+    // Confirmer : sauvegarder en base
+    saveAutoAssign(proposals);
+  }
+}
+
+async function saveAutoAssign(proposals){
+  if(!proposals||!proposals.length)return;
+  cm('m-auto');
+  setSync('syncing',`Sauvegarde ${proposals.length} assignations...`);
+  // Appliquer localement
+  proposals.forEach(p=>{
+    if(!_assignDays[p.sid])_assignDays[p.sid]={};
+    if(!_assignDays[p.sid][p.bid])_assignDays[p.sid][p.bid]=[];
+    if(!_assignDays[p.sid][p.bid].includes(p.jour))_assignDays[p.sid][p.bid].push(p.jour);
+    if(!assigns[p.sid])assigns[p.sid]=[];
+    if(!assigns[p.sid].includes(p.bid))assigns[p.sid].push(p.bid);
+  });
+  renderContent();updMq();
+  // Sauvegarder en base
+  let ok=0;
+  for(const p of proposals){
+    try{
+      const b=bens.find(x=>x.id===p.bid);
+      const sl=slots.find(x=>x.id===p.sid);
+      const r=await apiPost('/assigns',{slot_id:p.sid,ben_id:p.bid,ben_nom:b?b.nom+' '+b.prenom:'?',poste:sl?.pid||'',jour:p.jour});
+      if(r?.id)window._assignIds[p.sid+'|'+p.bid+'|'+p.jour]=r.id;
+      ok++;
+    }catch(e){console.error(e);}
+  }
+  setSync('ok',`${ok} assignations sauvegardées`);
 }
 
 // ═══ STATS ═══
