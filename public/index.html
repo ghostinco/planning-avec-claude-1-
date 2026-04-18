@@ -777,14 +777,29 @@ function getJoursSemaine(){
   return semaines[weekOffset]||[];
 }
 function getSemainesCalendaires(){
-  // Semaine = lundi→dimanche. On coupe APRÈS le dimanche.
-  const semaines=[];let sem=[];
+  // Grouper par numéro de semaine ISO (lundi=début, dimanche=fin)
+  if(!JOURS.length)return[];
+  const getISOWeek=lbl=>{
+    // Extraire jour et mois depuis lbl "17 juin"
+    const parts=lbl.split(' ');
+    const day=parseInt(parts[0]);
+    const mois={'janvier':1,'février':2,'mars':3,'avril':4,'mai':5,'juin':6,'juillet':7,'août':8,'septembre':9,'octobre':10,'novembre':11,'décembre':12};
+    const month=mois[parts[1]]||6;
+    const year=currentEvent.deb?parseInt(currentEvent.deb.split('-')[0]):2026;
+    const d=new Date(year,month-1,day);
+    // Numéro de semaine ISO
+    const tmp=new Date(d);tmp.setHours(0,0,0,0);
+    tmp.setDate(tmp.getDate()+3-(tmp.getDay()+6)%7);
+    const week1=new Date(tmp.getFullYear(),0,4);
+    return Math.round(((tmp-week1)/86400000-3+(week1.getDay()+6)%7)/7)+tmp.getFullYear()*100;
+  };
+  const semainesMap={};const ordre=[];
   JOURS.forEach(j=>{
-    sem.push(j);
-    if(j.wd==='Dim.'){semaines.push(sem);sem=[];}
+    const wk=getISOWeek(j.lbl);
+    if(!semainesMap[wk]){semainesMap[wk]=[];ordre.push(wk);}
+    semainesMap[wk].push(j);
   });
-  if(sem.length)semaines.push(sem);
-  return semaines;
+  return ordre.map(wk=>semainesMap[wk]);
 }
 function prevWeek(){if(weekOffset>0){weekOffset--;renderAll();}}
 function nextWeek(){const s=getSemainesCalendaires();if(weekOffset<s.length-1){weekOffset++;renderAll();}}
