@@ -2387,9 +2387,13 @@ async function saveEventParams(){
   const deb=document.getElementById('par-deb').value;
   const fin=document.getElementById('par-fin').value;
   if(!nom){alert('Le nom est obligatoire.');return;}
+  // Sauvegarder les anciennes dates pour détecter un changement
+  const oldDeb=currentEvent.deb||'';
+  const oldFin=currentEvent.fin||'';
   currentEvent={...currentEvent,nom,description:desc,deb,fin};
-  // Auto-générer les jours depuis les dates
-  if(deb&&fin){
+  // Auto-générer les jours UNIQUEMENT si les dates ont changé
+  const datesChanged=(deb!==oldDeb||fin!==oldFin);
+  if(datesChanged&&deb&&fin){
     const d1=new Date(deb+'T12:00:00'),d2=new Date(fin+'T12:00:00');
     if(d2>=d1){
       const newJours=[];
