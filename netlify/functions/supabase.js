@@ -122,7 +122,11 @@ exports.handler = async (event) => {
       if (cP===-1||cN===-1) return err('Colonnes Prenom/Nom introuvables');
       const existing = await supa(`bens?event_id=eq.${event_id}&select=*`);
       const benMap = {};
-      (Array.isArray(existing)?existing:[]).forEach(b=>{benMap[(b.nom+' '+b.prenom).toLowerCase()]=b;});
+      (Array.isArray(existing)?existing:[]).forEach(b=>{
+        // Indexer dans les deux sens pour matcher peu importe l'ordre
+        benMap[(b.nom+' '+b.prenom).toLowerCase().trim()]=b;
+        benMap[(b.prenom+' '+b.nom).toLowerCase().trim()]=b;
+      });
       let added=0,updated=0,skipped=0;
       for (const row of rows.slice(1)) {
         const prenom=String(row[cP]||'').trim(); const nom=String(row[cN]||'').trim();
@@ -132,8 +136,10 @@ exports.handler = async (event) => {
         const taille=cTa>=0?String(row[cTa]||'').trim():'';
         const dispos=cDi>=0?parseDispos(String(row[cDi]||'')):[];
         const rmq=cR>=0?String(row[cR]||'').trim():'';
-        const key=(nom+' '+prenom).toLowerCase();
-        const b=benMap[key];
+        // Chercher dans les deux sens (nom+prenom et prenom+nom)
+        const key1=(nom+' '+prenom).toLowerCase().trim();
+        const key2=(prenom+' '+nom).toLowerCase().trim();
+        const b=benMap[key1]||benMap[key2];
         try {
           if (b) {
             const upd={};
