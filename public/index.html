@@ -642,7 +642,7 @@ const BCOLS=["#0284c7","#059669","#7c3aed","#d97706","#be123c","#0891b2","#6d28d
 
 let role=null,rSel=null,bens=[],slots=[],assigns={};
 let eBid=null,eSlotId=null,bTypeCur="rotatif";
-let curView="sem",dayIdx=0,svDay=null;
+let curView="sem",dayIdx=0,svDay=null,weekOffset=0;
 let sbSelected=new Set(),dropOpen=false;
 // assignEditing = sid du créneau en cours
 // _assignDays[sid][benId] = ['17 juin','19 juin',...]  (jours sélectionnés)
@@ -769,25 +769,49 @@ function renderChips(){const el=document.getElementById('chips');if(!el)return;i
 function removeChip(k){sbSelected.delete(k);renderChips();renderContent();}
 
 // ═══ VUE SEMAINE ═══
+function getJoursSemaine(){
+  // Retourne les 7 jours de la semaine courante (weekOffset)
+  const start=weekOffset*7;
+  return JOURS.slice(start,start+7);
+}
+function prevWeek(){if(weekOffset>0){weekOffset--;renderAll();}}
+function nextWeek(){if((weekOffset+1)*7<JOURS.length){weekOffset++;renderAll();}}
+
 function renderSemaine(){
-  // Filtrer par recherche
+  const joursVis=getJoursSemaine();
+  if(!joursVis.length){document.getElementById('content').innerHTML='<div class="loading-box">Aucun jour configuré.</div>';return;}
   const filterBens=b=>{
     if(!semSearch)return true;
     return(b.nom+' '+b.prenom).toLowerCase().includes(semSearch)||(b.prenom+' '+b.nom).toLowerCase().includes(semSearch);
   };
   const totalVisible=bens.filter(filterBens).length;
-  let h='<div class="wk-wrap"><table class="wk-table"><thead><tr>';
+  // Navigation semaine
+  const totalSem=Math.ceil(JOURS.length/7);
+  const semLabel=totalSem>1?`Semaine ${weekOffset+1}/${totalSem}`:'';
+  let h=`<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:#120a22;border-bottom:1px solid rgba(245,166,35,.1);flex-shrink:0">`;
+  if(totalSem>1){
+    h+=`<button type="button" class="dnb" onclick="prevWeek()" ${weekOffset===0?'disabled style="opacity:.3"':''}>◀</button>`;
+    h+=`<span style="font-size:12px;font-weight:700;color:#f5a623;min-width:100px;text-align:center">${semLabel}</span>`;
+    h+=`<button type="button" class="dnb" onclick="nextWeek()" ${weekOffset>=totalSem-1?'disabled style="opacity:.3"':''}>▶</button>`;
+    h+=`<span style="font-size:11px;color:#4d7fa0;margin-left:4px">${joursVis[0].lbl} → ${joursVis[joursVis.length-1].lbl}</span>`;
+  }
+  h+=`</div>`;
+  h+='<div class="wk-wrap"><table class="wk-table"><thead><tr>';
   h+=`<th class="wk-th-nm"><div style="font-size:11px;font-weight:700;color:#4d7fa0">Bénévole</div><div style="font-size:10px;color:#2d5a7a">${semSearch?totalVisible+'/'+bens.length:bens.length}</div></th>`;
-  JOURS.forEach(j=>{const m=mqJ(j.lbl);h+=`<th class="wk-th-day"><div class="wk-th-day-in"><div class="wkwd">${j.wd}</div><div class="wkdt">${j.k} juin</div><div class="wkmq" style="color:${m>5?'#f87171':m>0?'#fbbf24':'#34d399'}">${m>0?'−'+m+' bén.':'✓ Complet'}</div></div></th>`;});
+  joursVis.forEach(j=>{const m=mqJ(j.lbl);h+=`<th class="wk-th-day"><div class="wk-th-day-in"><div class="wkwd">${j.wd}</div><div class="wkdt">${j.k}</div><div class="wkmq" style="color:${m>5?'#f87171':m>0?'#fbbf24':'#34d399'}">${m>0?'−'+m+' bén.':'✓'}</div></div></th>`;});
   h+='</tr></thead><tbody>';
-  SECS.forEach(sec=>{const sb=bens.filter(b=>b.sec===sec&&filterBens(b));if(!sb.length)return;const col=SCLR[sec];h+=`<tr class="wk-sec"><td colspan="${JOURS.length+1}"><span class="wk-sec-lbl" style="color:${col}">● ${sec}</span></td></tr>`;
-  sb.forEach(b=>{const bc=bCol(b.id);h+=`<tr><td class="wk-nm"><div class="nn">${b.nom} ${b.prenom}</div><div class="np" style="color:${col}">${b.poste||sec}</div><span class="nty ${b.type==='fixe'?'nfix':'nrot'}">${b.type==='fixe'?'📌':'🔄'}</span>${isA()?`<button type="button" class="ned" onclick="openEditBen('${b.id}')">✏</button>`:''}</td>`;
-  JOURS.forEach(j=>{const dis=(b.dispos||[]).includes(j.lbl);
+  SECS.forEach(sec=>{const sb=bens.filter(b=>b.sec===sec&&filterBens(b));if(!sb.length)return;const col=SCLR[sec];
+  h+=`<tr class="wk-sec"><td colspan="${joursVis.length+1}"><span class="wk-sec-lbl" style="color:${col}">● ${sec}</span></td></tr>`;
+  sb.forEach(b=>{const bc=bCol(b.id);
+  h+=`<tr><td class="wk-nm"><div class="nn">${b.nom} ${b.prenom}</div><div class="np" style="color:${col}">${b.poste||sec}</div><span class="nty ${b.type==='fixe'?'nfix':'nrot'}">${b.type==='fixe'?'📌':'🔄'}</span>${isA()?`<button type="button" class="ned" onclick="openEditBen('${b.id}')">✏</button>`:''}</td>`;
+  joursVis.forEach(j=>{const dis=(b.dispos||[]).includes(j.lbl);
   const mySlots=slots.filter(sl=>sl.jours.includes(j.lbl)&&assigns[sl.id]&&assigns[sl.id].includes(b.id)&&(_assignDays[sl.id]?.[b.id]||[]).includes(j.lbl));
   if(!dis){h+=`<td class="wk-td na"><div style="height:100%;display:flex;align-items:center;justify-content:center;opacity:.1">—</div></td>`;}
-  else{h+=`<td class="wk-td">`;mySlots.forEach(sl=>{const nec=POSTES_NEC[sl.pid]||2;const nbJ=nbBensOnPosteJour(sl.pid,j.lbl);const rc=nbJ>=nec?'#34d399':nbJ>0?'#fbbf24':'#f87171';h+=`<div class="wk-blk" style="background:${bc}" onclick="openAssign('${sl.id}',event)"><div class="bt">${sl.start_time}–${sl.end_time}</div><div class="bp">${sl.pid}</div><div class="bct" style="color:${rc}">${nbJ}/${nec}</div></div>`;});if(isA())h+=`<button type="button" class="wk-add" onclick="openNewSlotDay('${j.lbl}',event)">+ créneau</button>`;h+=`</td>`;}});h+=`</tr>`;});});
-  if(semSearch&&totalVisible===0)h+=`<tr><td colspan="5" style="text-align:center;padding:30px;color:#2d5a7a">Aucun bénévole trouvé pour "${semSearch}"</td></tr>`;
-  h+='</tbody></table></div>';document.getElementById('content').innerHTML=h;
+  else{h+=`<td class="wk-td">`;mySlots.forEach(sl=>{const nec=POSTES_NEC[sl.pid]||2;const nbJ=nbBensOnPosteJour(sl.pid,j.lbl);const rc=nbJ>=nec?'#34d399':nbJ>0?'#fbbf24':'#f87171';h+=`<div class="wk-blk" style="background:${bc}" onclick="openAssign('${sl.id}',event)"><div class="bt">${sl.start_time}–${sl.end_time}</div><div class="bp">${sl.pid}</div><div class="bct" style="color:${rc}">${nbJ}/${nec}</div></div>`;});if(isA())h+=`<button type="button" class="wk-add" onclick="openNewSlotDay('${j.lbl}',event)">+ créneau</button>`;h+=`</td>`;}});
+  h+=`</tr>`;});});
+  if(semSearch&&totalVisible===0)h+=`<tr><td colspan="${joursVis.length+1}" style="text-align:center;padding:30px;color:#2d5a7a">Aucun résultat.</td></tr>`;
+  h+='</tbody></table></div>';
+  document.getElementById('content').innerHTML=h;
 }
 
 // ═══ VUE JOUR ═══
@@ -1723,17 +1747,19 @@ async function saveEventParams(){
   const fin=document.getElementById('par-fin').value;
   if(!nom){alert('Le nom est obligatoire.');return;}
   currentEvent={...currentEvent,nom,description:desc,deb,fin};
-  // Recalculer les jours depuis les dates si renseignées
+  // Auto-générer les jours depuis les dates
   if(deb&&fin){
-    const d1=new Date(deb),d2=new Date(fin);
-    const newJours=[];
-    for(let d=new Date(d1);d<=d2;d.setDate(d.getDate()+1)){
-      const day=d.getDate();
-      const month=d.toLocaleString('fr',{month:'long'});
-      const wd=JOURS_WD[d.getDay()];
-      newJours.push({k:String(day),lbl:day+' '+month,wd});
+    const d1=new Date(deb+'T12:00:00'),d2=new Date(fin+'T12:00:00');
+    if(d2>=d1){
+      const newJours=[];
+      for(let d=new Date(d1);d<=d2;d.setDate(d.getDate()+1)){
+        const day=d.getDate();
+        const month=d.toLocaleString('fr',{month:'long'});
+        const wd=JOURS_WD[d.getDay()];
+        newJours.push({k:String(day),lbl:day+' '+month,wd});
+      }
+      if(newJours.length>0&&newJours.length<=60){JOURS=newJours;weekOffset=0;}
     }
-    if(newJours.length>0&&newJours.length<=14)JOURS=newJours;
   }
   // Mettre à jour dans allEvents
   const idx=allEvents.findIndex(e=>e.id===currentEvent.id);
@@ -1748,19 +1774,35 @@ async function saveEventParams(){
 // ── Jours ──
 function renderParamsJours(){
   const el=document.getElementById('par-jours-list');
-  el.innerHTML=JOURS.map((j,i)=>`
-    <div class="par-row">
-      <div class="par-row-nm">${j.lbl}</div>
-      <div class="par-row-meta">${j.wd}</div>
-      <button type="button" class="par-row-del" onclick="delJour(${i})" title="Supprimer">✕</button>
+  if(!JOURS.length){el.innerHTML='<div style="color:#4d7fa0;font-size:12px;padding:8px">Aucun jour. Renseigne les dates début/fin et sauvegarde.</div>';return;}
+  // Grouper par semaine pour lisibilité
+  const semaines=[];
+  for(let i=0;i<JOURS.length;i+=7)semaines.push(JOURS.slice(i,i+7));
+  el.innerHTML=semaines.map((sem,si)=>`
+    <div style="margin-bottom:8px">
+      ${semaines.length>1?`<div style="font-size:10px;font-weight:800;color:#f5a623;text-transform:uppercase;margin-bottom:4px">Semaine ${si+1}</div>`:''}
+      <div style="display:flex;flex-wrap:wrap;gap:5px">
+        ${sem.map((j,i)=>`<div class="par-row" style="flex:none;width:auto;padding:5px 10px;gap:6px">
+          <span style="font-size:10px;color:#4d7fa0;font-weight:700">${j.wd}</span>
+          <span class="par-row-nm" style="font-size:12px">${j.lbl}</span>
+          <button type="button" class="par-row-del" onclick="delJour(${si*7+i})" title="Supprimer">✕</button>
+        </div>`).join('')}
+      </div>
     </div>`).join('');
 }
 function addJour(){
-  const lbl=prompt('Nom du jour (ex: 21 juin) :');
-  if(!lbl)return;
-  const day=parseInt(lbl);
-  const wd=lbl.includes('lun')||lbl.includes('Lun')?'Lun.':lbl.includes('mar')||lbl.includes('Mar')?'Mar.':lbl.includes('mer')||lbl.includes('Mer')?'Mer.':lbl.includes('jeu')||lbl.includes('Jeu')?'Jeu.':lbl.includes('ven')||lbl.includes('Ven')?'Ven.':lbl.includes('sam')||lbl.includes('Sam')?'Sam.':'Dim.';
-  JOURS.push({k:String(day||lbl),lbl,wd});
+  // Utiliser un input date natif via une dialog temporaire
+  const dateStr=prompt('Date à ajouter (format AAAA-MM-JJ, ex: 2026-06-21) :');
+  if(!dateStr)return;
+  const d=new Date(dateStr+'T12:00:00');
+  if(isNaN(d.getTime())){alert('Format invalide. Utilise AAAA-MM-JJ');return;}
+  const day=d.getDate();
+  const month=d.toLocaleString('fr',{month:'long'});
+  const wd=JOURS_WD[d.getDay()];
+  const lbl=day+' '+month;
+  if(JOURS.some(j=>j.lbl===lbl)){alert('Ce jour existe déjà.');return;}
+  JOURS.push({k:String(day),lbl,wd});
+  JOURS.sort((a,b)=>a.lbl.localeCompare(b.lbl,'fr'));
   saveConfig();renderParamsJours();renderAll();
 }
 function delJour(i){
