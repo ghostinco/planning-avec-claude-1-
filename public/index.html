@@ -457,8 +457,14 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
     <div class="ben-pg">
       <div class="ben-hdr"><h2 id="ben-title">Bénévoles</h2>
         <div style="display:flex;gap:6px">
+          <button type="button" class="bpri" id="btn-import-festival" onclick="document.getElementById('festival-input').click()" style="display:none;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24;box-shadow:none">📋 Import Festival</button>
+          <input type="file" id="festival-input" accept=".xlsx,.xlsm,.xls" style="display:none" onchange="handleFestivalImport(this)"/>
           <button type="button" class="bpri" id="btn-import" onclick="document.getElementById('csv-input').click()" style="display:none;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);color:#38bdf8;box-shadow:none">📥 Importer</button>
           <input type="file" id="csv-input" accept=".csv,.xlsx,.xls,.ods,.numbers" style="display:none" onchange="handleImportFile(this)"/>
+          <div style="display:none" id="btn-exports">
+            <button type="button" class="bpri" onclick="exportRH()" style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:#34d399;box-shadow:none">⬇ Export RH</button>
+            <button type="button" class="bpri" onclick="exportComplet()" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:#a78bfa;box-shadow:none">⬇ Export Complet</button>
+          </div>
           <button type="button" class="bpri" id="btn-nb" onclick="openNewBen()" style="display:none">+ Nouveau</button>
         </div>
       </div>
@@ -609,6 +615,33 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
     <div class="fl"><label>Type</label><div class="dbtns"><button type="button" class="dbtn sel" id="t-rot" onclick="selType('rotatif')">🔄 Rotatif</button><button type="button" class="dbtn" id="t-fix" onclick="selType('fixe')">📌 Fixe</button></div></div>
     <div class="fl"><label>Disponibilités</label><div class="dbtns" id="mb-dis"></div></div>
     <div class="fl"><label>Remarques</label><textarea id="mb-rmq" rows="2"></textarea></div>
+    <div class="sep"></div>
+    <div class="fl"><label>🔑 Zones d'accès</label>
+      <div class="dbtns" id="mb-acces">
+        <button type="button" class="dbtn" data-a="3C" onclick="toggleAcces(this)">3C</button>
+        <button type="button" class="dbtn" data-a="B" onclick="toggleAcces(this)">B</button>
+        <button type="button" class="dbtn" data-a="L" onclick="toggleAcces(this)">L</button>
+        <button type="button" class="dbtn" data-a="P" onclick="toggleAcces(this)">P</button>
+        <button type="button" class="dbtn" data-a="T" onclick="toggleAcces(this)">T</button>
+        <button type="button" class="dbtn" data-a="V" onclick="toggleAcces(this)">V</button>
+      </div>
+    </div>
+    <div class="fl"><label>🎫 Type bénévole</label>
+      <div class="dbtns" id="mb-type-ben">
+        <button type="button" class="dbtn" data-tb="ben_plus" onclick="selTypeBen(this)">⭐ Bénévole +</button>
+        <button type="button" class="dbtn" data-tb="std1" onclick="selTypeBen(this)">Standard 1</button>
+        <button type="button" class="dbtn" data-tb="std2" onclick="selTypeBen(this)">Standard 2</button>
+        <button type="button" class="dbtn" data-tb="std3" onclick="selTypeBen(this)">Standard 3</button>
+        <button type="button" class="dbtn" data-tb="std4" onclick="selTypeBen(this)">Standard 4</button>
+      </div>
+    </div>
+    <div class="fl"><label>🏅 Rôle spécial</label>
+      <div class="dbtns" id="mb-role">
+        <button type="button" class="dbtn" data-r="team_leader" onclick="toggleRole(this)">👑 Team Leader</button>
+        <button type="button" class="dbtn" data-r="comite" onclick="toggleRole(this)">🎪 Comité</button>
+        <button type="button" class="dbtn" data-r="direction" onclick="toggleRole(this)">🎯 Direction</button>
+      </div>
+    </div>
     <div class="ae" id="mb-e2"></div>
     <button type="button" class="btn btn-p" onclick="saveBen()">Sauvegarder</button>
     <div class="sep"></div>
@@ -692,7 +725,7 @@ function setSync(s,t){const d=document.getElementById('sdot'),tx=document.getEle
 function selR(r){rSel=r;document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('rc-'+r).classList.add('sel');if(r==='admin'){document.getElementById('pz').classList.add('show');document.getElementById('pi').value='';document.getElementById('pe').style.display='none';document.getElementById('be').disabled=true;setTimeout(()=>document.getElementById('pi').focus(),60);}else{document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=false;}}
 document.getElementById('pi').addEventListener('input',function(){const v=this.value;document.getElementById('pe').style.display='none';if(v.length===4){const ok=v===PIN;document.getElementById('be').disabled=!ok;if(!ok)document.getElementById('pe').style.display='block';}else document.getElementById('be').disabled=true;});
 document.getElementById('pi').addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('be').disabled)goIn();});
-function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';loadAll();}
+function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';document.getElementById('btn-import-festival').style.display=isA()?'block':'none';document.getElementById('btn-exports').style.display=isA()?'flex':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';loadAll();}
 function deco(){role=null;rSel=null;document.getElementById('AP').className='';document.getElementById('AP').style.display='none';document.getElementById('login').style.display='flex';document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=true;}
 const isA=()=>role==='admin';
 function stab(n){
@@ -1330,15 +1363,24 @@ async function saveAssign(){
 
 // ═══ BÉNÉVOLES CRUD ═══
 function selType(t){bTypeCur=t;document.getElementById('t-rot').classList.toggle('sel',t==='rotatif');document.getElementById('t-fix').classList.toggle('sel',t==='fixe');}
+function toggleAcces(btn){btn.classList.toggle('sel');}
+function selTypeBen(btn){document.querySelectorAll('#mb-type-ben .dbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+function toggleRole(btn){btn.classList.toggle('sel');}
+function getAcces(){return[...document.querySelectorAll('#mb-acces .dbtn.sel')].map(b=>b.dataset.a);}
+function getTypeBen(){const sel=document.querySelector('#mb-type-ben .dbtn.sel');return sel?sel.dataset.tb:null;}
+function getRoles(){return[...document.querySelectorAll('#mb-role .dbtn.sel')].map(b=>b.dataset.r);}
+function setAcces(acces){document.querySelectorAll('#mb-acces .dbtn').forEach(b=>b.classList.toggle('sel',(acces||[]).includes(b.dataset.a)));}
+function setTypeBen(tb){document.querySelectorAll('#mb-type-ben .dbtn').forEach(b=>b.classList.toggle('sel',b.dataset.tb===tb));}
+function setRoles(roles){document.querySelectorAll('#mb-role .dbtn').forEach(b=>b.classList.toggle('sel',(roles||[]).includes(b.dataset.r)));}
 function updMbPostes(){const sec=document.getElementById('mb-sec')?.value||'';const ps=POSTES_DEF[sec]||[];document.getElementById('mb-pos').innerHTML=ps.map(p=>`<option>${p}</option>`).join('');}
-function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);document.getElementById('mb-sec').value='Parking';updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
-function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';document.getElementById('mb-sec').value=b.sec||'Parking';document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);document.getElementById('mb-sec').value='Parking';updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';setAcces([]);setTypeBen(null);setRoles([]);hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';document.getElementById('mb-sec').value=b.sec||'Parking';document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';setAcces(b.acces||[]);setTypeBen(b.type_ben||null);setRoles(b.roles||[]);hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
 
 async function saveBen(){
   const nom=document.getElementById('mb-n').value.trim(),prenom=document.getElementById('mb-p').value.trim();
   if(!nom||!prenom){sA('mb-e2','Nom et prénom obligatoires.');return;}
   const dispos=[...document.querySelectorAll('#mb-dis .dbtn.sel')].map(b=>b.dataset.j);
-  const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:document.getElementById('mb-sec').value,poste:document.getElementById('mb-pos').value,type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value};
+  const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:document.getElementById('mb-sec').value,poste:document.getElementById('mb-pos').value,type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value,acces:getAcces(),type_ben:getTypeBen(),roles:getRoles()};
   cm('m-ben');setSync('syncing','Sauvegarde...');
   try{
     if(eBid){Object.assign(bens.find(x=>x.id===eBid),d);await apiPatch('/bens/'+eBid,d);}
@@ -1410,11 +1452,23 @@ function benCard(b,col){
   const eb=isA()?`<button type="button" class="bcbtn" onclick="openEditBen('${b.id}')">Modifier</button>`:'';
   const db=isA()?`<button type="button" class="bcbtn d" onclick="openEditBen('${b.id}')">Suppr.</button>`:'';
   const ddnStr=b.ddn?`<div class="bcme">🎂 ${b.ddn.split('-').reverse().join('/')}</div>`:'';
+  // Badges accès
+  const accesHtml=(b.acces||[]).map(a=>`<span style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.25);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${a}</span>`).join('');
+  // Badge type bénévole
+  const tbMap={ben_plus:'⭐ Bén. +',std1:'Std 1',std2:'Std 2',std3:'Std 3',std4:'Std 4'};
+  const tbHtml=b.type_ben?`<span style="background:rgba(56,189,248,.1);color:#38bdf8;border:1px solid rgba(56,189,248,.2);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${tbMap[b.type_ben]||b.type_ben}</span>`:'';
+  // Badges rôles
+  const roleMap={team_leader:'👑 TL',comite:'🎪 Comité',direction:'🎯 Direction'};
+  const rolesHtml=(b.roles||[]).map(r=>`<span style="background:rgba(245,166,35,.1);color:#f5a623;border:1px solid rgba(245,166,35,.25);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${roleMap[r]||r}</span>`).join('');
   return`<div class="bcard"><div class="bcav" style="background:${bc}">${init(b)}</div><div class="bcb">
-    <div class="bcnm">${b.nom} ${b.prenom}</div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+      <div class="bcnm">${b.nom} ${b.prenom}</div>
+      ${tbHtml}${rolesHtml}
+    </div>
     <div class="bcme">${b.poste||b.sec} · <span style="color:${col};font-size:10px;font-weight:700">${b.sec}</span> · <span class="${b.type==='fixe'?'nfix':'nrot'}" style="border-radius:3px;padding:1px 4px;font-size:9px;font-weight:700">${b.type==='fixe'?'📌 Fixe':'🔄 Rotatif'}</span></div>
     ${ddnStr}
     ${b.tel?`<div class="bcme">📞 ${b.tel}</div>`:''}
+    ${accesHtml?`<div class="bctg" style="margin-top:3px">${accesHtml}</div>`:''}
     <div class="bctg">${dh||'<span style="font-size:10px;color:#f87171">Aucune dispo</span>'}</div>
     ${b.rmq?`<div style="font-size:11px;color:#2d5a7a;margin-top:3px;font-style:italic">"${b.rmq}"</div>`:''}
     ${eb||db?`<div class="bcact">${eb}${db}</div>`:''}
@@ -1653,6 +1707,148 @@ function renderStats(){
   let h=`<div class="kpis"><div class="kpi"><div class="kpi-v">${bens.length}</div><div class="kpi-l">Bénévoles</div></div><div class="kpi"><div class="kpi-v">${slots.length}</div><div class="kpi-l">Créneaux</div></div><div class="kpi" style="border-color:${tm>0?'rgba(239,68,68,.3)':'rgba(16,185,129,.3)'}"><div class="kpi-v" style="color:${tm>0?'#f87171':'#34d399'}">${tm}</div><div class="kpi-l">Manquants</div></div></div>`;
   h+=`<div class="scard"><h3>Remplissage par jour</h3>`;JOURS.forEach(j=>{const totalNec=Object.values(POSTES_NEC).reduce((s,n)=>s+n,0);const totalOk=Object.entries(POSTES_NEC).reduce((s,[pos,nec])=>s+Math.min(nbBensOnPosteJour(pos,j.lbl),nec),0);const pct=totalNec>0?Math.round(totalOk/totalNec*100):0;const m=mqJ(j.lbl);h+=`<div class="srow2"><div class="slbl2">${j.lbl}</div><div class="sbar2"><div class="sbfill2" style="width:${pct}%;background:${m===0?'#34d399':'#38bdf8'}"></div></div><div class="sval2" style="color:${m>0?'#f87171':'#34d399'}">${pct}%</div></div>`;});
   h+=`</div><div class="scard"><h3>Bénévoles par secteur</h3>`;SECS.forEach(sec=>{const n=bens.filter(b=>b.sec===sec).length;const col=SCLR[sec];const a=bens.filter(b=>b.sec===sec&&Object.values(assigns).some(arr=>arr.includes(b.id))).length;const pct=n>0?Math.round(a/n*100):0;h+=`<div class="srow2"><div class="slbl2" style="color:${col}">${sec}</div><div class="sbar2"><div class="sbfill2" style="width:${pct}%;background:${col}"></div></div><div class="sval2" style="color:#4d7fa0">${n}</div></div>`;});h+=`</div>`;c.innerHTML=h;
+}
+
+// ═══ IMPORT FESTIVAL (format spécifique) ═══
+async function handleFestivalImport(input){
+  const file=input.files[0];if(!file)return;
+  input.value='';
+  const reader=new FileReader();
+  reader.onload=async e=>{
+    try{
+      const wb=XLSX.read(e.target.result,{type:'array'});
+      const ws=wb.Sheets[wb.SheetNames[0]];
+      const data=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(!data||data.length<2){alert('Fichier vide.');return;}
+      // Mapping colonnes festival
+      // A=Prénom, B=Nom, C=Email, F=Téléphone, G=Adresse, H=NPA, I=Ville, J=DDN
+      // M=3C, N=B, O=L, P=P, Q=T, R=V (accès)
+      // T=Bén+, U=Std1, V=Std2, W=Std3, X=Std4 (type)
+      // Y=TeamLeader, Z=Comité, AA=Direction (rôles)
+      const rows=data.slice(1);
+      let added=0,updated=0,skipped=0;
+      setSync('syncing','Import festival...');
+      for(const row of rows){
+        const prenom=String(row[0]||'').trim();
+        const nom=String(row[1]||'').trim();
+        if(!prenom&&!nom){skipped++;continue;}
+        // Déterminer accès
+        const acces=[];
+        if(row[12]&&String(row[12]).trim())acces.push('3C');
+        if(row[13]&&String(row[13]).trim())acces.push('B');
+        if(row[14]&&String(row[14]).trim())acces.push('L');
+        if(row[15]&&String(row[15]).trim())acces.push('P');
+        if(row[16]&&String(row[16]).trim())acces.push('T');
+        if(row[17]&&String(row[17]).trim())acces.push('V');
+        // Type bénévole
+        let type_ben=null;
+        if(row[19]&&String(row[19]).trim())type_ben='ben_plus';
+        else if(row[20]&&String(row[20]).trim())type_ben='std1';
+        else if(row[21]&&String(row[21]).trim())type_ben='std2';
+        else if(row[22]&&String(row[22]).trim())type_ben='std3';
+        else if(row[23]&&String(row[23]).trim())type_ben='std4';
+        // Rôles
+        const roles=[];
+        if(row[24]&&String(row[24]).trim())roles.push('team_leader');
+        if(row[25]&&String(row[25]).trim())roles.push('comite');
+        if(row[26]&&String(row[26]).trim())roles.push('direction');
+        // DDN
+        let ddn='';
+        if(row[9]){
+          const d=new Date(row[9]);
+          if(!isNaN(d.getTime()))ddn=d.toISOString().split('T')[0];
+          else{const s=String(row[9]).trim();if(s.match(/\d{2}\.\d{2}\.\d{4}/)){const[dd,mm,yyyy]=s.split('.');ddn=`${yyyy}-${mm}-${dd}`;}}
+        }
+        const d={
+          prenom,nom,
+          email:String(row[2]||'').trim(),
+          tel:String(row[5]||'').trim(),
+          adresse:String(row[6]||'').trim(),
+          npa:String(row[7]||'').trim(),
+          ville:String(row[8]||'').trim(),
+          ddn,acces,type_ben,roles,
+          event_id:currentEvent.id
+        };
+        // Chercher bénévole existant
+        const existing=bens.find(b=>b.nom.toLowerCase()===nom.toLowerCase()&&b.prenom.toLowerCase()===prenom.toLowerCase());
+        try{
+          if(existing){
+            // Mettre à jour uniquement les champs du festival (ne pas écraser sec/poste/dispos)
+            const upd={email:d.email||existing.email,tel:d.tel||existing.tel,ddn:d.ddn||existing.ddn,acces:d.acces,type_ben:d.type_ben,roles:d.roles,adresse:d.adresse,npa:d.npa,ville:d.ville};
+            Object.assign(existing,upd);
+            await apiPatch('/bens/'+existing.id,upd);
+            updated++;
+          } else {
+            // Nouveau bénévole
+            const full={...d,sec:'Parking',poste:'P1',type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:''};
+            const r=await apiPost('/bens',full);
+            bens.push({id:r.id,...full});
+            added++;
+          }
+        }catch(e){console.error(e);skipped++;}
+      }
+      setSync('ok','Import terminé');
+      renderBens();updMq();
+      alert(`Import festival terminé :\n✅ ${added} ajoutés\n🔄 ${updated} mis à jour\n⏭ ${skipped} ignorés`);
+    }catch(e){console.error(e);alert('Erreur: '+e.message);}
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ═══ EXPORTS ═══
+function exportRH(){
+  // Format exact du fichier festival : Prénom, Nom, Email, Validation, Affectations, Téléphone, Adresse, NPA, Ville, DDN, Commentaire, 2026, 3C, B, L, P, T, V, Circ&Park, Bén+, Std1, Std2, Std3, Std4, TL, Comité, Direction
+  const headers=['Prénom','Nom','Courriel','Validation','Affectations','Téléphone','Adresse','NPA','Ville','Date de naissance','Commentaire','2026','  3C','  B','  L','  P','  T','  V',' Circulation & Parking','  Bénévole +','  Bénévole standard 1','  Bénévole standard 2','  Bénévole standard 3','  Bénévole standard 4','  Bénévole Team Leader','  Comité','  Direction'];
+  const rows=bens.map(b=>{
+    const ac=b.acces||[];const roles=b.roles||[];const tb=b.type_ben||'';
+    const ddn=b.ddn?b.ddn.split('-').reverse().join('.'):'';
+    return[
+      b.prenom,b.nom,b.email||'','Validé',b.poste||'',b.tel||'',b.adresse||'',b.npa||'',b.ville||'',ddn,b.rmq||'','2026',
+      ac.includes('3C')?'  3C':'',ac.includes('B')?'  B':'',ac.includes('L')?'  L':'',
+      ac.includes('P')?'  P':'',ac.includes('T')?'  T':'',ac.includes('V')?'  V':'',
+      ' Circulation & Parking',
+      tb==='ben_plus'?'  Bénévole +':'',tb==='std1'?'  Bénévole standard 1':'',
+      tb==='std2'?'  Bénévole standard 2':'',tb==='std3'?'  Bénévole standard 3':'',
+      tb==='std4'?'  Bénévole standard 4':'',
+      roles.includes('team_leader')?'  Bénévole Team Leader':'',
+      roles.includes('comite')?'  Comité':'',roles.includes('direction')?'  Direction':''
+    ];
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  ws['!cols']=headers.map(()=>({wch:20}));
+  XLSX.utils.book_append_sheet(wb,ws,'Bénévoles');
+  XLSX.writeFile(wb,`${currentEvent.nom}_RH_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+function exportComplet(){
+  // Format complet avec toutes les données de l'app
+  const headers=['Prénom','Nom','Email','Téléphone','Adresse','NPA','Ville','Date naissance','Secteur','Poste','Type','Disponibilités','Accès','Type bénévole','Rôles','Remarques'];
+  const tbMap={ben_plus:'Bénévole +',std1:'Standard 1',std2:'Standard 2',std3:'Standard 3',std4:'Standard 4'};
+  const roleMap={team_leader:'Team Leader',comite:'Comité',direction:'Direction'};
+  const rows=bens.map(b=>{
+    const ddn=b.ddn?b.ddn.split('-').reverse().join('/'):'';
+    return[
+      b.prenom,b.nom,b.email||'',b.tel||'',b.adresse||'',b.npa||'',b.ville||'',ddn,
+      b.sec||'',b.poste||'',b.type||'',
+      (b.dispos||[]).join(', '),
+      (b.acces||[]).join(', '),
+      tbMap[b.type_ben]||'',
+      (b.roles||[]).map(r=>roleMap[r]||r).join(', '),
+      b.rmq||''
+    ];
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  ws['!cols']=headers.map(()=>({wch:18}));
+  // Mettre en gras les headers
+  const range=XLSX.utils.decode_range(ws['!ref']);
+  for(let c=range.s.c;c<=range.e.c;c++){
+    const cell=ws[XLSX.utils.encode_cell({r:0,c})];
+    if(cell)cell.s={font:{bold:true}};
+  }
+  XLSX.utils.book_append_sheet(wb,ws,'Bénévoles complet');
+  XLSX.writeFile(wb,`${currentEvent.nom}_Complet_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
 // ═══ IMPORT CSV/EXCEL ═══
