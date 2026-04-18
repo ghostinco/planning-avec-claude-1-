@@ -770,12 +770,24 @@ function removeChip(k){sbSelected.delete(k);renderChips();renderContent();}
 
 // ═══ VUE SEMAINE ═══
 function getJoursSemaine(){
-  // Retourne les 7 jours de la semaine courante (weekOffset)
-  const start=weekOffset*7;
-  return JOURS.slice(start,start+7);
+  // Grouper les jours par semaine calendaire (lundi→dimanche)
+  // On reconstruit les semaines depuis les labels "D mois"
+  if(!JOURS.length)return[];
+  const semaines=getSemainesCalendaires();
+  return semaines[weekOffset]||[];
+}
+function getSemainesCalendaires(){
+  // Semaine = lundi→dimanche. On coupe APRÈS le dimanche.
+  const semaines=[];let sem=[];
+  JOURS.forEach(j=>{
+    sem.push(j);
+    if(j.wd==='Dim.'){semaines.push(sem);sem=[];}
+  });
+  if(sem.length)semaines.push(sem);
+  return semaines;
 }
 function prevWeek(){if(weekOffset>0){weekOffset--;renderAll();}}
-function nextWeek(){if((weekOffset+1)*7<JOURS.length){weekOffset++;renderAll();}}
+function nextWeek(){const s=getSemainesCalendaires();if(weekOffset<s.length-1){weekOffset++;renderAll();}}
 
 function renderSemaine(){
   const joursVis=getJoursSemaine();
@@ -786,7 +798,8 @@ function renderSemaine(){
   };
   const totalVisible=bens.filter(filterBens).length;
   // Navigation semaine
-  const totalSem=Math.ceil(JOURS.length/7);
+  const semaines=getSemainesCalendaires();
+  const totalSem=semaines.length;
   const semLabel=totalSem>1?`Semaine ${weekOffset+1}/${totalSem}`:'';
   let h=`<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:#120a22;border-bottom:1px solid rgba(245,166,35,.1);flex-shrink:0">`;
   if(totalSem>1){
