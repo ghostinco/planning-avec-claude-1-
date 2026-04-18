@@ -887,7 +887,7 @@ let curView="sem",dayIdx=0,svDay=null,weekOffset=0;
 let sbSelected=new Set(),dropOpen=false;
 // assignEditing = sid du créneau en cours
 // _assignDays[sid][benId] = ['17 juin','19 juin',...]  (jours sélectionnés)
-let assignEditing=null,_assignDays={};
+let assignEditing=null,_assignDays={},_locks={}; // _locks[sid][bid][jour]=true
 
 let _i=Date.now();const uid=()=>String(_i++);
 
@@ -938,14 +938,20 @@ async function loadAll(){
     slots=sd.slots||[];
     // assigns[sid] = tableau de benIds (pour compatibilité vues)
     // _assignDays[sid][benId] = [jours]  (granularité par jour)
-    assigns={};_assignDays={};
-    slots.forEach(s=>{assigns[s.id]=[];_assignDays[s.id]={};});
+    assigns={};_assignDays={};_locks={};
+    slots.forEach(s=>{assigns[s.id]=[];_assignDays[s.id]={};_locks[s.id]={};});
     (ad.assigns||[]).forEach(a=>{
       if(!assigns[a.slot_id])assigns[a.slot_id]=[];
       if(!_assignDays[a.slot_id])_assignDays[a.slot_id]={};
+      if(!_locks[a.slot_id])_locks[a.slot_id]={};
       if(!assigns[a.slot_id].includes(a.ben_id))assigns[a.slot_id].push(a.ben_id);
       if(!_assignDays[a.slot_id][a.ben_id])_assignDays[a.slot_id][a.ben_id]=[];
       if(a.jour&&!_assignDays[a.slot_id][a.ben_id].includes(a.jour))_assignDays[a.slot_id][a.ben_id].push(a.jour);
+      // Charger les locks
+      if(a.locked&&a.jour){
+        if(!_locks[a.slot_id][a.ben_id])_locks[a.slot_id][a.ben_id]=new Set();
+        _locks[a.slot_id][a.ben_id].add(a.jour);
+      }
     });
     // Stocker les IDs Supabase par (slot_id, ben_id, jour) pour pouvoir supprimer
     window._assignIds={};// clé: slot_id+'|'+ben_id+'|'+jour → id
@@ -1220,10 +1226,12 @@ function renderSV(){
             bidsJ.forEach(bid=>{
               const b=bens.find(x=>x.id===bid);if(!b)return;
               const bc=bCol(bid);
-              grid+=`<div class="sv2-tag" onclick="${isA()?`removeAssignDay('${sl.id}','${bid}','${j.lbl}')`:''}" title="${isA()?'Cliquer pour retirer':''}">
+              const isLocked=(_locks[sl.id]?.[bid]||new Set()).has(j.lbl);
+              grid+=`<div class="sv2-tag${isLocked?' sv2-locked':''}" title="${isLocked?'🔒 Verrouillé — cliquer pour déverrouiller':isA()?'Cliquer pour retirer':''}">
                 <div class="sv2-av" style="background:${bc};width:18px;height:18px;font-size:8px">${init(b)}</div>
                 <span style="font-size:11px">${b.prenom} ${b.nom}</span>
-                ${isA()?'<span class="sv2-tag-x">✕</span>':''}
+                ${isA()?`<span class="sv2-tag-lock${isLocked?' locked':''}" onclick="toggleLock('${sl.id}','${bid}','${j.lbl}')" title="${isLocked?'Déverrouiller':'Verrouiller'}">${isLocked?'🔒':'🔓'}</span>`:''}
+                ${isA()&&!isLocked?`<span class="sv2-tag-x" onclick="removeAssignDay('${sl.id}','${bid}','${j.lbl}')">✕</span>`:''}
               </div>`;
             });
             if(!bidsJ.length)grid+=`<div style="font-size:10px;color:#2d5a7a;font-style:italic">Aucun bénévole</div>`;
@@ -1890,6 +1898,26 @@ function isManuallPlaced(bid){
   return Object.values(_assignDays).some(days=>(days[bid]||[]).length>0);
 }
 
+// Vérifie si un bénévole est verrouillé sur un slot/jour
+function isLocked(sid,bid,jour){
+  return(_locks[sid]?.[bid]||new Set()).has(jour);
+}
+
+async function toggleLock(sid,bid,jour){
+  if(!_locks[sid])_locks[sid]={};
+  if(!_locks[sid][bid])_locks[sid][bid]=new Set();
+  const wasLocked=_locks[sid][bid].has(jour);
+  if(wasLocked)_locks[sid][bid].delete(jour);
+  else _locks[sid][bid].add(jour);
+  // Sauvegarder dans Supabase
+  const assignId=window._assignIds[sid+'|'+bid+'|'+jour];
+  if(assignId){
+    try{await apiPatch('/assigns/'+assignId,{locked:!wasLocked});}
+    catch(e){console.error(e);}
+  }
+  renderContent();
+}
+
 function runAutoAssign(simOnly){
   hA('auto-err');
   const proposals=[];
@@ -1950,6 +1978,8 @@ function runAutoAssign(simOnly){
 
         // 🔒 Respecter les assignations existantes si option cochée
         if(keepExisting&&isManuallPlaced(b.id))continue;
+        // 🔒 Toujours respecter les verrous explicites
+        if(isLocked(sl.id,b.id,jour))continue;
 
         if(isAlreadyOnSlotJour(b.id,sl.id,jour,proposals))continue;
 

@@ -205,6 +205,7 @@ exports.handler = async (event) => {
     if (path==='/assigns'&&method==='GET'){const data=await supa('assigns?select=*');return ok({assigns:Array.isArray(data)?data:[]});}
     if (path==='/assigns'&&method==='POST'){const data=await supa('assigns','POST',body);return ok({id:Array.isArray(data)?data[0]?.id:data?.id});}
     if (path.startsWith('/assigns/')&&method==='DELETE'){const id=path.split('/')[2];await supa(`assigns?id=eq.${id}`,'DELETE');return ok({ok:true});}
+    if (path.startsWith('/assigns/')&&method==='PATCH'){const id=path.split('/')[2];await supa(`assigns?id=eq.${id}`,'PATCH',body);return ok({ok:true});}
     if (path==='/assigns/remove'&&method==='POST'){const{slot_id,ben_id}=body;await supa(`assigns?slot_id=eq.${slot_id}&ben_id=eq.${ben_id}`,'DELETE');return ok({ok:true});}
 
     return err('Route inconnue: '+path,404);
