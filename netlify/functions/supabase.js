@@ -129,6 +129,7 @@ exports.handler = async (event) => {
       const col = (kws) => headers.findIndex(h => kws.some(k => h.includes(k)));
       // Prénom : index exact de 'prenom' (sans 'nom' seul)
       const cP = headers.findIndex(h => h==='prenom' || h.startsWith('prenom') || h==='first name' || h==='firstname');
+      const cGenre = col(['genre','gender','sexe','sex']);
       // Nom : chercher 'nom' mais pas dans 'prenom'
       const cN = headers.findIndex((h,i) => i !== cP && (h==='nom' || h==='last name' || h==='lastname' || h==='surname'));
       const cD = col(['naissance','birth','ddn']); const cT = col(['telephone','tel','phone','mobile','+41']);
@@ -151,6 +152,8 @@ exports.handler = async (event) => {
         const taille=cTa>=0?String(row[cTa]||'').trim():'';
         const dispos=cDi>=0?parseDispos(String(row[cDi]||'')):[];
         const rmq=cR>=0?String(row[cR]||'').trim():'';
+        const genre_raw=cGenre>=0?String(row[cGenre]||'').trim().toLowerCase():'';
+        const genre=genre_raw.includes('f')||genre_raw.includes('femme')||genre_raw.includes('female')?'F':genre_raw.includes('m')||genre_raw.includes('homme')||genre_raw.includes('male')?'M':''
         // Chercher dans les deux sens (nom+prenom et prenom+nom)
         const key1=(nom+' '+prenom).toLowerCase().trim();
         const key2=(prenom+' '+nom).toLowerCase().trim();
@@ -168,10 +171,11 @@ exports.handler = async (event) => {
             if(dispos.length>0)upd.dispos=dispos;
             // Remarques : compléter si absent
             if(rmq&&(!b.rmq||b.rmq===''))upd.rmq=rmq;
+            if(genre&&!b.genre)upd.genre=genre;
             await supa(`bens?id=eq.${b.id}`,'PATCH',upd);
             updated++;
           } else {
-            await supa('bens','POST',{prenom,nom,ddn,tel,taille,dispos,rmq,email:'',sec:'Parking',poste:'P1',type:'rotatif',acces:[],type_ben:null,roles:[],event_id});
+            await supa('bens','POST',{prenom,nom,ddn,tel,taille,dispos,rmq,genre:genre||'',email:'',sec:'Parking',poste:'P1',type:'rotatif',acces:[],type_ben:null,roles:[],event_id});
             added++;
           }
         } catch(e){console.error(e);skipped++;}

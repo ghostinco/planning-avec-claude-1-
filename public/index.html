@@ -504,7 +504,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
             <option value="sec">Par secteur</option>
             <option value="nom-az">Nom A→Z</option>
             <option value="nom-za">Nom Z→A</option>
-            <option value="prenom-az">Prénom A→Z</option>
+            <option value="prenom-az" selected>Prénom A→Z</option>
             <option value="prenom-za">Prénom Z→A</option>
             <option value="ddn-asc">Naissance ↑</option>
             <option value="ddn-desc">Naissance ↓</option>
@@ -653,6 +653,13 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
     <div class="sh-hdr"><div class="sh-ttl" id="mb-ttl">Bénévole</div><button type="button" class="xb" onclick="cm('m-ben')">✕</button></div>
     <div class="flrow"><div class="fl"><label>Nom *</label><input id="mb-n" placeholder="Dupont"/></div><div class="fl"><label>Prénom *</label><input id="mb-p" placeholder="Marie"/></div></div>
     <div class="flrow"><div class="fl"><label>Téléphone</label><input id="mb-t" type="tel"/></div><div class="fl"><label>Email</label><input id="mb-e" type="email"/></div></div>
+    <div class="fl"><label>Genre</label>
+      <div class="dbtns" id="mb-genre">
+        <button type="button" class="dbtn" data-g="F" onclick="selGenre(this)">♀ Féminin</button>
+        <button type="button" class="dbtn" data-g="M" onclick="selGenre(this)">♂ Masculin</button>
+        <button type="button" class="dbtn" data-g="?" onclick="selGenre(this)">? Non précisé</button>
+      </div>
+    </div>
     <div class="fl"><label>Date de naissance</label><input id="mb-ddn" type="date"/></div>
     <div class="fl"><label>👕 Taille T-shirt</label>
       <div class="dbtns" id="mb-taille">
@@ -1432,6 +1439,9 @@ async function saveAssign(){
 }
 
 // ═══ BÉNÉVOLES CRUD ═══
+function selGenre(btn){document.querySelectorAll('#mb-genre .dbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+function getGenre(){const s=document.querySelector('#mb-genre .dbtn.sel');return s?s.dataset.g:'';}
+function setGenre(g){document.querySelectorAll('#mb-genre .dbtn').forEach(b=>b.classList.toggle('sel',b.dataset.g===(g||'')));}
 function selTaille(btn){document.querySelectorAll('#mb-taille .dbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
 function getTaille(){const s=document.querySelector('#mb-taille .dbtn.sel');return s?s.dataset.t:'';}
 function setTaille(t){document.querySelectorAll('#mb-taille .dbtn').forEach(b=>b.classList.toggle('sel',b.dataset.t===t));}
@@ -1446,14 +1456,14 @@ function setAcces(acces){document.querySelectorAll('#mb-acces .dbtn').forEach(b=
 function setTypeBen(tb){document.querySelectorAll('#mb-type-ben .dbtn').forEach(b=>b.classList.toggle('sel',b.dataset.tb===tb));}
 function setRoles(roles){document.querySelectorAll('#mb-role .dbtn').forEach(b=>b.classList.toggle('sel',(roles||[]).includes(b.dataset.r)));}
 function updMbPostes(){const sec=document.getElementById('mb-sec')?.value||'';const ps=POSTES_DEF[sec]||[];document.getElementById('mb-pos').innerHTML=ps.map(p=>`<option>${p}</option>`).join('');}
-function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);document.getElementById('mb-sec').value='Parking';updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';setAcces([]);setTypeBen(null);setRoles([]);setTaille('');hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
-function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';document.getElementById('mb-sec').value=b.sec||'Parking';document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';setAcces(b.acces||[]);setTypeBen(b.type_ben||null);setRoles(b.roles||[]);setTaille(b.taille||'');hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);document.getElementById('mb-sec').value='Parking';updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';setAcces([]);setTypeBen(null);setRoles([]);setTaille('');setGenre('');hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';document.getElementById('mb-sec').value=b.sec||'Parking';document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';setAcces(b.acces||[]);setTypeBen(b.type_ben||null);setRoles(b.roles||[]);setTaille(b.taille||'');setGenre(b.genre||detectGenre(b.prenom));hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
 
 async function saveBen(){
   const nom=document.getElementById('mb-n').value.trim(),prenom=document.getElementById('mb-p').value.trim();
   if(!nom||!prenom){sA('mb-e2','Nom et prénom obligatoires.');return;}
   const dispos=[...document.querySelectorAll('#mb-dis .dbtn.sel')].map(b=>b.dataset.j);
-  const _secVal=document.getElementById('mb-sec').value;const _posVal=document.getElementById('mb-pos').value;const _existingBen=eBid?bens.find(x=>x.id===eBid):null;const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:_secVal||(_existingBen?.sec)||'Parking',poste:_posVal||(_existingBen?.poste)||'P1',type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value,acces:getAcces(),type_ben:getTypeBen(),roles:getRoles(),taille:getTaille()};
+  const _secVal=document.getElementById('mb-sec').value;const _posVal=document.getElementById('mb-pos').value;const _existingBen=eBid?bens.find(x=>x.id===eBid):null;const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:_secVal||(_existingBen?.sec)||'Parking',poste:_posVal||(_existingBen?.poste)||'P1',type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value,acces:getAcces(),type_ben:getTypeBen(),roles:getRoles(),taille:getTaille(),genre:getGenre()};
   cm('m-ben');setSync('syncing','Sauvegarde...');
   try{
     if(eBid){Object.assign(bens.find(x=>x.id===eBid),d);await apiPatch('/bens/'+eBid,d);}
@@ -1575,22 +1585,45 @@ function benCard(b,col){
   </div></div>`;
 }
 
+// ═══ DÉTECTION GENRE PAR PRÉNOM ═══
+const PRENOMS_F=new Set(['alice','amelie','amelia','amina','anaïs','anais','anastasia','andrea','angela','angie','anna','anne','antoinette','ariane','ashlynn','audrey','aurelie','axelle','beatrice','camille','carole','caroline','cassandra','cecile','charlotte','chiara','chloe','chloé','christelle','christina','claire','clara','clarisse','clemence','clémence','colette','coralie','cristina','diane','elena','elisa','elise','eloise','elodie','emilie','emma','eva','eve','fanny','fatima','florence','francoise','gaelle','gabrielle','grace','helena','ines','isabelle','jade','jessica','julie','julia','juliette','justine','karine','kim','laetitia','laure','laurence','lea','léa','lilas','lily','lisa','louise','lucie','luisa','luna','magalie','manon','margot','marie','marina','marine','marion','mathilde','melissa','mia','michelle','nadia','nadine','natalia','natalie','noemie','noémie','océane','olivia','ophelie','pauline','petronille','philippine','priscilla','rachel','rania','sarah','selena','sonia','sophie','stephanie','sylvie','valentina','vanessa','veronique','virginie','yasmine','zoe','zoé','audrey','ashlynn','camille','dominique','alexia','alexandra','alexia','elena','elisa','eloise','eva','fanny','isaline','léonie','leonie','lola','luna','maeva','maïa','maia','mathilde','noemie','romane','tiffany','victoire','victoria','violaine','viviane','yasmine','ysaline','lea','léa','inès']);
+
+function detectGenre(prenom){
+  const p=prenom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(PRENOMS_F.has(p))return'F';
+  // Terminaisons féminines
+  if(/(ine|ette|elle|ance|ence|oise|ise|ise|ille|ine|ice|ine|ane|ene|ève|eve|ie|ia|ee|ee)$/.test(p))return'F';
+  // Terminaisons masculines
+  if(/(ric|ert|and|aud|aud|ard|ant|ent|ent|our|oul|on|in|an|en|el|ul|us|os|is|as|es|ox|ax|ex|ix|ez|eux|aux|eau|ou|au)$/.test(p))return'M';
+  return'M'; // défaut masculin
+}
+
+function getBenColor(b){
+  // Priorité : rôle > genre manuel > genre auto
+  const roles=b.roles||[];
+  if(roles.includes('direction'))return{bg:'linear-gradient(135deg,#92400e,#d97706)',border:'rgba(217,119,6,.5)',text:'#fcd34d'};
+  if(roles.includes('comite'))return{bg:'linear-gradient(135deg,#78350f,#b45309)',border:'rgba(180,83,9,.5)',text:'#fbbf24'};
+  if(roles.includes('team_leader'))return{bg:'linear-gradient(135deg,#064e3b,#059669)',border:'rgba(5,150,105,.5)',text:'#6ee7b7'};
+  const genre=b.genre||detectGenre(b.prenom);
+  if(genre==='F')return{bg:'linear-gradient(135deg,#4c1d95,#7c3aed)',border:'rgba(124,58,237,.4)',text:'#c4b5fd'};
+  return{bg:'linear-gradient(135deg,#1e3a8a,#2563eb)',border:'rgba(37,99,235,.4)',text:'#93c5fd'};
+}
+
 function benCard2(b,col,byPrenom){
-  const bc=bCol(b.id);
-  const tbMap={ben_plus:'⭐',std1:'S1',std2:'S2',std3:'S3',std4:'S4'};
-  const roleMap={team_leader:'👑',comite:'🎪',direction:'🎯'};
+  const gc=getBenColor(b);
+  const tbMap={ben_plus:'⭐ Bén. +',std1:'Std 1',std2:'Std 2',std3:'Std 3',std4:'Std 4'};
+  const roleMap={team_leader:'👑 TL',comite:'🎪 Comité',direction:'🎯 Direction'};
   const nm1=byPrenom?b.prenom:b.nom;
   const nm2=byPrenom?b.nom:b.prenom;
-  const badges=[
-    b.type_ben?`<span style="background:rgba(56,189,248,.1);color:#38bdf8;border:1px solid rgba(56,189,248,.2);border-radius:4px;padding:1px 5px;font-size:9px;font-weight:700">${tbMap[b.type_ben]||b.type_ben}</span>`:'',
-    b.taille?`<span style="background:rgba(167,139,250,.1);color:#a78bfa;border:1px solid rgba(167,139,250,.2);border-radius:4px;padding:1px 5px;font-size:9px;font-weight:700">👕${b.taille}</span>`:'',
-    ...(b.roles||[]).map(r=>`<span style="background:rgba(245,166,35,.1);color:#f5a623;border:1px solid rgba(245,166,35,.2);border-radius:4px;padding:1px 5px;font-size:9px">${roleMap[r]||r}</span>`)
-  ].filter(Boolean).join('');
-  return`<div class="bcard2" onclick="openBenDetail('${b.id}')">
-    <div class="bcard2-av" style="background:${bc}">${init(b)}</div>
-    <div class="bcard2-nm">${nm1}<br><span style="color:#7fb8d4;font-weight:500">${nm2}</span></div>
-    <div class="bcard2-sub">${b.poste||b.sec} · <span style="color:${col}">${b.sec}</span></div>
-    ${badges?`<div class="bcard2-badges">${badges}</div>`:''}
+  const ddnStr=b.ddn?`<div style="font-size:10px;color:#94a3b8;margin-top:2px">🎂 ${b.ddn.split('-').reverse().join('/')}</div>`:'';
+  const typeBadge=b.type_ben?`<span style="background:rgba(255,255,255,.1);color:#fff;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${tbMap[b.type_ben]||b.type_ben}</span>`:'';
+  const rolesBadges=(b.roles||[]).map(r=>`<span style="background:rgba(255,255,255,.15);color:#fff;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${roleMap[r]||r}</span>`).join('');
+  return`<div class="bcard2" onclick="openBenDetail('${b.id}')" style="border-color:${gc.border};background:#0f2540">
+    <div class="bcard2-av" style="background:${gc.bg};box-shadow:0 3px 12px ${gc.border}">${init(b)}</div>
+    <div class="bcard2-nm" style="color:${gc.text}">${nm1}</div>
+    <div style="font-size:11px;color:#94a3b8;font-weight:500">${nm2}</div>
+    ${ddnStr}
+    ${typeBadge||rolesBadges?`<div class="bcard2-badges" style="margin-top:4px">${typeBadge}${rolesBadges}</div>`:''}
   </div>`;
 }
 
