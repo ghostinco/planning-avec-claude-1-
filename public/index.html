@@ -1408,7 +1408,7 @@ async function saveBen(){
   const nom=document.getElementById('mb-n').value.trim(),prenom=document.getElementById('mb-p').value.trim();
   if(!nom||!prenom){sA('mb-e2','Nom et prénom obligatoires.');return;}
   const dispos=[...document.querySelectorAll('#mb-dis .dbtn.sel')].map(b=>b.dataset.j);
-  const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:document.getElementById('mb-sec').value,poste:document.getElementById('mb-pos').value,type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value,acces:getAcces(),type_ben:getTypeBen(),roles:getRoles(),taille:getTaille()};
+  const _secVal=document.getElementById('mb-sec').value;const _posVal=document.getElementById('mb-pos').value;const _existingBen=eBid?bens.find(x=>x.id===eBid):null;const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:_secVal||(_existingBen?.sec)||'Parking',poste:_posVal||(_existingBen?.poste)||'P1',type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value,acces:getAcces(),type_ben:getTypeBen(),roles:getRoles(),taille:getTaille()};
   cm('m-ben');setSync('syncing','Sauvegarde...');
   try{
     if(eBid){Object.assign(bens.find(x=>x.id===eBid),d);await apiPatch('/bens/'+eBid,d);}

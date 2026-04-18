@@ -164,12 +164,17 @@ exports.handler = async (event) => {
         try {
           if (b) {
             const upd={};
-            if(ddn&&!b.ddn)upd.ddn=ddn;
-            if(tel&&!b.tel)upd.tel=tel;
+            // DDN : compléter si absent ou vide
+            if(ddn&&(!b.ddn||b.ddn===''))upd.ddn=ddn;
+            // Tel : compléter si absent
+            if(tel&&(!b.tel||b.tel===''))upd.tel=tel;
+            // Taille : toujours mettre à jour depuis le formulaire bénévole
             if(taille)upd.taille=taille;
+            // Dispos : toujours mettre à jour
             if(dispos.length>0)upd.dispos=dispos;
-            if(rmq&&!b.rmq)upd.rmq=rmq;
-            if(Object.keys(upd).length>0)await supa(`bens?id=eq.${b.id}`,'PATCH',upd);
+            // Remarques : compléter si absent
+            if(rmq&&(!b.rmq||b.rmq===''))upd.rmq=rmq;
+            await supa(`bens?id=eq.${b.id}`,'PATCH',upd);
             updated++;
           } else {
             await supa('bens','POST',{prenom,nom,ddn,tel,taille,dispos,rmq,email:'',sec:'Parking',poste:'P1',type:'rotatif',acces:[],type_ben:null,roles:[],event_id});
