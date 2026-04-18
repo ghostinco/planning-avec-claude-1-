@@ -457,6 +457,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
     <div class="ben-pg">
       <div class="ben-hdr"><h2 id="ben-title">Bénévoles</h2>
         <div style="display:flex;gap:6px">
+          <button type="button" class="bpri" id="btn-sync-sheets" onclick="openSyncSheets()" style="display:none;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:#34d399;box-shadow:none">🔄 Sync Sheets</button>
           <button type="button" class="bpri" id="btn-import-festival" onclick="document.getElementById('festival-input').click()" style="display:none;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.3);color:#fbbf24;box-shadow:none">📋 Import Festival</button>
           <input type="file" id="festival-input" accept=".xlsx,.xlsm,.xls" style="display:none" onchange="handleFestivalImport(this)"/>
           <button type="button" class="bpri" id="btn-import" onclick="document.getElementById('csv-input').click()" style="display:none;background:rgba(56,189,248,.12);border:1px solid rgba(56,189,248,.3);color:#38bdf8;box-shadow:none">📥 Importer</button>
@@ -557,21 +558,6 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
         </div>
       </div>
 
-      <!-- Section Sync Google Sheets -->
-      <div class="par-section">
-        <div class="par-sh">🔄 Sync Google Sheets</div>
-        <div style="font-size:11px;color:#4d7fa0;margin-bottom:12px">Synchronise automatiquement les bénévoles depuis ton Google Forms → Sheets.</div>
-        <div class="par-grid">
-          <div class="fl" style="grid-column:1/-1"><label>URL ou ID du Google Sheets</label>
-            <input id="par-sheets-url" class="par-inp" type="text" placeholder="https://docs.google.com/spreadsheets/d/..." value="https://docs.google.com/spreadsheets/d/1SOtnMQK-CtIz7m_Gsh1HJrBmmRreM27mgF6wkbyqHkg/edit"/>
-          </div>
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <button type="button" class="par-btn" onclick="syncGoogleSheets()" id="btn-sync-sheets" style="background:linear-gradient(135deg,#34d399,#059669);border-color:transparent;color:#fff">🔄 Synchroniser maintenant</button>
-          <div id="sync-sheets-result" style="font-size:12px;color:#4d7fa0"></div>
-        </div>
-      </div>
-
       <!-- Section Événements -->
       <div class="par-section">
         <div class="par-sh">🎪 Tous les événements</div>
@@ -664,6 +650,19 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
   </div>
 </div>
 
+<!-- Modal Sync Google Sheets -->
+<div class="ov" id="m-sync-sheets">
+  <div class="sht">
+    <div class="sh-hdr"><div class="sh-ttl">🔄 Sync Google Sheets</div><button type="button" class="xb" onclick="cm('m-sync-sheets')">✕</button></div>
+    <div style="font-size:12px;color:#7fb8d4;margin-bottom:14px;line-height:1.6">Synchronise les bénévoles depuis ton Google Forms → Sheets.<br><span style="color:#4d7fa0;font-size:11px">DDN, téléphone, taille T-shirt et disponibilités seront mis à jour.</span></div>
+    <div class="fl"><label>URL du Google Sheets</label>
+      <input id="sync-sheets-url" class="fl" type="text" style="width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:8px 11px;font-size:12px;outline:none" value="https://docs.google.com/spreadsheets/d/1SOtnMQK-CtIz7m_Gsh1HJrBmmRreM27mgF6wkbyqHkg/edit" placeholder="https://docs.google.com/spreadsheets/d/..."/>
+    </div>
+    <div id="sync-sheets-result" style="font-size:12px;margin:10px 0;min-height:20px"></div>
+    <button type="button" class="btn btn-p" id="btn-sync-go" onclick="syncGoogleSheets()">🔄 Synchroniser</button>
+  </div>
+</div>
+
 <!-- Modal import -->
 <div class="ov" id="m-import">
   <div class="sht">
@@ -740,7 +739,7 @@ function setSync(s,t){const d=document.getElementById('sdot'),tx=document.getEle
 function selR(r){rSel=r;document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('rc-'+r).classList.add('sel');if(r==='admin'){document.getElementById('pz').classList.add('show');document.getElementById('pi').value='';document.getElementById('pe').style.display='none';document.getElementById('be').disabled=true;setTimeout(()=>document.getElementById('pi').focus(),60);}else{document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=false;}}
 document.getElementById('pi').addEventListener('input',function(){const v=this.value;document.getElementById('pe').style.display='none';if(v.length===4){const ok=v===PIN;document.getElementById('be').disabled=!ok;if(!ok)document.getElementById('pe').style.display='block';}else document.getElementById('be').disabled=true;});
 document.getElementById('pi').addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('be').disabled)goIn();});
-function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';document.getElementById('btn-import-festival').style.display=isA()?'block':'none';document.getElementById('btn-exports').style.display=isA()?'flex':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';loadAll();}
+function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';document.getElementById('btn-sync-sheets').style.display=isA()?'block':'none';document.getElementById('btn-import-festival').style.display=isA()?'block':'none';document.getElementById('btn-exports').style.display=isA()?'flex':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';loadAll();}
 function deco(){role=null;rSel=null;document.getElementById('AP').className='';document.getElementById('AP').style.display='none';document.getElementById('login').style.display='flex';document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=true;}
 const isA=()=>role==='admin';
 function stab(n){
@@ -1964,8 +1963,15 @@ async function confirmImport(){
 }
 
 // ═══ SYNC GOOGLE SHEETS ═══
+function openSyncSheets(){
+  document.getElementById('sync-sheets-result').textContent='';
+  document.getElementById('btn-sync-go').textContent='🔄 Synchroniser';
+  document.getElementById('btn-sync-go').disabled=false;
+  document.getElementById('m-sync-sheets').classList.add('open');
+}
+
 async function syncGoogleSheets(){
-  const urlOrId=document.getElementById('par-sheets-url').value.trim();
+  const urlOrId=document.getElementById('sync-sheets-url').value.trim();
   if(!urlOrId){alert('Entre l\'URL ou l\'ID du Google Sheets.');return;}
   // Extraire l'ID depuis l'URL si nécessaire
   let sheetId=urlOrId;
