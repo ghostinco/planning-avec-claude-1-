@@ -243,11 +243,31 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .bcard2-sub{font-size:10px;color:#4d7fa0}
 .bcard2-badges{display:flex;flex-wrap:wrap;justify-content:center;gap:3px;margin-top:2px}
 /* Modal détail bénévole */
-.ben-detail-modal{background:#0d2137;border-top:3px solid #f5a623;border-radius:18px 18px 0 0;padding:20px 20px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto}
-.ben-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
-.ben-detail-field{background:#0c1929;border-radius:8px;padding:8px 10px}
-.ben-detail-label{font-size:9px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
-.ben-detail-val{font-size:12px;font-weight:600;color:#f0f9ff}
+.ben-detail-modal{background:#080e1a;border-radius:20px;padding:0;width:100%;max-width:560px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.7)}
+.bdd-hero{position:relative;padding:28px 24px 22px;overflow:hidden;flex-shrink:0}
+.bdd-hero::before{content:'';position:absolute;inset:0;opacity:.12}
+.bdd-hero-bg{position:absolute;inset:0;opacity:.15;filter:blur(40px)}
+.bdd-hero-content{position:relative;z-index:1;display:flex;align-items:center;gap:18px}
+.bdd-av{width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:900;color:#fff;flex-shrink:0;box-shadow:0 8px 24px rgba(0,0,0,.4)}
+.bdd-hero-txt{flex:1}
+.bdd-nm{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.3px;line-height:1.1}
+.bdd-sub{font-size:12px;color:rgba(255,255,255,.6);margin-top:4px}
+.bdd-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.bdd-badge{border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;border:1px solid rgba(255,255,255,.2);color:#fff;background:rgba(255,255,255,.12)}
+.bdd-body{padding:20px 24px 24px;overflow-y:auto;flex:1}
+.bdd-section{margin-bottom:16px}
+.bdd-section-title{font-size:9px;font-weight:800;color:#4d7fa0;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.bdd-section-title::after{content:'';flex:1;height:1px;background:rgba(56,189,248,.1)}
+.bdd-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.bdd-field{background:#0f1f33;border:1px solid rgba(56,189,248,.08);border-radius:10px;padding:10px 12px}
+.bdd-field-label{font-size:9px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.bdd-field-val{font-size:13px;font-weight:600;color:#e2e8f0}
+.bdd-tags{display:flex;flex-wrap:wrap;gap:5px}
+.bdd-tag{border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600}
+.bdd-actions{display:flex;gap:8px;padding:0 24px 20px;flex-shrink:0}
+.bdd-btn-edit{flex:1;background:linear-gradient(135deg,#f5a623,#e8850a);border:none;border-radius:10px;color:#000;font-size:13px;font-weight:800;padding:12px;cursor:pointer;transition:opacity .15s}
+.bdd-btn-edit:hover{opacity:.85}
+.bdd-btn-close{background:#0f1f33;border:1px solid rgba(56,189,248,.15);border-radius:10px;color:#7fb8d4;font-size:13px;font-weight:600;padding:12px 18px;cursor:pointer}
 /* ── CALENDRIER ── */
 .cal-wrap{position:relative}
 .cal-display{background:#0c1929;border:1.5px solid rgba(245,166,35,.25);color:#f0f9ff;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;transition:border-color .15s}
@@ -623,27 +643,39 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 </div>
 
 <!-- Modal détail bénévole (lecture) -->
-<div class="ov" id="m-ben-detail">
+<div class="ov" id="m-ben-detail" style="align-items:center">
   <div class="ben-detail-modal">
-    <div class="sh-hdr">
-      <div class="sh-ttl" id="mbd-ttl">Bénévole</div>
-      <div style="display:flex;gap:6px">
-        <button type="button" class="bcbtn" id="mbd-edit-btn" onclick="openEditFromDetail()" style="display:none">✏ Modifier</button>
-        <button type="button" class="xb" onclick="cm('m-ben-detail')">✕</button>
+    <div class="bdd-hero" id="mbd-hero">
+      <div class="bdd-hero-bg" id="mbd-hero-bg"></div>
+      <div class="bdd-hero-content">
+        <div class="bdd-av" id="mbd-av"></div>
+        <div class="bdd-hero-txt">
+          <div class="bdd-nm" id="mbd-nm"></div>
+          <div class="bdd-sub" id="mbd-sub"></div>
+          <div class="bdd-badges" id="mbd-badges"></div>
+        </div>
+        <button type="button" class="xb" onclick="cm('m-ben-detail')" style="position:absolute;top:14px;right:14px;background:rgba(0,0,0,.3);border-color:rgba(255,255,255,.2);color:#fff">✕</button>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">
-      <div id="mbd-av" class="bcard2-av" style="width:60px;height:60px;font-size:20px"></div>
-      <div>
-        <div id="mbd-nm" style="font-size:18px;font-weight:800;color:#f0f9ff"></div>
-        <div id="mbd-sub" style="font-size:12px;color:#4d7fa0;margin-top:2px"></div>
-        <div id="mbd-badges" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px"></div>
+    <div class="bdd-body">
+      <div class="bdd-section">
+        <div class="bdd-section-title">Informations</div>
+        <div class="bdd-grid" id="mbd-grid"></div>
       </div>
+      <div class="bdd-section" id="mbd-dispos-sec" style="display:none">
+        <div class="bdd-section-title">Disponibilités</div>
+        <div class="bdd-tags" id="mbd-dispos"></div>
+      </div>
+      <div class="bdd-section" id="mbd-acces-sec" style="display:none">
+        <div class="bdd-section-title">Zones d'accès</div>
+        <div class="bdd-tags" id="mbd-acces"></div>
+      </div>
+      <div id="mbd-rmq"></div>
     </div>
-    <div class="ben-detail-grid" id="mbd-grid"></div>
-    <div style="margin-top:8px" id="mbd-dispos"></div>
-    <div style="margin-top:8px" id="mbd-acces"></div>
-    <div style="margin-top:8px" id="mbd-rmq"></div>
+    <div class="bdd-actions" id="mbd-actions">
+      <button type="button" class="bdd-btn-edit" id="mbd-edit-btn" onclick="openEditFromDetail()" style="display:none">✏ Modifier</button>
+      <button type="button" class="bdd-btn-close" onclick="cm('m-ben-detail')">Fermer</button>
+    </div>
   </div>
 </div>
 
@@ -1629,39 +1661,49 @@ function benCard2(b,col,byPrenom){
 
 function openBenDetail(id){
   const b=bens.find(x=>x.id===id);if(!b)return;
-  const bc=bCol(id);const col=SCLR[b.sec]||'#94a3b8';
+  const gc=getBenColor(b);const col=SCLR[b.sec]||'#94a3b8';
   const tbMap={ben_plus:'⭐ Bénévole +',std1:'Standard 1',std2:'Standard 2',std3:'Standard 3',std4:'Standard 4'};
   const roleMap={team_leader:'👑 Team Leader',comite:'🎪 Comité',direction:'🎯 Direction'};
-  document.getElementById('mbd-ttl').textContent=b.nom+' '+b.prenom;
-  document.getElementById('mbd-edit-btn').style.display=isA()?'block':'none';
+  // Hero
+  const hero=document.getElementById('mbd-hero');
+  hero.style.background=gc.bg;
+  document.getElementById('mbd-hero-bg').style.background=gc.bg;
+  document.getElementById('mbd-edit-btn').style.display=isA()?'flex':'none';
   document.getElementById('mbd-edit-btn').dataset.id=id;
-  const av=document.getElementById('mbd-av');av.textContent=init(b);av.style.background=bc;
-  document.getElementById('mbd-nm').textContent=b.nom+' '+b.prenom;
-  document.getElementById('mbd-sub').textContent=b.poste+' · '+b.sec+' · '+(b.type==='fixe'?'📌 Fixe':'🔄 Rotatif');
-  // Badges
+  const av=document.getElementById('mbd-av');
+  av.textContent=init(b);av.style.background='rgba(0,0,0,.25)';av.style.border='2px solid rgba(255,255,255,.3)';
+  document.getElementById('mbd-nm').textContent=b.prenom+' '+b.nom;
+  document.getElementById('mbd-sub').textContent=(b.poste||b.sec)+' · '+b.sec+' · '+(b.type==='fixe'?'📌 Fixe':'🔄 Rotatif');
+  // Badges hero
   const badges=[
-    b.type_ben?`<span style="background:rgba(56,189,248,.1);color:#38bdf8;border:1px solid rgba(56,189,248,.2);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">${tbMap[b.type_ben]||b.type_ben}</span>`:'',
-    b.taille?`<span style="background:rgba(167,139,250,.1);color:#a78bfa;border:1px solid rgba(167,139,250,.2);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:700">👕 ${b.taille}</span>`:'',
-    ...(b.roles||[]).map(r=>`<span style="background:rgba(245,166,35,.1);color:#f5a623;border:1px solid rgba(245,166,35,.2);border-radius:5px;padding:2px 8px;font-size:11px">${roleMap[r]||r}</span>`)
+    b.type_ben?`<span class="bdd-badge">${tbMap[b.type_ben]}</span>`:'',
+    b.taille?`<span class="bdd-badge">👕 ${b.taille}</span>`:'',
+    ...(b.roles||[]).map(r=>`<span class="bdd-badge">${roleMap[r]||r}</span>`)
   ].filter(Boolean);
   document.getElementById('mbd-badges').innerHTML=badges.join('');
   // Grille infos
   const fields=[
-    ['📞 Téléphone', b.tel||'—'],
-    ['📧 Email', b.email||'—'],
-    ['🎂 Naissance', b.ddn?b.ddn.split('-').reverse().join('/'):'—'],
-    ['🏠 Ville', b.ville?`${b.npa||''} ${b.ville}`.trim():'—'],
+    ['📞 Téléphone',b.tel||'—'],
+    ['📧 Email',b.email||'—'],
+    ['🎂 Naissance',b.ddn?b.ddn.split('-').reverse().join('/'):'—'],
+    ['🏠 Ville',b.ville?`${b.npa||''} ${b.ville}`.trim():'—'],
+    ['📐 Secteur',b.sec||'—'],
+    ['📍 Poste',b.poste||'—'],
   ];
   document.getElementById('mbd-grid').innerHTML=fields.map(([label,val])=>`
-    <div class="ben-detail-field"><div class="ben-detail-label">${label}</div><div class="ben-detail-val">${val}</div></div>`).join('');
+    <div class="bdd-field"><div class="bdd-field-label">${label}</div><div class="bdd-field-val">${val}</div></div>`).join('');
   // Dispos
-  const dispos=(b.dispos||[]);
-  document.getElementById('mbd-dispos').innerHTML=dispos.length?`<div class="ben-detail-label" style="margin-bottom:5px">📅 Disponibilités</div><div style="display:flex;flex-wrap:wrap;gap:4px">${dispos.map(d=>`<span class="dtag" style="background:${col}22;color:${col}">${d.split(' ')[0]}/06</span>`).join('')}</div>`:'';
+  const dispos=b.dispos||[];
+  const dSec=document.getElementById('mbd-dispos-sec');
+  dSec.style.display=dispos.length?'block':'none';
+  document.getElementById('mbd-dispos').innerHTML=dispos.map(d=>`<span class="bdd-tag" style="background:${col}22;color:${col};border:1px solid ${col}44">${d.split(' ')[0]}/06</span>`).join('');
   // Accès
-  const acces=(b.acces||[]);
-  document.getElementById('mbd-acces').innerHTML=acces.length?`<div class="ben-detail-label" style="margin-bottom:5px">🔑 Accès</div><div style="display:flex;flex-wrap:wrap;gap:4px">${acces.map(a=>`<span style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.25);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700">${a}</span>`).join('')}</div>`:'';
+  const acces=b.acces||[];
+  const aSec=document.getElementById('mbd-acces-sec');
+  aSec.style.display=acces.length?'block':'none';
+  document.getElementById('mbd-acces').innerHTML=acces.map(a=>`<span class="bdd-tag" style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.3)">${a}</span>`).join('');
   // Remarques
-  document.getElementById('mbd-rmq').innerHTML=b.rmq?`<div class="ben-detail-field" style="margin-top:4px"><div class="ben-detail-label">💬 Remarques</div><div class="ben-detail-val" style="font-style:italic">"${b.rmq}"</div></div>`:'';
+  document.getElementById('mbd-rmq').innerHTML=b.rmq?`<div class="bdd-field" style="margin-top:4px"><div class="bdd-field-label">💬 Remarques</div><div class="bdd-field-val" style="font-style:italic">"${b.rmq}"</div></div>`:'';
   document.getElementById('m-ben-detail').classList.add('open');
 }
 
