@@ -228,6 +228,28 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .bcbtn:hover{background:rgba(56,189,248,.1)}
 .bcbtn.d{color:#f87171;border-color:rgba(239,68,68,.25)}
 .noben{text-align:center;padding:40px;color:#2d5a7a;background:#0f2540;border-radius:10px}
+/* ── PAGE PARAMÈTRES ── */
+.par-pg{padding:16px;max-width:860px;margin:0 auto}
+.par-section{background:#0f0a1e;border:1px solid rgba(245,166,35,.15);border-radius:12px;padding:16px;margin-bottom:14px}
+.par-sh{font-size:13px;font-weight:800;color:#f5a623;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.par-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.par-inp{width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:7px 10px;font-size:12px;outline:none;transition:border-color .15s}
+.par-inp:focus{border-color:#f5a623}
+.par-inp option{background:#0d2137}
+.par-btn{background:linear-gradient(135deg,#1a3a5e,#0f2540);border:1px solid rgba(56,189,248,.25);color:#38bdf8;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;margin-top:8px}
+.par-btn:hover{background:rgba(56,189,248,.12);border-color:#38bdf8}
+.par-btn-sm{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);color:#f5a623;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s;white-space:nowrap}
+.par-btn-sm:hover{background:rgba(245,166,35,.2)}
+.par-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#0c1929;border:1px solid rgba(56,189,248,.1);border-radius:8px;margin-bottom:5px}
+.par-row-nm{flex:1;font-size:12px;font-weight:600;color:#f0f9ff}
+.par-row-meta{font-size:11px;color:#4d7fa0}
+.par-row-del{background:none;border:none;color:#f87171;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;opacity:.6;transition:opacity .15s}
+.par-row-del:hover{opacity:1}
+.par-event-card{background:#0c1929;border:1.5px solid rgba(245,166,35,.15);border-radius:10px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all .15s}
+.par-event-card:hover{border-color:rgba(245,166,35,.4);background:rgba(245,166,35,.05)}
+.par-event-card.active{border-color:#f5a623;background:rgba(245,166,35,.08)}
+.par-event-name{font-size:13px;font-weight:700;color:#f0f9ff}
+.par-event-dates{font-size:11px;color:#4d7fa0;margin-top:2px}
 /* ── FILTRES BÉNÉVOLES ── */
 .ben-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:#1a0e2e;border:1px solid rgba(245,166,35,.15);border-radius:10px;margin-bottom:12px}
 .ben-search-inp{background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:6px 10px;font-size:12px;outline:none;width:200px;transition:border-color .15s}
@@ -378,6 +400,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
       <button type="button" class="nt act" onclick="stab('planning')">Planning</button>
       <button type="button" class="nt" onclick="stab('benevoles')">Bénévoles</button>
       <button type="button" class="nt" onclick="stab('stats')">Stats</button>
+      <button type="button" class="nt" id="nt-params" onclick="stab('params')" style="display:none">⚙ Paramètres</button>
     </div>
     <div class="tb-r">
       <div class="mqb" id="mqb">—</div>
@@ -449,6 +472,65 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
     </div>
   </div>
   <div id="pg-stats" style="display:none;overflow:auto"><div class="sta-pg" id="stats-c"></div></div>
+
+  <!-- PAGE PARAMÈTRES -->
+  <div id="pg-params" style="display:none;overflow:auto">
+    <div class="par-pg">
+
+      <!-- Section Événement -->
+      <div class="par-section">
+        <div class="par-sh">📅 Événement</div>
+        <div class="par-grid">
+          <div class="fl"><label>Nom de l'événement</label><input id="par-nom" type="text" placeholder="Caribana 2026"/></div>
+          <div class="fl"><label>Description</label><input id="par-desc" type="text" placeholder="Festival annuel..."/></div>
+        </div>
+        <div class="par-grid">
+          <div class="fl"><label>Date début</label><input id="par-deb" type="date"/></div>
+          <div class="fl"><label>Date fin</label><input id="par-fin" type="date"/></div>
+        </div>
+        <button type="button" class="par-btn" onclick="saveEventParams()">💾 Sauvegarder l'événement</button>
+      </div>
+
+      <!-- Section Jours -->
+      <div class="par-section">
+        <div class="par-sh">🗓 Jours actifs</div>
+        <div style="font-size:11px;color:#4d7fa0;margin-bottom:10px">Les jours sont calculés automatiquement depuis les dates début/fin. Tu peux aussi les éditer manuellement.</div>
+        <div id="par-jours-list"></div>
+        <button type="button" class="par-btn-sm" onclick="addJour()">+ Ajouter un jour</button>
+      </div>
+
+      <!-- Section Secteurs -->
+      <div class="par-section">
+        <div class="par-sh">🏷 Secteurs</div>
+        <div id="par-secs-list"></div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input id="par-new-sec" class="par-inp" type="text" placeholder="Nom du secteur..."/>
+          <input id="par-new-sec-col" type="color" value="#38bdf8" style="width:40px;height:36px;border:none;background:none;cursor:pointer;border-radius:6px"/>
+          <button type="button" class="par-btn-sm" onclick="addSec()">+ Ajouter</button>
+        </div>
+      </div>
+
+      <!-- Section Postes -->
+      <div class="par-section">
+        <div class="par-sh">📍 Postes</div>
+        <div id="par-postes-list"></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:flex-end">
+          <div class="fl" style="margin:0;flex:1;min-width:140px"><label>Nom du poste</label><input id="par-new-pos" class="par-inp" type="text" placeholder="Nom du poste..."/></div>
+          <div class="fl" style="margin:0;flex:1;min-width:120px"><label>Secteur</label><select id="par-new-pos-sec" class="par-inp"></select></div>
+          <div class="fl" style="margin:0;width:80px"><label>Bén. requis</label><input id="par-new-pos-nec" class="par-inp" type="number" value="2" min="1" max="20"/></div>
+          <button type="button" class="par-btn-sm" onclick="addPoste()" style="margin-bottom:0">+ Ajouter</button>
+        </div>
+      </div>
+
+      <!-- Section Événements -->
+      <div class="par-section">
+        <div class="par-sh">🎪 Tous les événements</div>
+        <div id="par-events-list"></div>
+        <button type="button" class="par-btn" onclick="createNewEvent()" style="background:linear-gradient(135deg,#f5a623,#e8652a)">+ Nouvel événement</button>
+      </div>
+
+    </div>
+  </div>
 </div>
 
 <!-- Modal créneau -->
@@ -540,13 +622,16 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 
 <script>
 const PIN='1234';
-const POSTES_DEF={Parking:["P1","P premium","P3-PMR-Buvette","P COF","Moto","STEP"],Circulation:["Rond-point","Levant","Landes","Piscine","Navette TPN","Station service","Port Vidoli","Passage piéton"],Entretien:["Montage+Démontage","Démontage"]};
-// Rond-point → 3, Levant → 2
-const POSTES_NEC={"P1":9,"P premium":4,"P3-PMR-Buvette":2,"P COF":2,"Moto":1,"STEP":2,"Rond-point":3,"Levant":2,"Landes":2,"Piscine":2,"Navette TPN":2,"Station service":2,"Port Vidoli":2,"Passage piéton":2,"Montage+Démontage":7,"Démontage":3};
-const JOURS=[{k:"17",lbl:"17 juin",wd:"Mer."},{k:"18",lbl:"18 juin",wd:"Jeu."},{k:"19",lbl:"19 juin",wd:"Ven."},{k:"20",lbl:"20 juin",wd:"Sam."}];
-const SECS=["Parking","Circulation","Entretien"];
-// Couleurs secteurs : bleu pour Parking, orange/corail pour Circulation, vert pour Entretien
-const SCLR={Parking:"#38bdf8",Circulation:"#fb923c",Entretien:"#34d399"};
+// Config dynamique — modifiable via l'onglet Paramètres
+// Valeurs par défaut pour Caribana 2026
+let POSTES_DEF={Parking:["P1","P premium","P3-PMR-Buvette","P COF","Moto","STEP"],Circulation:["Rond-point","Levant","Landes","Piscine","Navette TPN","Station service","Port Vidoli","Passage piéton"],Entretien:["Montage+Démontage","Démontage"]};
+let POSTES_NEC={"P1":9,"P premium":4,"P3-PMR-Buvette":2,"P COF":2,"Moto":1,"STEP":2,"Rond-point":3,"Levant":2,"Landes":2,"Piscine":2,"Navette TPN":2,"Station service":2,"Port Vidoli":2,"Passage piéton":2,"Montage+Démontage":7,"Démontage":3};
+let JOURS=[{k:"17",lbl:"17 juin",wd:"Mer."},{k:"18",lbl:"18 juin",wd:"Jeu."},{k:"19",lbl:"19 juin",wd:"Ven."},{k:"20",lbl:"20 juin",wd:"Sam."}];
+let SECS=["Parking","Circulation","Entretien"];
+let SCLR={Parking:"#38bdf8",Circulation:"#fb923c",Entretien:"#34d399"};
+// Événement actif
+let currentEvent={id:'caribana2026',nom:'Caribana 2026',desc:'Festival annuel',deb:'2026-06-17',fin:'2026-06-20'};
+let allEvents=[{...currentEvent}];
 const BCOLS=["#0284c7","#059669","#7c3aed","#d97706","#be123c","#0891b2","#6d28d9","#065f46","#9f1239","#1d4ed8","#0369a1","#4d7c0f","#86198f","#c2410c","#0f766e","#a21caf","#166534","#9333ea","#0284c7","#16a34a"];
 
 let role=null,rSel=null,bens=[],slots=[],assigns={};
@@ -560,7 +645,7 @@ let assignEditing=null,_assignDays={};
 let _i=Date.now();const uid=()=>String(_i++);
 
 // ═══ API CALLS ═══
-const API='/api/notion';
+const API='/api/supabase';
 async function apiGet(p){const r=await fetch(API+p);if(!r.ok)throw new Error(r.status);return r.json();}
 async function apiPost(p,b){const r=await fetch(API+p,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});if(!r.ok)throw new Error(r.status);return r.json();}
 async function apiPatch(p,b){const r=await fetch(API+p,{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)});if(!r.ok)throw new Error(r.status);return r.json();}
@@ -572,17 +657,36 @@ function setSync(s,t){const d=document.getElementById('sdot'),tx=document.getEle
 function selR(r){rSel=r;document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('rc-'+r).classList.add('sel');if(r==='admin'){document.getElementById('pz').classList.add('show');document.getElementById('pi').value='';document.getElementById('pe').style.display='none';document.getElementById('be').disabled=true;setTimeout(()=>document.getElementById('pi').focus(),60);}else{document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=false;}}
 document.getElementById('pi').addEventListener('input',function(){const v=this.value;document.getElementById('pe').style.display='none';if(v.length===4){const ok=v===PIN;document.getElementById('be').disabled=!ok;if(!ok)document.getElementById('pe').style.display='block';}else document.getElementById('be').disabled=true;});
 document.getElementById('pi').addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('be').disabled)goIn();});
-function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';loadAll();}
+function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';loadAll();}
 function deco(){role=null;rSel=null;document.getElementById('AP').className='';document.getElementById('AP').style.display='none';document.getElementById('login').style.display='flex';document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=true;}
 const isA=()=>role==='admin';
-function stab(n){document.querySelectorAll('.nt').forEach((t,i)=>t.classList.toggle('act',['planning','benevoles','stats'][i]===n));document.getElementById('pg-planning').style.display=n==='planning'?'flex':'none';document.getElementById('pg-benevoles').style.display=n==='benevoles'?'block':'none';document.getElementById('pg-stats').style.display=n==='stats'?'block':'none';if(n==='stats')renderStats();if(n==='benevoles')renderBens();}
+function stab(n){
+  ['planning','benevoles','stats','params'].forEach((tab,i)=>{
+    const btn=document.querySelectorAll('.nt')[i];
+    if(btn)btn.classList.toggle('act',tab===n);
+  });
+  document.getElementById('pg-planning').style.display=n==='planning'?'flex':'none';
+  document.getElementById('pg-benevoles').style.display=n==='benevoles'?'block':'none';
+  document.getElementById('pg-stats').style.display=n==='stats'?'block':'none';
+  document.getElementById('pg-params').style.display=n==='params'?'block':'none';
+  if(n==='stats')renderStats();
+  if(n==='benevoles')renderBens();
+  if(n==='params')renderParams();
+}
 
 // ═══ CHARGEMENT ═══
 async function loadAll(){
   setSync('syncing','Chargement...');
   showLoading('Chargement des données...');
   try{
-    const [bd,sd,ad]=await Promise.all([apiGet('/bens'),apiGet('/slots'),apiGet('/assigns')]);
+    // Charger d'abord les événements
+    await loadAllEvents();
+    const eid=currentEvent.id;
+    const [bd,sd,ad]=await Promise.all([
+      apiGet('/bens?event_id='+eid),
+      apiGet('/slots?event_id='+eid),
+      apiGet('/assigns')
+    ]);
     bens=bd.bens||[];
     slots=sd.slots||[];
     // assigns[sid] = tableau de benIds (pour compatibilité vues)
@@ -1138,7 +1242,7 @@ async function saveBen(){
   cm('m-ben');setSync('syncing','Sauvegarde...');
   try{
     if(eBid){Object.assign(bens.find(x=>x.id===eBid),d);await apiPatch('/bens/'+eBid,d);}
-    else{const r=await apiPost('/bens',d);bens.push({id:r.id,...d});}
+    else{const r=await apiPost('/bens',{...d,event_id:currentEvent.id});bens.push({id:r.id,...d,event_id:currentEvent.id});}
     setSync('ok','Synchronisé');
   }catch(err){setSync('err','Erreur');console.error(err);}
   requestAnimationFrame(()=>{renderBens();if(curView==='sem')renderContent();updMq();});
@@ -1546,6 +1650,252 @@ async function confirmImport(){
   setSync('ok',`${ok} importés`);
   renderBens();updMq();
   if(toImport.length-nouveaux.length>0)alert(`${ok} bénévoles importés.\n${toImport.length-nouveaux.length} ignorés (déjà existants).`);
+}
+
+// ═══ PARAMÈTRES ═══
+const JOURS_WD=['Dim.','Lun.','Mar.','Mer.','Jeu.','Ven.','Sam.'];
+const COLS_PALETTE=['#38bdf8','#fb923c','#34d399','#a78bfa','#f87171','#fbbf24','#4ade80','#60a5fa','#e879f9','#f472b6'];
+
+async function saveConfig(){
+  // Sauvegarder la config de l'event courant dans Supabase
+  const cfg={secs:SECS,sclr:SCLR,postes_def:POSTES_DEF,postes_nec:POSTES_NEC,jours:JOURS};
+  try{
+    await apiPatch('/events/'+currentEvent.id,{
+      nom:currentEvent.nom,
+      description:currentEvent.description||'',
+      deb:currentEvent.deb||null,
+      fin:currentEvent.fin||null,
+      config:cfg
+    });
+  }catch(e){console.error('saveConfig:',e);}
+}
+
+async function loadAllEvents(){
+  try{
+    const data=await apiGet('/events');
+    allEvents=data.events||[];
+    if(!allEvents.length){
+      // Aucun event en base — créer Caribana par défaut (ne devrait pas arriver)
+      return;
+    }
+    // Chercher l'event actif (le dernier utilisé stocké en session)
+    const lastId=sessionStorage.getItem('lfmr_event_id');
+    const ev=allEvents.find(e=>e.id===lastId)||allEvents[0];
+    applyEvent(ev);
+  }catch(e){console.error('loadAllEvents:',e);}
+}
+
+function applyEvent(ev){
+  if(!ev)return;
+  currentEvent={id:ev.id,nom:ev.nom,description:ev.description||'',deb:ev.deb||'',fin:ev.fin||''};
+  sessionStorage.setItem('lfmr_event_id',ev.id);
+  const cfg=ev.config||{};
+  if(cfg.secs&&cfg.secs.length)SECS=cfg.secs;
+  if(cfg.sclr&&Object.keys(cfg.sclr).length)SCLR=cfg.sclr;
+  if(cfg.postes_def&&Object.keys(cfg.postes_def).length)POSTES_DEF=cfg.postes_def;
+  if(cfg.postes_nec&&Object.keys(cfg.postes_nec).length)POSTES_NEC=cfg.postes_nec;
+  if(cfg.jours&&cfg.jours.length)JOURS=cfg.jours;
+}
+
+function renderParams(){
+  renderParamsJours();
+  renderParamsSecs();
+  renderParamsPostes();
+  renderParamsEvents();
+  // Pré-remplir infos événement
+  document.getElementById('par-nom').value=currentEvent.nom||'';
+  document.getElementById('par-desc').value=currentEvent.desc||'';
+  document.getElementById('par-deb').value=currentEvent.deb||'';
+  document.getElementById('par-fin').value=currentEvent.fin||'';
+}
+
+function saveEventParams(){
+  const nom=document.getElementById('par-nom').value.trim();
+  const desc=document.getElementById('par-desc').value.trim();
+  const deb=document.getElementById('par-deb').value;
+  const fin=document.getElementById('par-fin').value;
+  if(!nom){alert('Le nom est obligatoire.');return;}
+  currentEvent={...currentEvent,nom,desc,deb,fin};
+  // Recalculer les jours depuis les dates si renseignées
+  if(deb&&fin){
+    const d1=new Date(deb),d2=new Date(fin);
+    const newJours=[];
+    for(let d=new Date(d1);d<=d2;d.setDate(d.getDate()+1)){
+      const day=d.getDate();
+      const month=d.toLocaleString('fr',{month:'long'});
+      const wd=JOURS_WD[d.getDay()];
+      newJours.push({k:String(day),lbl:day+' '+month,wd});
+    }
+    if(newJours.length>0&&newJours.length<=14)JOURS=newJours;
+  }
+  // Mettre à jour dans allEvents
+  const idx=allEvents.findIndex(e=>e.id===currentEvent.id);
+  if(idx>=0)allEvents[idx]={...currentEvent};
+  await saveConfig();
+  renderParams();
+  renderAll();
+  // Flash confirmation
+  const btn=event.target;btn.textContent='✅ Sauvegardé !';setTimeout(()=>btn.textContent='💾 Sauvegarder l\'événement',1500);
+}
+
+// ── Jours ──
+function renderParamsJours(){
+  const el=document.getElementById('par-jours-list');
+  el.innerHTML=JOURS.map((j,i)=>`
+    <div class="par-row">
+      <div class="par-row-nm">${j.lbl}</div>
+      <div class="par-row-meta">${j.wd}</div>
+      <button type="button" class="par-row-del" onclick="delJour(${i})" title="Supprimer">✕</button>
+    </div>`).join('');
+}
+function addJour(){
+  const lbl=prompt('Nom du jour (ex: 21 juin) :');
+  if(!lbl)return;
+  const day=parseInt(lbl);
+  const wd=lbl.includes('lun')||lbl.includes('Lun')?'Lun.':lbl.includes('mar')||lbl.includes('Mar')?'Mar.':lbl.includes('mer')||lbl.includes('Mer')?'Mer.':lbl.includes('jeu')||lbl.includes('Jeu')?'Jeu.':lbl.includes('ven')||lbl.includes('Ven')?'Ven.':lbl.includes('sam')||lbl.includes('Sam')?'Sam.':'Dim.';
+  JOURS.push({k:String(day||lbl),lbl,wd});
+  saveConfig();renderParamsJours();renderAll();
+}
+function delJour(i){
+  if(!confirm('Supprimer ce jour ?'))return;
+  JOURS.splice(i,1);saveConfig();renderParamsJours();renderAll();
+}
+
+// ── Secteurs ──
+function renderParamsSecs(){
+  const el=document.getElementById('par-secs-list');
+  el.innerHTML=SECS.map(sec=>`
+    <div class="par-row">
+      <div style="width:14px;height:14px;border-radius:50%;background:${SCLR[sec]||'#94a3b8'};flex-shrink:0"></div>
+      <div class="par-row-nm">${sec}</div>
+      <div class="par-row-meta">${(POSTES_DEF[sec]||[]).length} poste(s)</div>
+      <button type="button" class="par-row-del" onclick="delSec('${sec}')" title="Supprimer">✕</button>
+    </div>`).join('');
+}
+function addSec(){
+  const nom=document.getElementById('par-new-sec').value.trim();
+  const col=document.getElementById('par-new-sec-col').value;
+  if(!nom){alert('Nom obligatoire.');return;}
+  if(SECS.includes(nom)){alert('Ce secteur existe déjà.');return;}
+  SECS.push(nom);SCLR[nom]=col;POSTES_DEF[nom]=[];
+  document.getElementById('par-new-sec').value='';
+  saveConfig();renderParamsSecs();renderParamsPostes();updSecSelects();renderAll();
+}
+function delSec(sec){
+  if(!confirm(`Supprimer le secteur "${sec}" et tous ses postes ?`))return;
+  SECS=SECS.filter(s=>s!==sec);
+  delete SCLR[sec];delete POSTES_DEF[sec];
+  saveConfig();renderParamsSecs();renderParamsPostes();updSecSelects();renderAll();
+}
+
+// ── Postes ──
+function renderParamsPostes(){
+  const el=document.getElementById('par-postes-list');
+  let h='';
+  SECS.forEach(sec=>{
+    const col=SCLR[sec]||'#94a3b8';
+    const postes=POSTES_DEF[sec]||[];
+    h+=`<div style="margin-bottom:10px">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:${col};margin-bottom:5px;letter-spacing:.4px">● ${sec}</div>`;
+    postes.forEach((pos,i)=>{
+      h+=`<div class="par-row">
+        <div class="par-row-nm">${pos}</div>
+        <div class="par-row-meta">${POSTES_NEC[pos]||2} bén. requis</div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <input type="number" value="${POSTES_NEC[pos]||2}" min="1" max="30"
+            style="width:52px;background:#0c1929;border:1px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:5px;padding:3px 6px;font-size:11px;outline:none"
+            onchange="updateNec('${pos}',this.value)"/>
+          <button type="button" class="par-row-del" onclick="delPoste('${sec}','${pos.replace(/'/g,"\\'")}')">✕</button>
+        </div>
+      </div>`;
+    });
+    h+='</div>';
+  });
+  el.innerHTML=h||'<div style="color:#4d7fa0;font-size:12px">Aucun poste.</div>';
+  // Mettre à jour le select secteur du formulaire ajout
+  updSecSelects();
+}
+function updSecSelects(){
+  const sel=document.getElementById('par-new-pos-sec');
+  if(sel)sel.innerHTML=SECS.map(s=>`<option value="${s}">${s}</option>`).join('');
+}
+function updateNec(pos,val){
+  POSTES_NEC[pos]=Math.max(1,parseInt(val)||1);
+  saveConfig();updMq();
+}
+function addPoste(){
+  const nom=document.getElementById('par-new-pos').value.trim();
+  const sec=document.getElementById('par-new-pos-sec').value;
+  const nec=parseInt(document.getElementById('par-new-pos-nec').value)||2;
+  if(!nom){alert('Nom obligatoire.');return;}
+  if(!POSTES_DEF[sec])POSTES_DEF[sec]=[];
+  if(POSTES_DEF[sec].includes(nom)){alert('Ce poste existe déjà dans ce secteur.');return;}
+  POSTES_DEF[sec].push(nom);
+  POSTES_NEC[nom]=nec;
+  document.getElementById('par-new-pos').value='';
+  saveConfig();renderParamsPostes();renderAll();
+}
+function delPoste(sec,pos){
+  if(!confirm(`Supprimer le poste "${pos}" ?`))return;
+  POSTES_DEF[sec]=(POSTES_DEF[sec]||[]).filter(p=>p!==pos);
+  delete POSTES_NEC[pos];
+  saveConfig();renderParamsPostes();renderAll();
+}
+
+// ── Événements ──
+function renderParamsEvents(){
+  const el=document.getElementById('par-events-list');
+  el.innerHTML=allEvents.map(ev=>`
+    <div class="par-event-card ${ev.id===currentEvent.id?'active':''}" onclick="switchEvent('${ev.id}')">
+      <div style="font-size:22px">${ev.id===currentEvent.id?'🎪':'📅'}</div>
+      <div style="flex:1">
+        <div class="par-event-name">${ev.nom}${ev.id===currentEvent.id?' <span style="font-size:10px;background:rgba(245,166,35,.2);color:#f5a623;border-radius:4px;padding:1px 6px;margin-left:6px">Actif</span>':''}</div>
+        <div class="par-event-dates">${ev.deb&&ev.fin?ev.deb+' → '+ev.fin:ev.desc||'Dates non définies'}</div>
+      </div>
+      ${ev.id!==currentEvent.id?`<button type="button" class="par-row-del" onclick="event.stopPropagation();delEvent('${ev.id}')" title="Supprimer">✕</button>`:''}
+    </div>`).join('');
+}
+
+function switchEvent(eid){
+  if(eid===currentEvent.id)return;
+  if(!confirm('Changer d\'événement ? Les données actuelles resteront en base.'))return;
+  const ev=allEvents.find(e=>e.id===eid);
+  if(!ev)return;
+  applyEvent(ev);
+  bens=[];slots=[];assigns={};_assignDays={};
+  loadAll();
+}
+
+async function createNewEvent(){
+  const nom=prompt('Nom du nouvel événement :');
+  if(!nom)return;
+  try{
+    setSync('syncing','Création...');
+    const r=await apiPost('/events',{nom,description:'',deb:null,fin:null,config:{}});
+    const newEv={id:r.id,nom,description:'',deb:'',fin:'',config:{}};
+    allEvents.push(newEv);
+    setSync('ok','Créé');
+    if(confirm(`Événement "${nom}" créé. Basculer dessus maintenant ?`)){
+      applyEvent(newEv);
+      bens=[];slots=[];assigns={};_assignDays={};
+      POSTES_DEF={};POSTES_NEC={};JOURS=[];SECS=[];SCLR={};
+      renderParams();renderAll();
+      document.getElementById('par-nom').focus();
+    } else {
+      renderParamsEvents();
+    }
+  }catch(e){setSync('err','Erreur');console.error(e);}
+}
+
+async function delEvent(eid){
+  if(allEvents.length<=1){alert('Tu ne peux pas supprimer le seul événement.');return;}
+  const ev=allEvents.find(e=>e.id===eid);
+  if(!confirm(`Supprimer l'événement "${ev?.nom}" définitivement ?`))return;
+  try{
+    await apiDel('/events/'+eid);
+    allEvents=allEvents.filter(e=>e.id!==eid);
+    renderParamsEvents();
+  }catch(e){console.error(e);alert('Erreur lors de la suppression.');}
 }
 
 // ═══ UTILS ═══

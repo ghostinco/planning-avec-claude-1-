@@ -31,14 +31,37 @@ exports.handler = async (event) => {
   const err = (msg, code = 500) => ({ statusCode: code, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: msg }) });
 
   try {
-    const path = event.path.replace('/.netlify/functions/notion', '').replace('/api/notion', '');
+    const path = event.path.replace('/.netlify/functions/supabase', '').replace('/api/supabase', '');
     const method = event.httpMethod;
     const body = event.body ? JSON.parse(event.body) : {};
     const params = event.queryStringParameters || {};
 
+    // ── ÉVÉNEMENTS ──
+    if (path === '/events' && method === 'GET') {
+      const data = await supa('events?select=*&order=created_at');
+      return ok({ events: Array.isArray(data) ? data : [] });
+    }
+    if (path === '/events' && method === 'POST') {
+      const data = await supa('events', 'POST', body);
+      return ok({ id: Array.isArray(data) ? data[0]?.id : data?.id, event: Array.isArray(data) ? data[0] : data });
+    }
+    if (path.startsWith('/events/') && method === 'PATCH') {
+      const id = path.split('/')[2];
+      await supa(`events?id=eq.${id}`, 'PATCH', body);
+      return ok({ ok: true });
+    }
+    if (path.startsWith('/events/') && method === 'DELETE') {
+      const id = path.split('/')[2];
+      await supa(`events?id=eq.${id}`, 'DELETE');
+      return ok({ ok: true });
+    }
+
     // ── BÉNÉVOLES ──
     if (path === '/bens' && method === 'GET') {
-      const data = await supa('bens?select=*&order=created_at');
+      // Filtrer par event_id si fourni
+      const eid = params.event_id;
+      const filter = eid ? `bens?event_id=eq.${eid}&select=*&order=created_at` : 'bens?select=*&order=created_at';
+      const data = await supa(filter);
       return ok({ bens: Array.isArray(data) ? data : [] });
     }
     if (path === '/bens' && method === 'POST') {
@@ -58,7 +81,9 @@ exports.handler = async (event) => {
 
     // ── CRÉNEAUX ──
     if (path === '/slots' && method === 'GET') {
-      const data = await supa('slots?select=*&order=created_at');
+      const eid = params.event_id;
+      const filter = eid ? `slots?event_id=eq.${eid}&select=*&order=created_at` : 'slots?select=*&order=created_at';
+      const data = await supa(filter);
       return ok({ slots: Array.isArray(data) ? data : [] });
     }
     if (path === '/slots' && method === 'POST') {
@@ -79,7 +104,12 @@ exports.handler = async (event) => {
 
     // ── ASSIGNATIONS ──
     if (path === '/assigns' && method === 'GET') {
-      const data = await supa('assigns?select=*');
+      const eid = params.event_id;
+      // Pour filtrer les assigns par event, on passe par les slots
+      const filter = eid
+        ? `assigns?select=*,slots!inner(event_id)&slots.event_id=eq.${eid}`
+        : 'assigns?select=*';
+      const data = await supa(filter);
       return ok({ assigns: Array.isArray(data) ? data : [] });
     }
     if (path === '/assigns' && method === 'POST') {
@@ -91,7 +121,6 @@ exports.handler = async (event) => {
       await supa(`assigns?id=eq.${id}`, 'DELETE');
       return ok({ ok: true });
     }
-    // Supprimer par slot+ben
     if (path === '/assigns/remove' && method === 'POST') {
       const { slot_id, ben_id } = body;
       await supa(`assigns?slot_id=eq.${slot_id}&ben_id=eq.${ben_id}`, 'DELETE');
