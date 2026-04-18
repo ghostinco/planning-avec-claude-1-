@@ -125,18 +125,12 @@ exports.handler = async (event) => {
       const rows = sheetsData.values || [];
       if (rows.length < 2) return ok({ added:0, updated:0, skipped:0 });
       const headers = rows[0].map(h => String(h).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim());
-      // Détection précise — chercher match exact d'abord, puis partiel
-      const col = (kws) => {
-        // Essai match exact
-        let idx = headers.findIndex(h => kws.some(k => h === k));
-        if (idx >= 0) return idx;
-        // Essai match partiel
-        return headers.findIndex(h => kws.some(k => h.includes(k)));
-      };
-      // Prénom : chercher 'prénom' exact avant 'nom'
-      const cP = headers.findIndex(h => h==='prénom'||h==='prenom'||h==='first name'||h==='firstname'||(h.startsWith('pr') && h.includes('nom')));
-      // Nom : chercher 'nom' seul (pas prénom)
-      const cN = headers.findIndex((h,i) => i!==cP && (h==='nom'||h==='last name'||h==='lastname'||h==='surname'||(h==='nom' )));
+      // Détection simple et fiable
+      const col = (kws) => headers.findIndex(h => kws.some(k => h.includes(k)));
+      // Prénom : index exact de 'prenom' (sans 'nom' seul)
+      const cP = headers.findIndex(h => h==='prenom' || h.startsWith('prenom') || h==='first name' || h==='firstname');
+      // Nom : chercher 'nom' mais pas dans 'prenom'
+      const cN = headers.findIndex((h,i) => i !== cP && (h==='nom' || h==='last name' || h==='lastname' || h==='surname'));
       const cD = col(['naissance','birth','ddn']); const cT = col(['telephone','tel','phone','mobile','+41']);
       const cTa = col(['taille','t-shirt','tshirt','shirt']); const cDi = col(['disponible','dispo','present','quand']);
       const cR = col(['remarque','comment','note']);
