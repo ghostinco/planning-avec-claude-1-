@@ -740,15 +740,15 @@ const totMq=()=>JOURS.reduce((t,j)=>t+mqJ(j.lbl),0);
 function computeLanes(shs){const lanes=[];shs.forEach(s=>{const sm=tToMin(s.start_time),em=tToMin(s.end_time);let placed=false;for(const lane of lanes){if(!lane.some(x=>tToMin(x.start_time)<em&&tToMin(x.end_time)>sm)){lane.push(s);placed=true;break;}}if(!placed)lanes.push([s]);});return lanes;}
 function filteredRows(){let rows=[];SECS.forEach(sec=>(POSTES_DEF[sec]||[]).forEach(p=>rows.push({sec,pos:p})));if(sbSelected.size>0)rows=rows.filter(({sec,pos})=>sbSelected.has('sec:'+sec)||sbSelected.has('pos:'+pos));return rows;}
 
-function renderAll(){updMq();renderChips();renderContent();renderVbarR();}
+function renderAll(){updMq();renderChips();renderContent();renderVbarR();if(JOURS[dayIdx])document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;}
 function updMq(){const m=totMq();const b=document.getElementById('mqb');b.textContent=m+' manquant'+(m!==1?'s':'');b.className='mqb'+(m===0?' ok':'');}
 
 // ═══ VUES ═══
 let semSearch='';
 function setView(v){curView=v;['sem','jour','sv'].forEach(x=>document.getElementById('vb-'+x).classList.toggle('act',x===v));document.getElementById('dnav').style.display=v!=='sem'?'flex':'none';const ssw=document.getElementById('sem-search-wrap');if(ssw)ssw.style.display=v==='sem'?'block':'none';renderContent();renderVbarR();}
 function semSearchChange(val){semSearch=val.toLowerCase();renderSemaine();}
-function prevDay(){dayIdx=Math.max(0,dayIdx-1);document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;renderAll();}
-function nextDay(){dayIdx=Math.min(3,dayIdx+1);document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;renderAll();}
+function prevDay(){dayIdx=Math.max(0,dayIdx-1);if(JOURS[dayIdx])document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;renderAll();}
+function nextDay(){dayIdx=Math.min(JOURS.length-1,dayIdx+1);if(JOURS[dayIdx])document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;renderAll();}
 function renderVbarR(){const r=document.getElementById('vbar-r');if(!isA()){r.innerHTML='<span style="font-size:11px;color:#2d5a7a">Observation</span>';return;}r.innerHTML=`<button type="button" class="tbtn" onclick="openAutoAssign()" title="Placement automatique">🎲 Auto-assign</button><button type="button" class="tbtn hi" onclick="openNewSlot()">+ Nouveau créneau</button>`;}
 function renderContent(){if(curView==='sem')renderSemaine();else if(curView==='jour')renderJour();else renderSV();}
 
@@ -1230,7 +1230,7 @@ async function saveAssign(){
 
 // ═══ BÉNÉVOLES CRUD ═══
 function selType(t){bTypeCur=t;document.getElementById('t-rot').classList.toggle('sel',t==='rotatif');document.getElementById('t-fix').classList.toggle('sel',t==='fixe');}
-function updMbPostes(){const sec=document.getElementById('mb-sec').value;document.getElementById('mb-pos').innerHTML=(POSTES_DEF[sec]||[]).map(p=>`<option>${p}</option>`).join('');}
+function updMbPostes(){const sec=document.getElementById('mb-sec')?.value||'';const ps=POSTES_DEF[sec]||[];document.getElementById('mb-pos').innerHTML=ps.map(p=>`<option>${p}</option>`).join('');}
 function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);document.getElementById('mb-sec').value='Parking';updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
 function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';document.getElementById('mb-sec').value=b.sec||'Parking';document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
 
@@ -1906,7 +1906,7 @@ document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.
 document.getElementById('msl-s').addEventListener('change',chkSlotDur);
 document.getElementById('msl-e').addEventListener('change',chkSlotDur);
 updMbPostes();
-document.getElementById('dnl').textContent=JOURS[0].lbl;
+if(JOURS.length)document.getElementById('dnl').textContent=JOURS[0].lbl;
 </script>
 </body>
 </html>
