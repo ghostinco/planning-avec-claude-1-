@@ -1711,18 +1711,18 @@ function renderParams(){
   renderParamsEvents();
   // Pré-remplir infos événement
   document.getElementById('par-nom').value=currentEvent.nom||'';
-  document.getElementById('par-desc').value=currentEvent.desc||'';
+  document.getElementById('par-desc').value=currentEvent.description||currentEvent.desc||'';
   document.getElementById('par-deb').value=currentEvent.deb||'';
   document.getElementById('par-fin').value=currentEvent.fin||'';
 }
 
-function saveEventParams(){
+async function saveEventParams(){
   const nom=document.getElementById('par-nom').value.trim();
   const desc=document.getElementById('par-desc').value.trim();
   const deb=document.getElementById('par-deb').value;
   const fin=document.getElementById('par-fin').value;
   if(!nom){alert('Le nom est obligatoire.');return;}
-  currentEvent={...currentEvent,nom,desc,deb,fin};
+  currentEvent={...currentEvent,nom,description:desc,deb,fin};
   // Recalculer les jours depuis les dates si renseignées
   if(deb&&fin){
     const d1=new Date(deb),d2=new Date(fin);
