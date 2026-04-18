@@ -2572,13 +2572,42 @@ function delJour(i){
 // ── Secteurs ──
 function renderParamsSecs(){
   const el=document.getElementById('par-secs-list');
-  el.innerHTML=SECS.map(sec=>`
-    <div class="par-row">
+  el.innerHTML=SECS.map((sec,si)=>`
+    <div class="par-row" id="par-sec-row-${si}">
       <div style="width:14px;height:14px;border-radius:50%;background:${SCLR[sec]||'#94a3b8'};flex-shrink:0"></div>
-      <div class="par-row-nm">${sec}</div>
+      <div class="par-row-nm" style="cursor:pointer;flex:1" onclick="startRenameSec(${si},'${sec.replace(/'/g,"\'")}')">
+        ${sec} <span style="font-size:9px;color:#2d5a7a">✎</span>
+      </div>
       <div class="par-row-meta">${(POSTES_DEF[sec]||[]).length} poste(s)</div>
       <button type="button" class="par-row-del" onclick="delSec('${sec}')" title="Supprimer">✕</button>
     </div>`).join('');
+}
+
+function startRenameSec(idx,oldNom){
+  const row=document.getElementById('par-sec-row-'+idx);if(!row)return;
+  const nmDiv=row.querySelector('.par-row-nm');
+  nmDiv.innerHTML=`<input type="text" value="${oldNom}"
+    style="flex:1;background:#0c1929;border:1.5px solid rgba(245,166,35,.4);color:#f0f9ff;border-radius:6px;padding:4px 8px;font-size:12px;outline:none;width:100%"
+    id="rename-sec-${idx}"
+    onblur="confirmRenameSec(${idx},'${oldNom.replace(/'/g,"\'")}',this.value)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${oldNom.replace(/'/g,"\'")}';this.blur();}"/>`;
+  setTimeout(()=>{const inp=document.getElementById('rename-sec-'+idx);if(inp){inp.focus();inp.select();}},30);
+}
+
+function confirmRenameSec(idx,oldNom,newNom){
+  newNom=newNom.trim();
+  if(!newNom||newNom===oldNom){renderParamsSecs();return;}
+  if(SECS.includes(newNom)){alert('Ce secteur existe déjà.');renderParamsSecs();return;}
+  // Renommer dans SECS
+  SECS[idx]=newNom;
+  // Migrer SCLR, POSTES_DEF
+  if(SCLR[oldNom]){SCLR[newNom]=SCLR[oldNom];delete SCLR[oldNom];}
+  if(POSTES_DEF[oldNom]){POSTES_DEF[newNom]=POSTES_DEF[oldNom];delete POSTES_DEF[oldNom];}
+  // Migrer les bénévoles
+  bens.forEach(b=>{if(b.sec===oldNom)b.sec=newNom;});
+  // Migrer les slots
+  slots.forEach(sl=>{if(sl.sec===oldNom)sl.sec=newNom;});
+  saveConfig();renderParamsSecs();renderParamsPostes();updSecSelects();renderAll();
 }
 function addSec(){
   const nom=document.getElementById('par-new-sec').value.trim();
@@ -2606,10 +2635,13 @@ function renderParamsPostes(){
     h+=`<div style="margin-bottom:10px">
       <div style="font-size:10px;font-weight:800;text-transform:uppercase;color:${col};margin-bottom:5px;letter-spacing:.4px">● ${sec}</div>`;
     postes.forEach((pos,i)=>{
-      h+=`<div class="par-row">
-        <div class="par-row-nm">${pos}</div>
-        <div class="par-row-meta">${POSTES_NEC[pos]||2} bén. requis</div>
+      h+=`<div class="par-row" id="par-pos-row-${sec}-${i}">
+        <div class="par-row-nm" style="cursor:pointer;flex:1" onclick="startRenamePoste('${sec}',${i},'${pos.replace(/'/g,"\\'")}')" title="Cliquer pour renommer">${pos} <span style="font-size:9px;color:#2d5a7a">✎</span></div>
         <div style="display:flex;align-items:center;gap:4px">
+          <select style="background:#0c1929;border:1px solid rgba(56,189,248,.2);color:#4d7fa0;border-radius:5px;padding:3px 5px;font-size:10px;outline:none;cursor:pointer" title="Changer de secteur"
+            onchange="movePoste('${sec}','${pos.replace(/'/g,"\\'")}',this.value);this.value='${sec}'">
+            ${SECS.map(s=>`<option value="${s}"${s===sec?' selected':''}>${s}</option>`).join('')}
+          </select>
           <input type="number" value="${POSTES_NEC[pos]||2}" min="1" max="30"
             style="width:52px;background:#0c1929;border:1px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:5px;padding:3px 6px;font-size:11px;outline:none"
             onchange="updateNec('${pos}',this.value)"/>
@@ -2620,8 +2652,34 @@ function renderParamsPostes(){
     h+='</div>';
   });
   el.innerHTML=h||'<div style="color:#4d7fa0;font-size:12px">Aucun poste.</div>';
-  // Mettre à jour le select secteur du formulaire ajout
   updSecSelects();
+}
+
+function startRenamePoste(sec,idx,oldNom){
+  const rowId=`par-pos-row-${sec}-${idx}`;
+  const row=document.getElementById(rowId);
+  if(!row)return;
+  const nmDiv=row.querySelector('.par-row-nm');
+  nmDiv.innerHTML=`<input type="text" value="${oldNom}"
+    style="flex:1;background:#0c1929;border:1.5px solid rgba(245,166,35,.4);color:#f0f9ff;border-radius:6px;padding:4px 8px;font-size:12px;outline:none;width:100%"
+    id="rename-inp-${idx}"
+    onblur="confirmRenamePoste('${sec}',${idx},'${oldNom.replace(/'/g,"\\'")}',this.value)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${oldNom.replace(/'/g,"\\'")}';this.blur();}"/>`;
+  setTimeout(()=>{const inp=document.getElementById(`rename-inp-${idx}`);if(inp){inp.focus();inp.select();}},30);
+}
+
+function confirmRenamePoste(sec,idx,oldNom,newNom){
+  newNom=newNom.trim();
+  if(!newNom||newNom===oldNom){renderParamsPostes();return;}
+  if(POSTES_DEF[sec]&&POSTES_DEF[sec].includes(newNom)&&newNom!==oldNom){alert('Ce nom existe déjà.');renderParamsPostes();return;}
+  // Renommer dans POSTES_DEF
+  const i=POSTES_DEF[sec].indexOf(oldNom);
+  if(i>=0)POSTES_DEF[sec][i]=newNom;
+  // Migrer POSTES_NEC
+  if(POSTES_NEC[oldNom]!==undefined){POSTES_NEC[newNom]=POSTES_NEC[oldNom];delete POSTES_NEC[oldNom];}
+  // Migrer les slots existants
+  slots.forEach(sl=>{if(sl.pid===oldNom)sl.pid=newNom;});
+  saveConfig();renderParamsPostes();renderAll();
 }
 function updSecSelects(){
   const sel=document.getElementById('par-new-pos-sec');
@@ -2641,6 +2699,15 @@ function addPoste(){
   POSTES_DEF[sec].push(nom);
   POSTES_NEC[nom]=nec;
   document.getElementById('par-new-pos').value='';
+  saveConfig();renderParamsPostes();renderAll();
+}
+function movePoste(oldSec,pos,newSec){
+  if(oldSec===newSec)return;
+  // Retirer de l'ancien secteur
+  POSTES_DEF[oldSec]=(POSTES_DEF[oldSec]||[]).filter(p=>p!==pos);
+  // Ajouter au nouveau
+  if(!POSTES_DEF[newSec])POSTES_DEF[newSec]=[];
+  if(!POSTES_DEF[newSec].includes(pos))POSTES_DEF[newSec].push(pos);
   saveConfig();renderParamsPostes();renderAll();
 }
 function delPoste(sec,pos){
