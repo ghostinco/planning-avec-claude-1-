@@ -557,6 +557,21 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
         </div>
       </div>
 
+      <!-- Section Sync Google Sheets -->
+      <div class="par-section">
+        <div class="par-sh">🔄 Sync Google Sheets</div>
+        <div style="font-size:11px;color:#4d7fa0;margin-bottom:12px">Synchronise automatiquement les bénévoles depuis ton Google Forms → Sheets.</div>
+        <div class="par-grid">
+          <div class="fl" style="grid-column:1/-1"><label>URL ou ID du Google Sheets</label>
+            <input id="par-sheets-url" class="par-inp" type="text" placeholder="https://docs.google.com/spreadsheets/d/..." value="https://docs.google.com/spreadsheets/d/1SOtnMQK-CtIz7m_Gsh1HJrBmmRreM27mgF6wkbyqHkg/edit"/>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button type="button" class="par-btn" onclick="syncGoogleSheets()" id="btn-sync-sheets" style="background:linear-gradient(135deg,#34d399,#059669);border-color:transparent;color:#fff">🔄 Synchroniser maintenant</button>
+          <div id="sync-sheets-result" style="font-size:12px;color:#4d7fa0"></div>
+        </div>
+      </div>
+
       <!-- Section Événements -->
       <div class="par-section">
         <div class="par-sh">🎪 Tous les événements</div>
@@ -1946,6 +1961,35 @@ async function confirmImport(){
   setSync('ok',`${ok} importés`);
   renderBens();updMq();
   if(toImport.length-nouveaux.length>0)alert(`${ok} bénévoles importés.\n${toImport.length-nouveaux.length} ignorés (déjà existants).`);
+}
+
+// ═══ SYNC GOOGLE SHEETS ═══
+async function syncGoogleSheets(){
+  const urlOrId=document.getElementById('par-sheets-url').value.trim();
+  if(!urlOrId){alert('Entre l\'URL ou l\'ID du Google Sheets.');return;}
+  // Extraire l'ID depuis l'URL si nécessaire
+  let sheetId=urlOrId;
+  const m=urlOrId.match(/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  if(m)sheetId=m[1];
+  const btn=document.getElementById('btn-sync-sheets');
+  const res=document.getElementById('sync-sheets-result');
+  btn.textContent='⏳ Synchronisation...';btn.disabled=true;
+  res.textContent='';
+  setSync('syncing','Sync Sheets...');
+  try{
+    const r=await apiPost('/sync-sheets',{sheet_id:sheetId,event_id:currentEvent.id});
+    if(r.error)throw new Error(r.error);
+    res.innerHTML=`<span style="color:#34d399">✅ ${r.added} ajoutés · ${r.updated} mis à jour · ${r.skipped} ignorés (sur ${r.total} lignes)</span>`;
+    setSync('ok','Synchronisé');
+    // Recharger les bénévoles
+    const bd=await apiGet('/bens?event_id='+currentEvent.id);
+    bens=bd.bens||[];
+    renderBens();updMq();
+  }catch(e){
+    res.innerHTML=`<span style="color:#f87171">❌ Erreur: ${e.message}</span>`;
+    setSync('err','Erreur');
+  }
+  btn.textContent='🔄 Synchroniser maintenant';btn.disabled=false;
 }
 
 // ═══ CALENDRIER PARAMÈTRES ═══
