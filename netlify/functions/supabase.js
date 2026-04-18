@@ -106,7 +106,7 @@ exports.handler = async (event) => {
       if (!sheet_id) return err('sheet_id manquant');
       if (!GOOGLE_SERVICE_KEY) return err('GOOGLE_SERVICE_KEY non configure');
       const token = await getGoogleToken();
-      const sr = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheet_id}/values/A1:Z500`, {
+      const sr = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheet_id}/values/A1:Z500?valueRenderOption=FORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const sheetsData = await sr.json();
