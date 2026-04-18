@@ -623,15 +623,21 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 <script>
 const PIN='1234';
 // Config dynamique — modifiable via l'onglet Paramètres
-// Valeurs par défaut pour Caribana 2026
-let POSTES_DEF={Parking:["P1","P premium","P3-PMR-Buvette","P COF","Moto","STEP"],Circulation:["Rond-point","Levant","Landes","Piscine","Navette TPN","Station service","Port Vidoli","Passage piéton"],Entretien:["Montage+Démontage","Démontage"]};
-let POSTES_NEC={"P1":9,"P premium":4,"P3-PMR-Buvette":2,"P COF":2,"Moto":1,"STEP":2,"Rond-point":3,"Levant":2,"Landes":2,"Piscine":2,"Navette TPN":2,"Station service":2,"Port Vidoli":2,"Passage piéton":2,"Montage+Démontage":7,"Démontage":3};
-let JOURS=[{k:"17",lbl:"17 juin",wd:"Mer."},{k:"18",lbl:"18 juin",wd:"Jeu."},{k:"19",lbl:"19 juin",wd:"Ven."},{k:"20",lbl:"20 juin",wd:"Sam."}];
-let SECS=["Parking","Circulation","Entretien"];
-let SCLR={Parking:"#38bdf8",Circulation:"#fb923c",Entretien:"#34d399"};
-// Événement actif
-let currentEvent={id:'caribana2026',nom:'Caribana 2026',desc:'Festival annuel',deb:'2026-06-17',fin:'2026-06-20'};
-let allEvents=[{...currentEvent}];
+// Valeurs par défaut Caribana 2026 (fallback si Supabase pas encore chargé)
+const DEFAULT_CFG={
+  POSTES_DEF:{Parking:["P1","P premium","P3-PMR-Buvette","P COF","Moto","STEP"],Circulation:["Rond-point","Levant","Landes","Piscine","Navette TPN","Station service","Port Vidoli","Passage piéton"],Entretien:["Montage+Démontage","Démontage"]},
+  POSTES_NEC:{"P1":9,"P premium":4,"P3-PMR-Buvette":2,"P COF":2,"Moto":1,"STEP":2,"Rond-point":3,"Levant":2,"Landes":2,"Piscine":2,"Navette TPN":2,"Station service":2,"Port Vidoli":2,"Passage piéton":2,"Montage+Démontage":7,"Démontage":3},
+  JOURS:[{k:"17",lbl:"17 juin",wd:"Mer."},{k:"18",lbl:"18 juin",wd:"Jeu."},{k:"19",lbl:"19 juin",wd:"Ven."},{k:"20",lbl:"20 juin",wd:"Sam."}],
+  SECS:["Parking","Circulation","Entretien"],
+  SCLR:{Parking:"#38bdf8",Circulation:"#fb923c",Entretien:"#34d399"}
+};
+let POSTES_DEF={...DEFAULT_CFG.POSTES_DEF};
+let POSTES_NEC={...DEFAULT_CFG.POSTES_NEC};
+let JOURS=[...DEFAULT_CFG.JOURS];
+let SECS=[...DEFAULT_CFG.SECS];
+let SCLR={...DEFAULT_CFG.SCLR};
+let currentEvent={id:null,nom:'Caribana 2026',description:'Festival annuel',deb:'2026-06-17',fin:'2026-06-20'};
+let allEvents=[];
 const BCOLS=["#0284c7","#059669","#7c3aed","#d97706","#be123c","#0891b2","#6d28d9","#065f46","#9f1239","#1d4ed8","#0369a1","#4d7c0f","#86198f","#c2410c","#0f766e","#a21caf","#166534","#9333ea","#0284c7","#16a34a"];
 
 let role=null,rSel=null,bens=[],slots=[],assigns={};
@@ -1690,11 +1696,12 @@ function applyEvent(ev){
   currentEvent={id:ev.id,nom:ev.nom,description:ev.description||'',deb:ev.deb||'',fin:ev.fin||''};
   sessionStorage.setItem('lfmr_event_id',ev.id);
   const cfg=ev.config||{};
-  if(cfg.secs&&cfg.secs.length)SECS=cfg.secs;
-  if(cfg.sclr&&Object.keys(cfg.sclr).length)SCLR=cfg.sclr;
-  if(cfg.postes_def&&Object.keys(cfg.postes_def).length)POSTES_DEF=cfg.postes_def;
-  if(cfg.postes_nec&&Object.keys(cfg.postes_nec).length)POSTES_NEC=cfg.postes_nec;
-  if(cfg.jours&&cfg.jours.length)JOURS=cfg.jours;
+  // Appliquer config Supabase, sinon garder les defaults
+  SECS=cfg.secs&&cfg.secs.length?cfg.secs:[...DEFAULT_CFG.SECS];
+  SCLR=cfg.sclr&&Object.keys(cfg.sclr).length?cfg.sclr:{...DEFAULT_CFG.SCLR};
+  POSTES_DEF=cfg.postes_def&&Object.keys(cfg.postes_def).length?cfg.postes_def:{...DEFAULT_CFG.POSTES_DEF};
+  POSTES_NEC=cfg.postes_nec&&Object.keys(cfg.postes_nec).length?cfg.postes_nec:{...DEFAULT_CFG.POSTES_NEC};
+  JOURS=cfg.jours&&cfg.jours.length?cfg.jours:[...DEFAULT_CFG.JOURS];
 }
 
 function renderParams(){
