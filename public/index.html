@@ -288,6 +288,12 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .cal-day.empty{cursor:default}
 .par-pg{padding:16px;max-width:860px;margin:0 auto}
 .par-section{background:#0f0a1e;border:1px solid rgba(245,166,35,.15);border-radius:12px;padding:16px;margin-bottom:14px}
+.mbe-field{display:flex;flex-direction:column;gap:5px}
+.mbe-lbl{font-size:10px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.4px}
+.mbe-inp{background:#0f1f33;border:1.5px solid rgba(56,189,248,.15);color:#f0f9ff;border-radius:9px;padding:9px 12px;font-size:13px;outline:none;transition:border-color .15s;width:100%;box-sizing:border-box}
+.mbe-inp:focus{border-color:rgba(245,166,35,.5)}
+select.mbe-inp{cursor:pointer}
+textarea.mbe-inp{font-family:inherit}
 .par-sh{font-size:13px;font-weight:800;color:#f5a623;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .par-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
 .par-inp{width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:7px 10px;font-size:12px;outline:none;transition:border-color .15s}
@@ -680,68 +686,94 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 </div>
 
 <!-- Modal bénévole -->
-<div class="ov" id="m-ben">
-  <div class="sht">
-    <div class="sh-hdr"><div class="sh-ttl" id="mb-ttl">Bénévole</div><button type="button" class="xb" onclick="cm('m-ben')">✕</button></div>
-    <div class="flrow"><div class="fl"><label>Nom *</label><input id="mb-n" placeholder="Dupont"/></div><div class="fl"><label>Prénom *</label><input id="mb-p" placeholder="Marie"/></div></div>
-    <div class="flrow"><div class="fl"><label>Téléphone</label><input id="mb-t" type="tel"/></div><div class="fl"><label>Email</label><input id="mb-e" type="email"/></div></div>
-    <div class="fl"><label>Genre</label>
-      <div class="dbtns" id="mb-genre">
-        <button type="button" class="dbtn" data-g="F" onclick="selGenre(this)">♀ Féminin</button>
-        <button type="button" class="dbtn" data-g="M" onclick="selGenre(this)">♂ Masculin</button>
-        <button type="button" class="dbtn" data-g="?" onclick="selGenre(this)">? Non précisé</button>
+<div class="ov" id="m-ben" style="align-items:center;padding:16px">
+  <div style="background:#080e1a;border-radius:20px;width:100%;max-width:820px;max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.7)">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 16px;border-bottom:1px solid rgba(56,189,248,.1);flex-shrink:0">
+      <div id="mb-ttl" style="font-size:18px;font-weight:900;color:#f0f9ff;letter-spacing:-.3px">Bénévole</div>
+      <button type="button" class="xb" onclick="cm('m-ben')">✕</button>
+    </div>
+    <!-- Body 2 colonnes -->
+    <div style="overflow-y:auto;flex:1;padding:20px 24px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <!-- Colonne gauche -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="mbe-field"><label class="mbe-lbl">Nom *</label><input id="mb-n" class="mbe-inp" placeholder="DUPONT"/></div>
+            <div class="mbe-field"><label class="mbe-lbl">Prénom *</label><input id="mb-p" class="mbe-inp" placeholder="Marie"/></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="mbe-field"><label class="mbe-lbl">Téléphone</label><input id="mb-t" class="mbe-inp" type="tel"/></div>
+            <div class="mbe-field"><label class="mbe-lbl">Email</label><input id="mb-e" class="mbe-inp" type="email"/></div>
+          </div>
+          <div class="mbe-field"><label class="mbe-lbl">Genre</label>
+            <div class="dbtns" id="mb-genre">
+              <button type="button" class="dbtn" data-g="F" onclick="selGenre(this)">♀ Féminin</button>
+              <button type="button" class="dbtn" data-g="M" onclick="selGenre(this)">♂ Masculin</button>
+              <button type="button" class="dbtn" data-g="?" onclick="selGenre(this)">? Non précisé</button>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="mbe-field"><label class="mbe-lbl">Date de naissance</label><input id="mb-ddn" class="mbe-inp" type="date"/></div>
+            <div class="mbe-field"><label class="mbe-lbl">👕 Taille T-shirt</label>
+              <div class="dbtns" id="mb-taille" style="flex-wrap:wrap">
+                <button type="button" class="dbtn" data-t="XS" onclick="selTaille(this)">XS</button>
+                <button type="button" class="dbtn" data-t="S" onclick="selTaille(this)">S</button>
+                <button type="button" class="dbtn" data-t="M" onclick="selTaille(this)">M</button>
+                <button type="button" class="dbtn" data-t="L" onclick="selTaille(this)">L</button>
+                <button type="button" class="dbtn" data-t="XL" onclick="selTaille(this)">XL</button>
+                <button type="button" class="dbtn" data-t="XXL" onclick="selTaille(this)">XXL</button>
+                <button type="button" class="dbtn" data-t="3XL" onclick="selTaille(this)">3XL</button>
+              </div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="mbe-field"><label class="mbe-lbl">Secteur</label><select id="mb-sec" class="mbe-inp" onchange="updMbPostes()"><option>Parking</option><option>Circulation</option><option>Entretien</option></select></div>
+            <div class="mbe-field"><label class="mbe-lbl">Poste</label><select id="mb-pos" class="mbe-inp"></select></div>
+          </div>
+          <div class="mbe-field"><label class="mbe-lbl">Type</label>
+            <div class="dbtns"><button type="button" class="dbtn sel" id="t-rot" onclick="selType('rotatif')">🔄 Rotatif</button><button type="button" class="dbtn" id="t-fix" onclick="selType('fixe')">📌 Fixe</button></div>
+          </div>
+          <div class="mbe-field"><label class="mbe-lbl">Remarques</label><textarea id="mb-rmq" class="mbe-inp" rows="3" style="resize:vertical"></textarea></div>
+        </div>
+        <!-- Colonne droite -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="mbe-field"><label class="mbe-lbl">📅 Disponibilités</label><div class="dbtns" id="mb-dis" style="flex-wrap:wrap"></div></div>
+          <div class="mbe-field"><label class="mbe-lbl">🔑 Zones d'accès</label>
+            <div class="dbtns" id="mb-acces">
+              <button type="button" class="dbtn" data-a="3C" onclick="toggleAcces(this)">3C</button>
+              <button type="button" class="dbtn" data-a="B" onclick="toggleAcces(this)">B</button>
+              <button type="button" class="dbtn" data-a="L" onclick="toggleAcces(this)">L</button>
+              <button type="button" class="dbtn" data-a="P" onclick="toggleAcces(this)">P</button>
+              <button type="button" class="dbtn" data-a="T" onclick="toggleAcces(this)">T</button>
+              <button type="button" class="dbtn" data-a="V" onclick="toggleAcces(this)">V</button>
+            </div>
+          </div>
+          <div class="mbe-field"><label class="mbe-lbl">🎫 Type bénévole</label>
+            <div class="dbtns" id="mb-type-ben" style="flex-wrap:wrap">
+              <button type="button" class="dbtn" data-tb="ben_plus" onclick="selTypeBen(this)">⭐ Bénévole +</button>
+              <button type="button" class="dbtn" data-tb="std1" onclick="selTypeBen(this)">Standard 1</button>
+              <button type="button" class="dbtn" data-tb="std2" onclick="selTypeBen(this)">Standard 2</button>
+              <button type="button" class="dbtn" data-tb="std3" onclick="selTypeBen(this)">Standard 3</button>
+              <button type="button" class="dbtn" data-tb="std4" onclick="selTypeBen(this)">Standard 4</button>
+            </div>
+          </div>
+          <div class="mbe-field"><label class="mbe-lbl">🏅 Rôle spécial</label>
+            <div class="dbtns" id="mb-role">
+              <button type="button" class="dbtn" data-r="team_leader" onclick="toggleRole(this)">👑 Team Leader</button>
+              <button type="button" class="dbtn" data-r="comite" onclick="toggleRole(this)">🎪 Comité</button>
+              <button type="button" class="dbtn" data-r="direction" onclick="toggleRole(this)">🎯 Direction</button>
+            </div>
+          </div>
+        </div>
       </div>
+      <div class="ae" id="mb-e2" style="margin-top:10px"></div>
     </div>
-    <div class="fl"><label>Date de naissance</label><input id="mb-ddn" type="date"/></div>
-    <div class="fl"><label>👕 Taille T-shirt</label>
-      <div class="dbtns" id="mb-taille">
-        <button type="button" class="dbtn" data-t="XS" onclick="selTaille(this)">XS</button>
-        <button type="button" class="dbtn" data-t="S" onclick="selTaille(this)">S</button>
-        <button type="button" class="dbtn" data-t="M" onclick="selTaille(this)">M</button>
-        <button type="button" class="dbtn" data-t="L" onclick="selTaille(this)">L</button>
-        <button type="button" class="dbtn" data-t="XL" onclick="selTaille(this)">XL</button>
-        <button type="button" class="dbtn" data-t="XXL" onclick="selTaille(this)">XXL</button>
-        <button type="button" class="dbtn" data-t="3XL" onclick="selTaille(this)">3XL</button>
-      </div>
+    <!-- Footer actions -->
+    <div style="display:flex;gap:10px;padding:16px 24px;border-top:1px solid rgba(56,189,248,.1);flex-shrink:0">
+      <button type="button" class="btn btn-p" onclick="saveBen()" style="flex:1;padding:13px;font-size:14px">💾 Sauvegarder</button>
+      <button type="button" class="btn btn-d" id="mb-del" onclick="delBen()" style="display:none;padding:13px 20px">🗑 Supprimer</button>
     </div>
-    <div class="flrow">
-      <div class="fl"><label>Secteur</label><select id="mb-sec" onchange="updMbPostes()"><option>Parking</option><option>Circulation</option><option>Entretien</option></select></div>
-      <div class="fl"><label>Poste</label><select id="mb-pos"></select></div>
-    </div>
-    <div class="fl"><label>Type</label><div class="dbtns"><button type="button" class="dbtn sel" id="t-rot" onclick="selType('rotatif')">🔄 Rotatif</button><button type="button" class="dbtn" id="t-fix" onclick="selType('fixe')">📌 Fixe</button></div></div>
-    <div class="fl"><label>Disponibilités</label><div class="dbtns" id="mb-dis"></div></div>
-    <div class="fl"><label>Remarques</label><textarea id="mb-rmq" rows="2"></textarea></div>
-    <div class="sep"></div>
-    <div class="fl"><label>🔑 Zones d'accès</label>
-      <div class="dbtns" id="mb-acces">
-        <button type="button" class="dbtn" data-a="3C" onclick="toggleAcces(this)">3C</button>
-        <button type="button" class="dbtn" data-a="B" onclick="toggleAcces(this)">B</button>
-        <button type="button" class="dbtn" data-a="L" onclick="toggleAcces(this)">L</button>
-        <button type="button" class="dbtn" data-a="P" onclick="toggleAcces(this)">P</button>
-        <button type="button" class="dbtn" data-a="T" onclick="toggleAcces(this)">T</button>
-        <button type="button" class="dbtn" data-a="V" onclick="toggleAcces(this)">V</button>
-      </div>
-    </div>
-    <div class="fl"><label>🎫 Type bénévole</label>
-      <div class="dbtns" id="mb-type-ben">
-        <button type="button" class="dbtn" data-tb="ben_plus" onclick="selTypeBen(this)">⭐ Bénévole +</button>
-        <button type="button" class="dbtn" data-tb="std1" onclick="selTypeBen(this)">Standard 1</button>
-        <button type="button" class="dbtn" data-tb="std2" onclick="selTypeBen(this)">Standard 2</button>
-        <button type="button" class="dbtn" data-tb="std3" onclick="selTypeBen(this)">Standard 3</button>
-        <button type="button" class="dbtn" data-tb="std4" onclick="selTypeBen(this)">Standard 4</button>
-      </div>
-    </div>
-    <div class="fl"><label>🏅 Rôle spécial</label>
-      <div class="dbtns" id="mb-role">
-        <button type="button" class="dbtn" data-r="team_leader" onclick="toggleRole(this)">👑 Team Leader</button>
-        <button type="button" class="dbtn" data-r="comite" onclick="toggleRole(this)">🎪 Comité</button>
-        <button type="button" class="dbtn" data-r="direction" onclick="toggleRole(this)">🎯 Direction</button>
-      </div>
-    </div>
-    <div class="ae" id="mb-e2"></div>
-    <button type="button" class="btn btn-p" onclick="saveBen()">Sauvegarder</button>
-    <div class="sep"></div>
-    <button type="button" class="btn btn-d" id="mb-del" onclick="delBen()" style="display:none">Supprimer</button>
   </div>
 </div>
 
