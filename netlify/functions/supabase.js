@@ -75,12 +75,15 @@ function parseDispos(text) {
 function parseDDN(val) {
   if (!val) return '';
   const s = String(val).trim();
-  const m = s.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})$/);
+  // Format DD/MM/YYYY ou DD.MM.YYYY
+  const m = s.match(/^(\d{1,2})[.\/](\d{1,2})[.\/](\d{4})$/);
   if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+  // Format YYYY-MM-DD
   if (s.match(/^\d{4}-\d{2}-\d{2}$/)) return s;
+  // Timestamp Excel
   const n = parseFloat(val);
   if (!isNaN(n) && n > 10000) {
-    const d = new Date((n - 25569) * 86400 * 1000);
+    const d = new Date(Math.round((n - 25569) * 86400 * 1000));
     if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
   }
   return '';

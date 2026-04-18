@@ -609,6 +609,17 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
     <div class="flrow"><div class="fl"><label>Nom *</label><input id="mb-n" placeholder="Dupont"/></div><div class="fl"><label>Prénom *</label><input id="mb-p" placeholder="Marie"/></div></div>
     <div class="flrow"><div class="fl"><label>Téléphone</label><input id="mb-t" type="tel"/></div><div class="fl"><label>Email</label><input id="mb-e" type="email"/></div></div>
     <div class="fl"><label>Date de naissance</label><input id="mb-ddn" type="date"/></div>
+    <div class="fl"><label>👕 Taille T-shirt</label>
+      <div class="dbtns" id="mb-taille">
+        <button type="button" class="dbtn" data-t="XS" onclick="selTaille(this)">XS</button>
+        <button type="button" class="dbtn" data-t="S" onclick="selTaille(this)">S</button>
+        <button type="button" class="dbtn" data-t="M" onclick="selTaille(this)">M</button>
+        <button type="button" class="dbtn" data-t="L" onclick="selTaille(this)">L</button>
+        <button type="button" class="dbtn" data-t="XL" onclick="selTaille(this)">XL</button>
+        <button type="button" class="dbtn" data-t="XXL" onclick="selTaille(this)">XXL</button>
+        <button type="button" class="dbtn" data-t="3XL" onclick="selTaille(this)">3XL</button>
+      </div>
+    </div>
     <div class="flrow">
       <div class="fl"><label>Secteur</label><select id="mb-sec" onchange="updMbPostes()"><option>Parking</option><option>Circulation</option><option>Entretien</option></select></div>
       <div class="fl"><label>Poste</label><select id="mb-pos"></select></div>
@@ -1376,6 +1387,9 @@ async function saveAssign(){
 }
 
 // ═══ BÉNÉVOLES CRUD ═══
+function selTaille(btn){document.querySelectorAll('#mb-taille .dbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
+function getTaille(){const s=document.querySelector('#mb-taille .dbtn.sel');return s?s.dataset.t:'';}
+function setTaille(t){document.querySelectorAll('#mb-taille .dbtn').forEach(b=>b.classList.toggle('sel',b.dataset.t===t));}
 function selType(t){bTypeCur=t;document.getElementById('t-rot').classList.toggle('sel',t==='rotatif');document.getElementById('t-fix').classList.toggle('sel',t==='fixe');}
 function toggleAcces(btn){btn.classList.toggle('sel');}
 function selTypeBen(btn){document.querySelectorAll('#mb-type-ben .dbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
@@ -1387,14 +1401,14 @@ function setAcces(acces){document.querySelectorAll('#mb-acces .dbtn').forEach(b=
 function setTypeBen(tb){document.querySelectorAll('#mb-type-ben .dbtn').forEach(b=>b.classList.toggle('sel',b.dataset.tb===tb));}
 function setRoles(roles){document.querySelectorAll('#mb-role .dbtn').forEach(b=>b.classList.toggle('sel',(roles||[]).includes(b.dataset.r)));}
 function updMbPostes(){const sec=document.getElementById('mb-sec')?.value||'';const ps=POSTES_DEF[sec]||[];document.getElementById('mb-pos').innerHTML=ps.map(p=>`<option>${p}</option>`).join('');}
-function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);document.getElementById('mb-sec').value='Parking';updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';setAcces([]);setTypeBen(null);setRoles([]);hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
-function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';document.getElementById('mb-sec').value=b.sec||'Parking';document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';setAcces(b.acces||[]);setTypeBen(b.type_ben||null);setRoles(b.roles||[]);hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);document.getElementById('mb-sec').value='Parking';updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';setAcces([]);setTypeBen(null);setRoles([]);setTaille('');hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';document.getElementById('mb-sec').value=b.sec||'Parking';document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';setAcces(b.acces||[]);setTypeBen(b.type_ben||null);setRoles(b.roles||[]);setTaille(b.taille||'');hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
 
 async function saveBen(){
   const nom=document.getElementById('mb-n').value.trim(),prenom=document.getElementById('mb-p').value.trim();
   if(!nom||!prenom){sA('mb-e2','Nom et prénom obligatoires.');return;}
   const dispos=[...document.querySelectorAll('#mb-dis .dbtn.sel')].map(b=>b.dataset.j);
-  const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:document.getElementById('mb-sec').value,poste:document.getElementById('mb-pos').value,type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value,acces:getAcces(),type_ben:getTypeBen(),roles:getRoles()};
+  const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:document.getElementById('mb-sec').value,poste:document.getElementById('mb-pos').value,type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value,acces:getAcces(),type_ben:getTypeBen(),roles:getRoles(),taille:getTaille()};
   cm('m-ben');setSync('syncing','Sauvegarde...');
   try{
     if(eBid){Object.assign(bens.find(x=>x.id===eBid),d);await apiPatch('/bens/'+eBid,d);}
@@ -1465,7 +1479,8 @@ function benCard(b,col){
   const dh=(b.dispos||[]).map(d=>`<span class="dtag" style="background:${col}22;color:${col}">${d.split(' ')[0]}/06</span>`).join('');
   const eb=isA()?`<button type="button" class="bcbtn" onclick="openEditBen('${b.id}')">Modifier</button>`:'';
   const db=isA()?`<button type="button" class="bcbtn d" onclick="openEditBen('${b.id}')">Suppr.</button>`:'';
-  const ddnStr=b.ddn?`<div class="bcme">🎂 ${b.ddn.split('-').reverse().join('/')}</div>`:'';
+  const ddnStr=b.ddn?`<div class="bcme">🎂 ${b.ddn.split('-').reverse().join('/')}</div>`:''
+  const tailleStr=b.taille?`<span style="background:rgba(167,139,250,.1);color:#a78bfa;border:1px solid rgba(167,139,250,.25);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">👕 ${b.taille}</span>`:'';
   // Badges accès
   const accesHtml=(b.acces||[]).map(a=>`<span style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.25);border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${a}</span>`).join('');
   // Badge type bénévole
@@ -1477,7 +1492,7 @@ function benCard(b,col){
   return`<div class="bcard"><div class="bcav" style="background:${bc}">${init(b)}</div><div class="bcb">
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
       <div class="bcnm">${b.nom} ${b.prenom}</div>
-      ${tbHtml}${rolesHtml}
+      ${tbHtml}${tailleStr}${rolesHtml}
     </div>
     <div class="bcme">${b.poste||b.sec} · <span style="color:${col};font-size:10px;font-weight:700">${b.sec}</span> · <span class="${b.type==='fixe'?'nfix':'nrot'}" style="border-radius:3px;padding:1px 4px;font-size:9px;font-weight:700">${b.type==='fixe'?'📌 Fixe':'🔄 Rotatif'}</span></div>
     ${ddnStr}
