@@ -2094,10 +2094,203 @@ async function saveAutoAssign(proposals){
 
 // ═══ STATS ═══
 function renderStats(){
-  const c=document.getElementById('stats-c');const tm=totMq();
-  let h=`<div class="kpis"><div class="kpi"><div class="kpi-v">${bens.length}</div><div class="kpi-l">Bénévoles</div></div><div class="kpi"><div class="kpi-v">${slots.length}</div><div class="kpi-l">Créneaux</div></div><div class="kpi" style="border-color:${tm>0?'rgba(239,68,68,.3)':'rgba(16,185,129,.3)'}"><div class="kpi-v" style="color:${tm>0?'#f87171':'#34d399'}">${tm}</div><div class="kpi-l">Manquants</div></div></div>`;
-  h+=`<div class="scard"><h3>Remplissage par jour</h3>`;JOURS.forEach(j=>{const totalNec=Object.values(POSTES_NEC).reduce((s,n)=>s+n,0);const totalOk=Object.entries(POSTES_NEC).reduce((s,[pos,nec])=>s+Math.min(nbBensOnPosteJour(pos,j.lbl),nec),0);const pct=totalNec>0?Math.round(totalOk/totalNec*100):0;const m=mqJ(j.lbl);h+=`<div class="srow2"><div class="slbl2">${j.lbl}</div><div class="sbar2"><div class="sbfill2" style="width:${pct}%;background:${m===0?'#34d399':'#38bdf8'}"></div></div><div class="sval2" style="color:${m>0?'#f87171':'#34d399'}">${pct}%</div></div>`;});
-  h+=`</div><div class="scard"><h3>Bénévoles par secteur</h3>`;SECS.forEach(sec=>{const n=bens.filter(b=>b.sec===sec).length;const col=SCLR[sec];const a=bens.filter(b=>b.sec===sec&&Object.values(assigns).some(arr=>arr.includes(b.id))).length;const pct=n>0?Math.round(a/n*100):0;h+=`<div class="srow2"><div class="slbl2" style="color:${col}">${sec}</div><div class="sbar2"><div class="sbfill2" style="width:${pct}%;background:${col}"></div></div><div class="sval2" style="color:#4d7fa0">${n}</div></div>`;});h+=`</div>`;c.innerHTML=h;
+  const c=document.getElementById('stats-c');
+  const tab=window._statsTab||'jours';
+
+  // ── Helpers ──
+  const hMin=b=>{
+    let m=0;
+    Object.entries(_assignDays).forEach(([sid,days])=>{
+      const jrs=days[b.id]||[];
+      if(!jrs.length)return;
+      const sl=slots.find(x=>x.id===sid);
+      if(sl)m+=jrs.length*(tToMin(sl.end_time)-tToMin(sl.start_time));
+    });
+    return m;
+  };
+  const fmtH=m=>{const h=Math.floor(m/60);const mn=m%60;return mn?`${h}h${String(mn).padStart(2,'0')}`:`${h}h`;};
+  const isPlaced=b=>Object.values(_assignDays).some(days=>(days[b.id]||[]).length>0);
+
+  // ── Onglets ──
+  let h=`<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">
+    ${[['jours','📅 Par jour'],['postes','📍 Postes'],['heures','⏱ Heures'],['placement','👥 Placement']].map(([k,l])=>`
+    <button type="button" onclick="window._statsTab='${k}';renderStats()" style="padding:8px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid;transition:all .15s;
+      ${tab===k?'background:rgba(245,166,35,.15);border-color:#f5a623;color:#f5a623':'background:#0f1f33;border-color:rgba(56,189,248,.15);color:#4d7fa0'}">${l}</button>`).join('')}
+  </div>`;
+
+  // ══ VUE JOURS ══
+  if(tab==='jours'){
+    h+=`<div style="display:grid;gap:10px">`;
+    JOURS.forEach(j=>{
+      const placedBens=bens.filter(b=>(b.dispos||[]).includes(j.lbl)||!b.dispos?.length);
+      const assignedBens=bens.filter(b=>Object.entries(_assignDays).some(([sid,days])=>(days[b.id]||[]).includes(j.lbl)));
+      const notAssigned=bens.filter(b=>(b.dispos||[]).includes(j.lbl)&&!assignedBens.find(x=>x.id===b.id));
+      // Postes pleins / vides
+      const postesStatus=[];
+      slots.forEach(sl=>{
+        if(!(sl.jours||[]).includes(j.lbl))return;
+        const nec=POSTES_NEC[sl.pid]||2;
+        const nb=Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(j.lbl)).length;
+        postesStatus.push({pos:sl.pid,nb,nec,full:nb>=nec});
+      });
+      const nbFull=postesStatus.filter(p=>p.full).length;
+      const nbEmpty=postesStatus.filter(p=>p.nb===0).length;
+      const nbPartial=postesStatus.filter(p=>p.nb>0&&!p.full).length;
+      const pct=postesStatus.length>0?Math.round(nbFull/postesStatus.length*100):0;
+
+      h+=`<div style="background:#0f1f33;border:1px solid rgba(56,189,248,.1);border-radius:12px;padding:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:15px;font-weight:800;color:#f0f9ff">${j.wd} ${j.k}</div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:11px;color:#34d399;font-weight:700">${assignedBens.length} placés</span>
+            ${notAssigned.length?`<span style="font-size:11px;color:#f87171;font-weight:700">${notAssigned.length} dispo non placés</span>`:''}
+          </div>
+        </div>
+        <!-- Barre remplissage postes -->
+        <div style="display:flex;gap:4px;align-items:center;margin-bottom:8px">
+          <div style="flex:1;height:8px;background:#0c1929;border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${pct===100?'#34d399':pct>50?'#fbbf24':'#f87171'};transition:width .3s;border-radius:4px"></div>
+          </div>
+          <span style="font-size:11px;font-weight:700;color:${pct===100?'#34d399':pct>50?'#fbbf24':'#f87171'};min-width:35px;text-align:right">${pct}%</span>
+        </div>
+        <!-- Postes status -->
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
+          ${postesStatus.map(p=>`<span style="padding:2px 8px;border-radius:5px;font-size:10px;font-weight:600;
+            background:${p.full?'rgba(52,211,153,.1)':p.nb>0?'rgba(251,191,36,.1)':'rgba(248,113,113,.1)'};
+            color:${p.full?'#34d399':p.nb>0?'#fbbf24':'#f87171'};
+            border:1px solid ${p.full?'rgba(52,211,153,.2)':p.nb>0?'rgba(251,191,36,.2)':'rgba(248,113,113,.2)'}">
+            ${p.pos} ${p.nb}/${p.nec}</span>`).join('')}
+        </div>
+        ${notAssigned.length?`<div style="font-size:11px;color:#f87171;margin-top:4px">⚠ Dispos mais non placés : ${notAssigned.map(b=>b.prenom+' '+b.nom).join(', ')}</div>`:''}
+      </div>`;
+    });
+    h+=`</div>`;
+  }
+
+  // ══ VUE POSTES ══
+  else if(tab==='postes'){
+    h+=`<div style="display:flex;flex-direction:column;gap:8px">`;
+    SECS.forEach(sec=>{
+      const col=SCLR[sec]||'#94a3b8';
+      h+=`<div style="font-size:11px;font-weight:800;color:${col};text-transform:uppercase;letter-spacing:.5px;margin-top:8px">● ${sec}</div>`;
+      const postes=POSTES_DEF[sec]||[];
+      postes.forEach(pos=>{
+        const nec=POSTES_NEC[pos]||2;
+        h+=`<div style="background:#0f1f33;border:1px solid rgba(56,189,248,.08);border-radius:10px;padding:10px 14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:700;color:#f0f9ff">${pos}</span>
+            <span style="font-size:11px;color:#4d7fa0">${nec} requis/jour</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));gap:4px">`;
+        JOURS.forEach(j=>{
+          const slJ=slots.filter(sl=>sl.pid===pos&&(sl.jours||[]).includes(j.lbl));
+          const nb=slJ.reduce((s,sl)=>s+Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(j.lbl)).length,0);
+          const full=nb>=nec;
+          h+=`<div style="text-align:center;padding:4px;border-radius:6px;background:${full?'rgba(52,211,153,.1)':nb>0?'rgba(251,191,36,.1)':'rgba(248,113,113,.08)'};border:1px solid ${full?'rgba(52,211,153,.2)':nb>0?'rgba(251,191,36,.2)':'rgba(248,113,113,.15)'}">
+            <div style="font-size:9px;color:#4d7fa0">${j.wd.replace('.','')}</div>
+            <div style="font-size:13px;font-weight:800;color:${full?'#34d399':nb>0?'#fbbf24':'#f87171'}">${nb}</div>
+          </div>`;
+        });
+        h+=`</div></div>`;
+      });
+    });
+    h+=`</div>`;
+  }
+
+  // ══ VUE HEURES ══
+  else if(tab==='heures'){
+    const bensSorted=[...bens].sort((a,b2)=>hMin(b2)-hMin(a));
+    const maxH=Math.max(...bensSorted.map(b=>hMin(b)),1);
+    h+=`<div style="font-size:11px;color:#4d7fa0;margin-bottom:12px">${bens.length} bénévoles · Total ${fmtH(bensSorted.reduce((s,b)=>s+hMin(b),0))}</div>`;
+    h+=`<div style="display:flex;flex-direction:column;gap:4px">`;
+    bensSorted.forEach(b=>{
+      const m=hMin(b);
+      const pct=Math.round(m/maxH*100);
+      const col=m>360?'#f87171':m>=180?'#34d399':m>0?'#fbbf24':'#4d7fa0';
+      const gc=getBenColor(b);
+      // Détail par jour
+      const parJour=JOURS.map(j=>{
+        let mj=0;
+        Object.entries(_assignDays).forEach(([sid,days])=>{
+          if((days[b.id]||[]).includes(j.lbl)){const sl=slots.find(x=>x.id===sid);if(sl)mj+=tToMin(sl.end_time)-tToMin(sl.start_time);}
+        });
+        return mj>0?`<span style="font-size:9px;background:rgba(56,189,248,.1);color:#7fb8d4;border-radius:3px;padding:1px 5px">${j.k}/06 ${fmtH(mj)}</span>`:'';
+      }).filter(Boolean).join('');
+      h+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#0f1f33;border-radius:8px;border:1px solid rgba(56,189,248,.06)">
+        <div style="width:32px;height:32px;border-radius:50%;background:${gc.bg};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0">${init(b)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;color:#f0f9ff">${b.prenom} ${b.nom}</div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">${parJour||'<span style="font-size:10px;color:#2d5a7a">Non placé</span>'}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:16px;font-weight:900;color:${col}">${m>0?fmtH(m):'—'}</div>
+          <div style="width:60px;height:4px;background:#0c1929;border-radius:2px;margin-top:3px"><div style="height:100%;width:${pct}%;background:${col};border-radius:2px"></div></div>
+        </div>
+      </div>`;
+    });
+    h+=`</div>`;
+  }
+
+  // ══ VUE PLACEMENT ══
+  else if(tab==='placement'){
+    const placed=bens.filter(b=>isPlaced(b));
+    const notPlaced=bens.filter(b=>!isPlaced(b));
+    const dispoNotPlaced=notPlaced.filter(b=>(b.dispos||[]).some(d=>JOURS.map(j=>j.lbl).includes(d)));
+    const noDispos=notPlaced.filter(b=>!(b.dispos||[]).some(d=>JOURS.map(j=>j.lbl).includes(d)));
+
+    h+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="background:#0f1f33;border:1px solid rgba(52,211,153,.2);border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:32px;font-weight:900;color:#34d399">${placed.length}</div>
+        <div style="font-size:11px;color:#4d7fa0;margin-top:4px">✅ Placés</div>
+      </div>
+      <div style="background:#0f1f33;border:1px solid rgba(251,191,36,.2);border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:32px;font-weight:900;color:#fbbf24">${dispoNotPlaced.length}</div>
+        <div style="font-size:11px;color:#4d7fa0;margin-top:4px">⚠ Dispo, non placés</div>
+      </div>
+      <div style="background:#0f1f33;border:1px solid rgba(248,113,113,.2);border-radius:12px;padding:14px;text-align:center">
+        <div style="font-size:32px;font-weight:900;color:#f87171">${noDispos.length}</div>
+        <div style="font-size:11px;color:#4d7fa0;margin-top:4px">❌ Aucune dispo</div>
+      </div>
+    </div>`;
+
+    if(dispoNotPlaced.length){
+      h+=`<div style="background:#0f1f33;border:1px solid rgba(251,191,36,.15);border-radius:12px;padding:14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:10px">⚠ Disponibles mais non placés (${dispoNotPlaced.length})</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">`;
+      dispoNotPlaced.sort((a,b)=>a.prenom.localeCompare(b.prenom,'fr')).forEach(b=>{
+        const gc=getBenColor(b);
+        const col=SCLR[b.sec]||'#94a3b8';
+        const jDispos=(b.dispos||[]).filter(d=>JOURS.map(j=>j.lbl).includes(d));
+        h+=`<div style="background:#080e1a;border:1px solid rgba(251,191,36,.2);border-radius:8px;padding:8px 12px;cursor:pointer" onclick="openBenDetail('${b.id}')">
+          <div style="display:flex;align-items:center;gap:7px">
+            <div style="width:28px;height:28px;border-radius:50%;background:${gc.bg};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff">${init(b)}</div>
+            <div>
+              <div style="font-size:12px;font-weight:700;color:#f0f9ff">${b.prenom} ${b.nom}</div>
+              <div style="font-size:10px;color:${col}">${b.poste||b.sec}</div>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:6px">${jDispos.map(d=>`<span style="font-size:9px;background:rgba(251,191,36,.1);color:#fbbf24;border-radius:3px;padding:1px 5px">${d.split(' ')[0]}/06</span>`).join('')}</div>
+        </div>`;
+      });
+      h+=`</div></div>`;
+    }
+
+    if(noDispos.length){
+      h+=`<div style="background:#0f1f33;border:1px solid rgba(248,113,113,.1);border-radius:12px;padding:14px">
+        <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:10px">❌ Sans disponibilité renseignée (${noDispos.length})</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">`;
+      noDispos.sort((a,b)=>a.prenom.localeCompare(b.prenom,'fr')).forEach(b=>{
+        const gc=getBenColor(b);
+        h+=`<div style="display:flex;align-items:center;gap:6px;background:#080e1a;border:1px solid rgba(248,113,113,.1);border-radius:7px;padding:6px 10px;cursor:pointer" onclick="openBenDetail('${b.id}')">
+          <div style="width:24px;height:24px;border-radius:50%;background:${gc.bg};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff">${init(b)}</div>
+          <span style="font-size:11px;font-weight:600;color:#94a3b8">${b.prenom} ${b.nom}</span>
+        </div>`;
+      });
+      h+=`</div></div>`;
+    }
+  }
+
+  c.innerHTML=h;
 }
 
 // ═══ IMPORT FESTIVAL (format spécifique) ═══
