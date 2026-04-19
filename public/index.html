@@ -1741,10 +1741,6 @@ function getBenColor(b){
   if(roles.includes('direction'))return{bg:'linear-gradient(135deg,#92400e,#d97706)',border:'rgba(217,119,6,.5)',text:'#fcd34d'};
   if(roles.includes('comite'))return{bg:'linear-gradient(135deg,#78350f,#b45309)',border:'rgba(180,83,9,.5)',text:'#fbbf24'};
   if(roles.includes('team_leader'))return{bg:'linear-gradient(135deg,#064e3b,#059669)',border:'rgba(5,150,105,.5)',text:'#6ee7b7'};
-  // Rotatif = arc-en-ciel
-  if(b.type==='rotatif'){
-    return{bg:'linear-gradient(135deg,#f97316,#eab308,#22c55e,#06b6d4,#8b5cf6,#ec4899)',border:'rgba(139,92,246,.4)',text:'#e9d5ff'};
-  }
   const genre=b.genre||detectGenre(b.prenom);
   if(genre==='F')return{bg:'linear-gradient(135deg,#831843,#db2777)',border:'rgba(219,39,119,.45)',text:'#fbcfe8'};
   return{bg:'linear-gradient(135deg,#1e3a8a,#0284c7)',border:'rgba(2,132,199,.45)',text:'#bae6fd'};
