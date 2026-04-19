@@ -611,6 +611,16 @@ textarea.mbe-inp{font-family:inherit}
         </div>
       </div>
 
+      <!-- Section Migration SPF -->
+      <div class="par-section">
+        <div class="par-sh">🔄 Migration bénévoles</div>
+        <div style="font-size:11px;color:#4d7fa0;margin-bottom:12px">Basculer tous les bénévoles <strong style="color:#f0f9ff">rotatifs</strong> sans secteur spécifique vers le secteur SPF / Non défini.</div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button type="button" class="par-btn" onclick="migrateToSPF()" style="background:rgba(139,92,246,.15);border-color:rgba(139,92,246,.4);color:#a78bfa">🌈 Migrer rotatifs → SPF</button>
+          <div id="spf-migrate-result" style="font-size:12px;color:#4d7fa0"></div>
+        </div>
+      </div>
+
       <!-- Section Événements -->
       <div class="par-section">
         <div class="par-sh">🎪 Tous les événements</div>
@@ -1731,6 +1741,10 @@ function getBenColor(b){
   if(roles.includes('direction'))return{bg:'linear-gradient(135deg,#92400e,#d97706)',border:'rgba(217,119,6,.5)',text:'#fcd34d'};
   if(roles.includes('comite'))return{bg:'linear-gradient(135deg,#78350f,#b45309)',border:'rgba(180,83,9,.5)',text:'#fbbf24'};
   if(roles.includes('team_leader'))return{bg:'linear-gradient(135deg,#064e3b,#059669)',border:'rgba(5,150,105,.5)',text:'#6ee7b7'};
+  // Rotatif = arc-en-ciel
+  if(b.type==='rotatif'){
+    return{bg:'linear-gradient(135deg,#f97316,#eab308,#22c55e,#06b6d4,#8b5cf6,#ec4899)',border:'rgba(139,92,246,.4)',text:'#e9d5ff'};
+  }
   const genre=b.genre||detectGenre(b.prenom);
   if(genre==='F')return{bg:'linear-gradient(135deg,#831843,#db2777)',border:'rgba(219,39,119,.45)',text:'#fbcfe8'};
   return{bg:'linear-gradient(135deg,#1e3a8a,#0284c7)',border:'rgba(2,132,199,.45)',text:'#bae6fd'};
@@ -2124,48 +2138,71 @@ function renderStats(){
 
   // ══ VUE JOURS ══
   if(tab==='jours'){
-    h+=`<div style="display:grid;gap:10px">`;
+    h+=`<div style="display:grid;gap:14px">`;
     JOURS.forEach(j=>{
-      const placedBens=bens.filter(b=>(b.dispos||[]).includes(j.lbl)||!b.dispos?.length);
       const assignedBens=bens.filter(b=>Object.entries(_assignDays).some(([sid,days])=>(days[b.id]||[]).includes(j.lbl)));
       const notAssigned=bens.filter(b=>(b.dispos||[]).includes(j.lbl)&&!assignedBens.find(x=>x.id===b.id));
-      // Postes pleins / vides
-      const postesStatus=[];
+      // Grouper postes par secteur
+      const parSec={};
       slots.forEach(sl=>{
         if(!(sl.jours||[]).includes(j.lbl))return;
+        const sec=secOfPos(sl.pid)||sl.sec||'?';
+        if(!parSec[sec])parSec[sec]=[];
         const nec=POSTES_NEC[sl.pid]||2;
         const nb=Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(j.lbl)).length;
-        postesStatus.push({pos:sl.pid,nb,nec,full:nb>=nec});
+        // Éviter doublons de postes
+        const existing=parSec[sec].find(p=>p.pos===sl.pid);
+        if(existing){existing.nb+=nb;existing.nec+=nec;}
+        else parSec[sec].push({pos:sl.pid,nb,nec,full:nb>=nec});
       });
-      const nbFull=postesStatus.filter(p=>p.full).length;
-      const nbEmpty=postesStatus.filter(p=>p.nb===0).length;
-      const nbPartial=postesStatus.filter(p=>p.nb>0&&!p.full).length;
-      const pct=postesStatus.length>0?Math.round(nbFull/postesStatus.length*100):0;
+      const allPostes=Object.values(parSec).flat();
+      const nbFull=allPostes.filter(p=>p.full).length;
+      const pct=allPostes.length>0?Math.round(nbFull/allPostes.length*100):0;
+      const couleurPct=pct===100?'#34d399':pct>=60?'#fbbf24':'#f87171';
 
-      h+=`<div style="background:#0f1f33;border:1px solid rgba(56,189,248,.1);border-radius:12px;padding:14px">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-          <div style="font-size:15px;font-weight:800;color:#f0f9ff">${j.wd} ${j.k}</div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <span style="font-size:11px;color:#34d399;font-weight:700">${assignedBens.length} placés</span>
-            ${notAssigned.length?`<span style="font-size:11px;color:#f87171;font-weight:700">${notAssigned.length} dispo non placés</span>`:''}
+      h+=`<div style="background:#0f1f33;border:1.5px solid rgba(56,189,248,.08);border-radius:14px;overflow:hidden">
+        <!-- En-tête jour -->
+        <div style="display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:12px 16px;background:#080e1a;border-bottom:1px solid rgba(56,189,248,.08)">
+          <div style="font-size:16px;font-weight:900;color:#f0f9ff">${j.wd} <span style="color:#f5a623">${j.k}</span></div>
+          <div style="display:flex;gap:10px;align-items:center">
+            <span style="font-size:11px;color:#34d399;font-weight:700">✅ ${assignedBens.length} placés</span>
+            ${notAssigned.length?`<span style="font-size:11px;color:#fbbf24;font-weight:700">⚠ ${notAssigned.length} en attente</span>`:'<span style="font-size:11px;color:#34d399">✓ Tous placés</span>'}
           </div>
+          <div style="font-size:20px;font-weight:900;color:${couleurPct};min-width:48px;text-align:right">${pct}%</div>
         </div>
-        <!-- Barre remplissage postes -->
-        <div style="display:flex;gap:4px;align-items:center;margin-bottom:8px">
-          <div style="flex:1;height:8px;background:#0c1929;border-radius:4px;overflow:hidden">
-            <div style="height:100%;width:${pct}%;background:${pct===100?'#34d399':pct>50?'#fbbf24':'#f87171'};transition:width .3s;border-radius:4px"></div>
-          </div>
-          <span style="font-size:11px;font-weight:700;color:${pct===100?'#34d399':pct>50?'#fbbf24':'#f87171'};min-width:35px;text-align:right">${pct}%</span>
+        <!-- Barre progression -->
+        <div style="height:4px;background:#0c1929">
+          <div style="height:100%;width:${pct}%;background:${couleurPct};transition:width .3s"></div>
         </div>
-        <!-- Postes status -->
-        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
-          ${postesStatus.map(p=>`<span style="padding:2px 8px;border-radius:5px;font-size:10px;font-weight:600;
-            background:${p.full?'rgba(52,211,153,.1)':p.nb>0?'rgba(251,191,36,.1)':'rgba(248,113,113,.1)'};
-            color:${p.full?'#34d399':p.nb>0?'#fbbf24':'#f87171'};
-            border:1px solid ${p.full?'rgba(52,211,153,.2)':p.nb>0?'rgba(251,191,36,.2)':'rgba(248,113,113,.2)'}">
-            ${p.pos} ${p.nb}/${p.nec}</span>`).join('')}
+        <!-- Postes par secteur -->
+        <div style="padding:12px 16px;display:flex;flex-direction:column;gap:10px">
+          ${Object.entries(parSec).map(([sec,postes])=>{
+            const col=SCLR[sec]||'#94a3b8';
+            return`<div>
+              <div style="font-size:9px;font-weight:800;color:${col};text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">● ${sec}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:5px">
+                ${postes.map(p=>{
+                  const c=p.full?'#34d399':p.nb>0?'#fbbf24':'#f87171';
+                  const bg=p.full?'rgba(52,211,153,.08)':p.nb>0?'rgba(251,191,36,.08)':'rgba(248,113,113,.06)';
+                  const border=p.full?'rgba(52,211,153,.2)':p.nb>0?'rgba(251,191,36,.2)':'rgba(248,113,113,.15)';
+                  return`<div style="background:${bg};border:1px solid ${border};border-radius:7px;padding:5px 10px;min-width:80px">
+                    <div style="font-size:10px;color:#94a3b8;margin-bottom:2px">${p.pos}</div>
+                    <div style="font-size:13px;font-weight:800;color:${c}">${p.nb}<span style="font-size:10px;color:#4d7fa0;font-weight:400">/${p.nec}</span></div>
+                  </div>`;
+                }).join('')}
+              </div>
+            </div>`;
+          }).join('')}
+          ${notAssigned.length?`<div style="border-top:1px solid rgba(251,191,36,.1);padding-top:8px;margin-top:2px">
+            <div style="font-size:10px;font-weight:700;color:#fbbf24;margin-bottom:5px">⚠ Disponibles, non placés</div>
+            <div style="display:flex;flex-wrap:wrap;gap:4px">
+              ${notAssigned.map(b=>{const gc=getBenColor(b);return`<div onclick="openBenDetail('${b.id}')" style="display:flex;align-items:center;gap:5px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.12);border-radius:6px;padding:4px 8px;cursor:pointer">
+                <div style="width:20px;height:20px;border-radius:50%;background:${gc.bg};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;flex-shrink:0">${init(b)}</div>
+                <span style="font-size:11px;color:#f0f9ff;font-weight:600">${b.prenom} ${b.nom}</span>
+              </div>`;}).join('')}
+            </div>
+          </div>`:''}
         </div>
-        ${notAssigned.length?`<div style="font-size:11px;color:#f87171;margin-top:4px">⚠ Dispos mais non placés : ${notAssigned.map(b=>b.prenom+' '+b.nom).join(', ')}</div>`:''}
       </div>`;
     });
     h+=`</div>`;
@@ -2368,7 +2405,7 @@ async function handleFestivalImport(input){
             updated++;
           } else {
             // Nouveau bénévole
-            const full={...d,sec:'Parking',poste:'P1',type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:'',event_id:currentEvent.id};
+            const spfSec=SECS.find(s=>(POSTES_DEF[s]||[]).some(p=>p.toLowerCase().includes('spf')||p.toLowerCase().includes('non')))|| 'Non défini';const spfPos=(POSTES_DEF[spfSec]||[])[0]||'Non défini';const full={...d,sec:spfSec,poste:spfPos,type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:'',event_id:currentEvent.id};
             const r=await apiPost('/bens',full);
             bens.push({id:r.id,...full,event_id:currentEvent.id});
             added++;
@@ -2526,7 +2563,7 @@ async function confirmImport(){
   let ok=0;
   for(const r of nouveaux){
     try{
-      const d={nom:r.nom,prenom:r.prenom,tel:'',email:'',sec:'Parking',poste:'P1',type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:'',event_id:currentEvent.id};
+      const spfSec2=SECS.find(s=>(POSTES_DEF[s]||[]).some(p=>p.toLowerCase().includes('spf')||p.toLowerCase().includes('non')))|| 'Non défini';const spfPos2=(POSTES_DEF[spfSec2]||[])[0]||'Non défini';const d={nom:r.nom,prenom:r.prenom,tel:'',email:'',sec:spfSec2,poste:spfPos2,type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:'',event_id:currentEvent.id};
       const res=await apiPost('/bens',d);
       bens.push({id:res.id,...d,event_id:currentEvent.id});ok++;
     }catch(e){console.error(e);}
@@ -2534,6 +2571,28 @@ async function confirmImport(){
   setSync('ok',`${ok} importés`);
   renderBens();updMq();
   if(toImport.length-nouveaux.length>0)alert(`${ok} bénévoles importés.\n${toImport.length-nouveaux.length} ignorés (déjà existants).`);
+}
+
+// ═══ MIGRATION SPF ═══
+async function migrateToSPF(){
+  const spfSec=SECS.find(s=>(POSTES_DEF[s]||[]).some(p=>p.toLowerCase().includes('spf')||p.toLowerCase().includes('non defini')||p.toLowerCase().includes('non défini')));
+  if(!spfSec){alert('Secteur SPF introuvable. Crée un secteur avec un poste contenant "SPF" ou "Non défini".');return;}
+  const spfPos=(POSTES_DEF[spfSec]||[])[0]||'Non défini';
+  // Sélectionner les bénévoles rotatifs qui ne sont pas déjà placés manuellement
+  const toMigrate=bens.filter(b=>b.type==='rotatif'&&b.sec!==spfSec);
+  if(!toMigrate.length){document.getElementById('spf-migrate-result').innerHTML='<span style="color:#34d399">✅ Tous les rotatifs sont déjà en SPF.</span>';return;}
+  if(!confirm(`Migrer ${toMigrate.length} bénévoles rotatifs vers ${spfSec} / ${spfPos} ?`))return;
+  document.getElementById('spf-migrate-result').textContent='Migration en cours...';
+  let ok=0;
+  for(const b of toMigrate){
+    try{
+      await apiPatch('/bens/'+b.id,{sec:spfSec,poste:spfPos});
+      b.sec=spfSec;b.poste=spfPos;
+      ok++;
+    }catch(e){console.error(e);}
+  }
+  document.getElementById('spf-migrate-result').innerHTML=`<span style="color:#34d399">✅ ${ok} bénévoles migrés vers ${spfSec}/${spfPos}</span>`;
+  renderBens();renderAll();
 }
 
 // ═══ SYNC GOOGLE SHEETS ═══
@@ -2852,7 +2911,7 @@ function renderParamsPostes(){
             onchange="movePoste('${sec}','${pos.replace(/'/g,"\\'")}',this.value);this.value='${sec}'">
             ${SECS.map(s=>`<option value="${s}"${s===sec?' selected':''}>${s}</option>`).join('')}
           </select>
-          <input type="number" value="${POSTES_NEC[pos]||2}" min="1" max="30"
+          <input type="number" value="${POSTES_NEC[pos]||2}" min="0" max="30"
             style="width:52px;background:#0c1929;border:1px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:5px;padding:3px 6px;font-size:11px;outline:none"
             onchange="updateNec('${pos}',this.value)"/>
           <button type="button" class="par-row-del" onclick="delPoste('${sec}','${pos.replace(/'/g,"\\'")}')">✕</button>
@@ -2896,7 +2955,7 @@ function updSecSelects(){
   if(sel)sel.innerHTML=SECS.map(s=>`<option value="${s}">${s}</option>`).join('');
 }
 function updateNec(pos,val){
-  POSTES_NEC[pos]=Math.max(1,parseInt(val)||1);
+  POSTES_NEC[pos]=Math.max(0,parseInt(val)||0);
   saveConfig();updMq();
 }
 function addPoste(){
