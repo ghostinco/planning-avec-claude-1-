@@ -973,8 +973,8 @@ async function createDefaultSlots(){
   const defs=[{s:'08:00',e:'14:00'},{s:'14:00',e:'20:00'}];
   for(const sec of SECS){for(const pos of POSTES_DEF[sec]||[]){for(const d of defs){
     try{
-      const r=await apiPost('/slots',{pid:pos,sec,start_time:d.s,end_time:d.e,jours:JOURS.map(j=>j.lbl),rmq:''});
-      slots.push({id:r.id,pid:pos,start_time:d.s,end_time:d.e,jours:JOURS.map(j=>j.lbl),rmq:''});
+      const r=await apiPost('/slots',{pid:pos,sec,start_time:d.s,end_time:d.e,jours:JOURS.map(j=>j.lbl),rmq:'',event_id:currentEvent.id});
+      slots.push({id:r.id,pid:pos,start_time:d.s,end_time:d.e,jours:JOURS.map(j=>j.lbl),rmq:'',event_id:currentEvent.id});
       assigns[r.id]=[];_assignDays[r.id]={};
     }catch(e){console.error(e);}
   }}}
@@ -1364,7 +1364,7 @@ async function saveSlot(){
       const sl=slots.find(x=>x.id===eSlotId);if(sl){sl.pid=pid;sl.start_time=s;sl.end_time=e;sl.rmq=rmq;sl.jours=jours;}
       await apiPatch('/slots/'+eSlotId,{pid,sec,start_time:s,end_time:e,jours,rmq});
     }else{
-      const r=await apiPost('/slots',{pid,sec,start_time:s,end_time:e,jours,rmq});
+      const r=await apiPost('/slots',{pid,sec,start_time:s,end_time:e,jours,rmq,event_id:currentEvent.id});
       slots.push({id:r.id,pid,start_time:s,end_time:e,jours,rmq});assigns[r.id]=[];_assignDays[r.id]={};
     }
     setSync('ok','Synchronisé');
@@ -2368,9 +2368,9 @@ async function handleFestivalImport(input){
             updated++;
           } else {
             // Nouveau bénévole
-            const full={...d,sec:'Parking',poste:'P1',type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:''};
+            const full={...d,sec:'Parking',poste:'P1',type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:'',event_id:currentEvent.id};
             const r=await apiPost('/bens',full);
-            bens.push({id:r.id,...full});
+            bens.push({id:r.id,...full,event_id:currentEvent.id});
             added++;
           }
         }catch(e){console.error(e);skipped++;}
@@ -2526,9 +2526,9 @@ async function confirmImport(){
   let ok=0;
   for(const r of nouveaux){
     try{
-      const d={nom:r.nom,prenom:r.prenom,tel:'',email:'',sec:'Parking',poste:'P1',type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:''};
+      const d={nom:r.nom,prenom:r.prenom,tel:'',email:'',sec:'Parking',poste:'P1',type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:'',event_id:currentEvent.id};
       const res=await apiPost('/bens',d);
-      bens.push({id:res.id,...d});ok++;
+      bens.push({id:res.id,...d,event_id:currentEvent.id});ok++;
     }catch(e){console.error(e);}
   }
   setSync('ok',`${ok} importés`);
