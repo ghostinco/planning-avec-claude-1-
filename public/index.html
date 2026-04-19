@@ -492,7 +492,14 @@ textarea.mbe-inp{font-family:inherit}
         <div class="fdrop" id="fdrop" style="display:none"></div>
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap" id="chips"></div>
-      <div id="sem-search-wrap" style="display:none;margin-left:auto">
+      <div id="sem-search-wrap" style="display:none;margin-left:auto;display:flex;align-items:center;gap:8px">
+        <select id="sem-sort" onchange="semSortChange(this.value)" style="background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#7fb8d4;border-radius:7px;padding:5px 8px;font-size:11px;outline:none;cursor:pointer">
+          <option value="prenom-az" selected>Prénom A→Z</option>
+          <option value="prenom-za">Prénom Z→A</option>
+          <option value="nom-az">Nom A→Z</option>
+          <option value="nom-za">Nom Z→A</option>
+          <option value="sec">Par secteur</option>
+        </select>
         <input class="sem-search" id="sem-search" type="text" placeholder="Rechercher un bénévole..." oninput="semSearchChange(this.value)"/>
       </div>
     </div>
@@ -997,9 +1004,10 @@ function renderAll(){updMq();renderChips();renderContent();renderVbarR();if(JOUR
 function updMq(){const m=totMq();const b=document.getElementById('mqb');b.textContent=m+' manquant'+(m!==1?'s':'');b.className='mqb'+(m===0?' ok':'');}
 
 // ═══ VUES ═══
-let semSearch='';
-function setView(v){curView=v;['sem','jour','sv'].forEach(x=>document.getElementById('vb-'+x).classList.toggle('act',x===v));document.getElementById('dnav').style.display=v!=='sem'?'flex':'none';const ssw=document.getElementById('sem-search-wrap');if(ssw)ssw.style.display=v==='sem'?'block':'none';renderContent();renderVbarR();}
+let semSearch='',semSort='prenom-az';
+function setView(v){curView=v;['sem','jour','sv'].forEach(x=>document.getElementById('vb-'+x).classList.toggle('act',x===v));document.getElementById('dnav').style.display=v!=='sem'?'flex':'none';const ssw=document.getElementById('sem-search-wrap');if(ssw)ssw.style.display=v==='sem'?'flex':'none';renderContent();renderVbarR();}
 function semSearchChange(val){semSearch=val.toLowerCase();renderSemaine();}
+function semSortChange(val){semSort=val;renderSemaine();}
 function prevDay(){dayIdx=Math.max(0,dayIdx-1);if(JOURS[dayIdx])document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;renderAll();}
 function nextDay(){dayIdx=Math.min(JOURS.length-1,dayIdx+1);if(JOURS[dayIdx])document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;renderAll();}
 function renderVbarR(){const r=document.getElementById('vbar-r');if(!isA()){r.innerHTML='<span style="font-size:11px;color:#2d5a7a">Observation</span>';return;}r.innerHTML=`<button type="button" class="tbtn" onclick="openAutoAssign()" title="Placement automatique">🎲 Auto-assign</button><button type="button" class="tbtn hi" onclick="openNewSlot()">+ Nouveau créneau</button>`;}
@@ -1076,9 +1084,14 @@ function renderSemaine(){
   joursVis.forEach(j=>{const m=mqJ(j.lbl);h+=`<th class="wk-th-day"><div class="wk-th-day-in"><div class="wkwd">${j.wd}</div><div class="wkdt">${j.k}</div><div class="wkmq" style="color:${m>5?'#f87171':m>0?'#fbbf24':'#34d399'}">${m>0?'−'+m+' bén.':'✓'}</div></div></th>`;});
   h+='</tr></thead><tbody>';
   SECS.forEach(sec=>{const sb=bens.filter(b=>b.sec===sec&&filterBens(b));if(!sb.length)return;const col=SCLR[sec];
+  const sorted=[...sb];
+  if(semSort==='prenom-az')sorted.sort((a,b)=>a.prenom.localeCompare(b.prenom,'fr'));
+  else if(semSort==='prenom-za')sorted.sort((a,b)=>b.prenom.localeCompare(a.prenom,'fr'));
+  else if(semSort==='nom-az')sorted.sort((a,b)=>a.nom.localeCompare(b.nom,'fr'));
+  else if(semSort==='nom-za')sorted.sort((a,b)=>b.nom.localeCompare(a.nom,'fr'));
   h+=`<tr class="wk-sec"><td colspan="${joursVis.length+1}"><span class="wk-sec-lbl" style="color:${col}">● ${sec}</span></td></tr>`;
-  sb.forEach(b=>{const bc=bCol(b.id);
-  h+=`<tr><td class="wk-nm"><div class="nn">${b.nom} ${b.prenom}</div><div class="np" style="color:${col}">${b.poste||sec}</div><span class="nty ${b.type==='fixe'?'nfix':'nrot'}">${b.type==='fixe'?'📌':'🔄'}</span>${isA()?`<button type="button" class="ned" onclick="openEditBen('${b.id}')">✏</button>`:''}</td>`;
+  sorted.forEach(b=>{const bc=bCol(b.id);
+  h+=`<tr><td class="wk-nm"><div class="nn">${semSort.startsWith('prenom')?b.prenom+' '+b.nom:b.nom+' '+b.prenom}</div><div class="np" style="color:${col}">${b.poste||sec}</div><span class="nty ${b.type==='fixe'?'nfix':'nrot'}">${b.type==='fixe'?'📌':'🔄'}</span>${isA()?`<button type="button" class="ned" onclick="openEditBen('${b.id}')">✏</button>`:''}</td>`;
   joursVis.forEach(j=>{const dis=(b.dispos||[]).includes(j.lbl);
   const mySlots=slots.filter(sl=>sl.jours.includes(j.lbl)&&assigns[sl.id]&&assigns[sl.id].includes(b.id)&&(_assignDays[sl.id]?.[b.id]||[]).includes(j.lbl));
   if(!dis){h+=`<td class="wk-td na"><div style="height:100%;display:flex;align-items:center;justify-content:center;opacity:.1">—</div></td>`;}
