@@ -697,6 +697,7 @@ textarea.mbe-inp{font-family:inherit}
     </div>
     <div class="bdd-actions" id="mbd-actions">
       <button type="button" class="bdd-btn-edit" id="mbd-edit-btn" onclick="openEditFromDetail()" style="display:none">✏ Modifier</button>
+      <button type="button" id="mbd-place-btn" onclick="openPlaceOnSlot()" style="flex:1;background:rgba(52,211,153,.15);border:1.5px solid rgba(52,211,153,.3);border-radius:10px;color:#34d399;font-size:13px;font-weight:700;padding:12px;cursor:pointer;display:none">📅 Placer sur un créneau</button>
       <button type="button" class="bdd-btn-close" onclick="cm('m-ben-detail')">Fermer</button>
     </div>
   </div>
@@ -1746,6 +1747,20 @@ function getBenColor(b){
   return{bg:'linear-gradient(135deg,#1e3a8a,#0284c7)',border:'rgba(2,132,199,.45)',text:'#bae6fd'};
 }
 
+// Statut placement : 'none' | 'partial' | 'full'
+function benPlacementStatus(b){
+  const joursActifs=JOURS.map(j=>j.lbl);
+  const dispoDays=(b.dispos||[]).filter(d=>joursActifs.includes(d));
+  if(dispoDays.length===0)return'none';
+  const placedDays=new Set();
+  Object.entries(_assignDays).forEach(([sid,days])=>{
+    (days[b.id]||[]).forEach(j=>{if(joursActifs.includes(j))placedDays.add(j);});
+  });
+  if(placedDays.size===0)return'none';
+  if(placedDays.size>=dispoDays.length)return'full';
+  return'partial';
+}
+
 function benCard2(b,col,byPrenom){
   const gc=getBenColor(b);
   const tbMap={ben_plus:'⭐ Bén. +',std1:'Std 1',std2:'Std 2',std3:'Std 3',std4:'Std 4'};
@@ -1757,7 +1772,10 @@ function benCard2(b,col,byPrenom){
 
   const typeBadge=b.type_ben?`<span style="background:rgba(255,255,255,.1);color:#fff;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${tbMap[b.type_ben]||b.type_ben}</span>`:'';
   const rolesBadges=(b.roles||[]).map(r=>`<span style="background:rgba(255,255,255,.15);color:#fff;border-radius:4px;padding:1px 6px;font-size:9px;font-weight:700">${roleMap[r]||r}</span>`).join('');
-  return`<div class="bcard2" onclick="openBenDetail('${b.id}')" style="border-color:${gc.border};background:#0f2540">
+  const status=benPlacementStatus(b);
+  const statusDot=status==='full'?'<div style="position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%;background:#34d399;box-shadow:0 0 6px #34d399"></div>':status==='partial'?'<div style="position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%;background:#fbbf24;box-shadow:0 0 6px #fbbf24"></div>':'<div style="position:absolute;top:7px;right:7px;width:9px;height:9px;border-radius:50%;background:#f87171;box-shadow:0 0 6px #f87171"></div>';
+  return`<div class="bcard2" onclick="openBenDetail('${b.id}')" style="border-color:${gc.border};background:#0f2540;position:relative">
+    ${statusDot}
     <div class="bcard2-av" style="background:${gc.bg};box-shadow:0 3px 12px ${gc.border}">${init(b)}</div>
     <div class="bcard2-nm" style="color:${gc.text}">${nm1}</div>
     <div style="font-size:11px;color:#94a3b8;font-weight:500">${nm2}</div>
@@ -1776,6 +1794,7 @@ function openBenDetail(id){
   hero.style.background=gc.bg;
   document.getElementById('mbd-hero-bg').style.background=gc.bg;
   document.getElementById('mbd-edit-btn').style.display=isA()?'flex':'none';
+  document.getElementById('mbd-place-btn').style.display='none'; // reset
   document.getElementById('mbd-edit-btn').dataset.id=id;
   const av=document.getElementById('mbd-av');
   av.textContent=init(b);av.style.background='rgba(0,0,0,.25)';av.style.border='2px solid rgba(255,255,255,.3)';
@@ -1812,6 +1831,45 @@ function openBenDetail(id){
   // Remarques
   document.getElementById('mbd-rmq').innerHTML=b.rmq?`<div class="bdd-field" style="margin-top:4px"><div class="bdd-field-label">💬 Remarques</div><div class="bdd-field-val" style="font-style:italic">"${b.rmq}"</div></div>`:'';
   document.getElementById('m-ben-detail').classList.add('open');
+}
+
+let _quickPlaceBid=null;
+function openQuickPlace(bid){
+  _quickPlaceBid=bid;
+  cm('m-ben-detail');
+  openBenDetail(bid);
+  setTimeout(()=>{
+    document.getElementById('mbd-place-btn').style.display='flex';
+  },50);
+}
+
+function openPlaceOnSlot(){
+  if(!_quickPlaceBid)return;
+  const b=bens.find(x=>x.id===_quickPlaceBid);if(!b)return;
+  cm('m-ben-detail');
+  // Trouver les créneaux disponibles pour ce bénévole
+  const dispoDays=b.dispos||[];
+  const slotsDispos=slots.filter(sl=>(sl.jours||[]).some(j=>dispoDays.includes(j)));
+  if(!slotsDispos.length){alert('Aucun créneau compatible avec les disponibilités de '+b.prenom+' '+b.nom);return;}
+  // Ouvrir le premier créneau compatible
+  openAssign(slotsDispos[0].id,null);
+  // Ouvrir automatiquement le panel de ce bénévole
+  setTimeout(()=>{
+    const el=document.getElementById('ba-'+_quickPlaceBid);
+    if(el&&!el.classList.contains('open'))el.classList.add('open');
+    if(el)el.scrollIntoView({behavior:'smooth',block:'center'});
+  },200);
+}
+
+function openQuickPlace(bid){
+  // Ouvrir la fiche détail avec un bouton "Placer sur un créneau"
+  cm('m-ben-detail');
+  openBenDetail(bid);
+  // Scroll jusqu'aux dispos
+  setTimeout(()=>{
+    const body=document.querySelector('.bdd-body');
+    if(body)body.scrollTop=body.scrollHeight;
+  },100);
 }
 
 function openEditFromDetail(){
@@ -2192,9 +2250,10 @@ function renderStats(){
           ${notAssigned.length?`<div style="border-top:1px solid rgba(251,191,36,.1);padding-top:8px;margin-top:2px">
             <div style="font-size:10px;font-weight:700;color:#fbbf24;margin-bottom:5px">⚠ Disponibles, non placés</div>
             <div style="display:flex;flex-wrap:wrap;gap:4px">
-              ${notAssigned.map(b=>{const gc=getBenColor(b);return`<div onclick="openBenDetail('${b.id}')" style="display:flex;align-items:center;gap:5px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.12);border-radius:6px;padding:4px 8px;cursor:pointer">
+              ${notAssigned.map(b=>{const gc=getBenColor(b);return`<div onclick="openQuickPlace('${b.id}')" title="Cliquer pour placer" style="display:flex;align-items:center;gap:5px;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.12);border-radius:6px;padding:4px 8px;cursor:pointer;transition:background .15s" onmouseover="this.style.background='rgba(251,191,36,.18)'" onmouseout="this.style.background='rgba(251,191,36,.06)'">
                 <div style="width:20px;height:20px;border-radius:50%;background:${gc.bg};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#fff;flex-shrink:0">${init(b)}</div>
                 <span style="font-size:11px;color:#f0f9ff;font-weight:600">${b.prenom} ${b.nom}</span>
+                <span style="font-size:9px;color:#fbbf24">→ placer</span>
               </div>`;}).join('')}
             </div>
           </div>`:''}
