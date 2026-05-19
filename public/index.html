@@ -400,7 +400,7 @@ textarea.mbe-inp{font-family:inherit}
 .ba-quick{display:flex;gap:5px;margin-top:5px}
 .ba-quick button{background:transparent;border:1px solid rgba(56,189,248,.15);border-radius:5px;padding:3px 9px;font-size:10px;color:#4d7fa0;cursor:pointer;transition:all .15s}
 .ba-quick button:hover{color:#38bdf8;border-color:#38bdf8}
-.ba-dispo-warn{font-size:10px;color:#f87171;margin-top:5px}
+.ba-dispo-warn{font-size:10px;color:#f87171;margin-top:5px}.ba-doublon{border-color:rgba(248,113,113,.4)!important;background:rgba(248,113,113,.05)!important}.ba-day-btn.occupied{pointer-events:none}
 .slot-info-box{background:#0c1929;border:1px solid rgba(56,189,248,.15);border-radius:9px;padding:9px 11px;font-size:12px;color:#7fb8d4;margin-bottom:14px}
 </style>
 </head>
@@ -1441,41 +1441,130 @@ function renderAssignList(sid,sl){
     return(a.nom+a.prenom).localeCompare(b.nom+b.prenom);
   });
 
-  document.getElementById('ma-list').innerHTML=sorted.map(b=>{
-    const bc=bCol(b.id);const col2=SCLR[b.sec]||'#94a3b8';
-    const selectedDays=window._assignTmpDays[b.id]||[];
-    const hasDays=selectedDays.length>0;
-    const isHab=b.type==='fixe'&&b.poste===sl.pid;
-    const dispoDays=(b.dispos||[]).filter(d=>allDays.includes(d));
-    const summaryTxt=hasDays?selectedDays.map(d=>d.split(' ')[0]+'/06').join(', '):'';
-    return`<div class="ba-item${hasDays?' has-days':''}" id="ba-${b.id}">
-      <div class="ba-hdr" onclick="toggleBaPanel('${b.id}','${sid}')">
-        <div class="ba-av" style="background:${bc}">${init(b)}</div>
-        <div style="flex:1;min-width:0">
-          <div class="ba-nm">${b.nom} ${b.prenom}${isHab?' <span style="font-size:9px;background:rgba(56,189,248,.12);color:#38bdf8;border-radius:3px;padding:1px 5px;border:1px solid rgba(56,189,248,.25)">poste habituel</span>':''}</div>
-          <div class="ba-meta">${b.poste||b.sec} · <span style="color:${col2}">${b.sec}</span></div>
-        </div>
-        ${hasDays?`<div class="ba-days-summary">${summaryTxt}</div>`:''}
-        <div class="ba-arrow">▶</div>
-      </div>
-      <div class="ba-days-panel">
-        <div class="ba-days-btns">
-          ${allDays.map(j=>{
-            const k=j.split(' ')[0];
-            const isDispo=(b.dispos||[]).includes(j);
-            const isSel=selectedDays.includes(j);
-            return`<button type="button" class="ba-day-btn${isSel?' sel':''}" onclick="toggleDay('${b.id}','${j}','${sid}')" style="${!isDispo?'opacity:.4':''}" title="${isDispo?'Disponible':'Non disponible ce jour'}">${k}/06</button>`;
-          }).join('')}
-        </div>
-        <div class="ba-quick">
-          <button type="button" onclick="selectAllDays('${b.id}','${sid}')">Tous</button>
-          <button type="button" onclick="clearDays('${b.id}','${sid}')">Aucun</button>
-          ${dispoDays.length>0&&dispoDays.length<allDays.length?`<button type="button" onclick="selectDispoDays('${b.id}','${sid}')">Ses dispos</button>`:''}
-        </div>
-        ${dispoDays.length===0?`<div class="ba-dispo-warn">⚠ Aucune dispo sur ce créneau</div>`:''}
-      </div>
-    </div>`;
+  // Calculer les jours où le bénévole est occupé sur un AUTRE poste CE MÊME JOUR (vrai doublon)
+  var getDoublonDays=function(bid){
+    var occ={};
+    Object.keys(_assignDays).forEach(function(osid){
+      if(osid===sid)return;
+      var os=null;for(var i=0;i<slots.length;i++){if(slots[i].id===osid){os=slots[i];break;}}
+      if(!os||os.pid===sl.pid)return;
+      (_assignDays[osid][bid]||[]).forEach(function(j){occ[j]=os.pid;});
+    });
+    return occ;
+  };
+
+  // Calculer les jours où le bénévole est sur CE MÊME POSTE (autre créneau/slot)
+  var getSamePosteOtherDays=function(bid){
+    var days=[];
+    Object.keys(_assignDays).forEach(function(osid){
+      if(osid===sid)return;
+      var os=null;for(var i=0;i<slots.length;i++){if(slots[i].id===osid){os=slots[i];break;}}
+      if(!os||os.pid!==sl.pid)return;
+      (_assignDays[osid][bid]||[]).forEach(function(j){
+        var d=j.split(' ')[0];if(days.indexOf(d)<0)days.push(d);
+      });
+    });
+    return days;
+  };
+
+  // Masquer: fixes autre secteur + tous jours bloqués par doublon
+  var visibleBens=sorted.filter(function(b){
+    var alreadyHere=(window._assignTmpDays[b.id]||[]).length>0;
+    if(b.type==='fixe'&&b.sec!==sl.sec&&!alreadyHere)return false;
+    var dispoDays=(b.dispos||[]).filter(function(d){return allDays.indexOf(d)>=0;});
+    if(dispoDays.length===0||alreadyHere)return true;
+    var occ=getDoublonDays(b.id);
+    return dispoDays.some(function(d){return!occ[d];});
+  });
+
+  var totalHidden=sorted.length-visibleBens.length;
+  var abbrMap={'17':'me','18':'je','19':'ve','20':'sa'};
+
+  var hiddenBtn=totalHidden>0?
+    '<div style="text-align:center;padding:6px 0;margin-bottom:8px">'+
+    '<button type="button" onclick="showAllBensForSlot(\''+sid+'\')"'+
+    ' style="font-size:10px;background:rgba(148,163,184,.1);color:#94a3b8;border:1px solid rgba(148,163,184,.3);border-radius:5px;padding:4px 10px;cursor:pointer">'+
+    '\uD83D\uDC41 '+totalHidden+' masqu'+(totalHidden>1?'és':'é')+' (fixe autre secteur / complets)</button></div>':'';
+
+  document.getElementById('ma-list').innerHTML=hiddenBtn+visibleBens.map(function(b){
+    var bc=bCol(b.id);var col2=SCLR[b.sec]||'#94a3b8';
+    var selectedDays=window._assignTmpDays[b.id]||[];
+    var hasDays=selectedDays.length>0;
+    var isHab=b.type==='fixe'&&b.poste===sl.pid;
+    var dispoDays=(b.dispos||[]).filter(function(d){return allDays.indexOf(d)>=0;});
+    var summaryTxt=hasDays?selectedDays.map(function(d){return d.split(' ')[0]+'/06';}).join(', '):'';
+    var occ=getDoublonDays(b.id);
+    var samePoste=getSamePosteOtherDays(b.id);
+    var doublonDays=selectedDays.filter(function(j){return!!occ[j];});
+    var hasDoublon=doublonDays.length>0;
+
+    var daysHtml=allDays.map(function(j){
+      var k=j.split(' ')[0];
+      var isDispo=(b.dispos||[]).indexOf(j)>=0;
+      var isSel=selectedDays.indexOf(j)>=0;
+      var isOcc=!!occ[j];
+      var isSamePoste=samePoste.indexOf(k)>=0;
+      var style='';
+      if(!isDispo)style='opacity:.4;';
+      if(isOcc&&!isSel)style+='opacity:.25;cursor:not-allowed;border-color:rgba(248,113,113,.3);';
+      if(isOcc&&isSel)style+='border-color:#f87171;background:rgba(248,113,113,.2);color:#f87171;';
+      var title=isOcc?'Doublon: deja sur '+occ[j]+' ce jour':isDispo?'Disponible':'Non disponible';
+      var sameLbl=(isSamePoste&&!isSel)?'<span style="font-size:8px;color:#475569;margin-left:1px">('+abbrMap[k]+')</span>':'';
+      var doublonMark=(isOcc&&isSel)?' \u26A0':'';
+      return '<button type="button" class="ba-day-btn'+(isSel?' sel':'')+(isOcc&&!isSel?' occupied':'')+
+        '" onclick="toggleDay(\''+b.id+'\',\''+j+'\',\''+sid+'\')"'+
+        ' style="'+style+'" title="'+title+'">'+k+'/06'+doublonMark+sameLbl+'</button>';
+    }).join('');
+
+    var doublonBadge=hasDoublon?' <span style="font-size:9px;background:rgba(248,113,113,.15);color:#f87171;border-radius:3px;padding:1px 5px;border:1px solid rgba(248,113,113,.4)">\u26A0 doublon</span>':'';
+    var habBadge=isHab?' <span style="font-size:9px;background:rgba(56,189,248,.12);color:#38bdf8;border-radius:3px;padding:1px 5px;border:1px solid rgba(56,189,248,.25)">poste habituel</span>':'';
+    var doublonWarn=hasDoublon?'<div class="ba-dispo-warn" style="color:#f87171;margin-bottom:4px">\u26A0 Doublon: deja sur '+doublonDays.map(function(j){return occ[j];}).join(', ')+'</div>':'';
+    var noDispoWarn=dispoDays.length===0?'<div class="ba-dispo-warn">\u26A0 Aucune dispo</div>':'';
+
+    return '<div class="ba-item'+(hasDays?' has-days':'')+(hasDoublon?' ba-doublon':'')+'" id="ba-'+b.id+'">'+
+      '<div class="ba-hdr" onclick="toggleBaPanel(\''+b.id+'\',\''+sid+'\')">'+
+      '<div class="ba-av" style="background:'+bc+'">'+init(b)+'</div>'+
+      '<div style="flex:1;min-width:0">'+
+      '<div class="ba-nm">'+b.nom+' '+b.prenom+habBadge+doublonBadge+'</div>'+
+      '<div class="ba-meta">'+(b.poste||b.sec)+' \xB7 <span style="color:'+col2+'">'+b.sec+'</span></div>'+
+      '</div>'+
+      (hasDays?'<div class="ba-days-summary" style="'+(hasDoublon?'color:#f87171':'')+'">'+summaryTxt+'</div>':'')+
+      '<div class="ba-arrow">\u25B6</div>'+
+      '</div>'+
+      '<div class="ba-days-panel">'+
+      '<div class="ba-days-btns">'+daysHtml+'</div>'+
+      doublonWarn+
+      '<div class="ba-quick">'+
+      '<button type="button" onclick="selectAllDays(\''+b.id+'\',\''+sid+'\')">Tous</button> '+
+      '<button type="button" onclick="clearDays(\''+b.id+'\',\''+sid+'\')">Aucun</button>'+
+      (dispoDays.length>0&&dispoDays.length<allDays.length?' <button type="button" onclick="selectDispoDays(\''+b.id+'\',\''+sid+'\')">Ses dispos</button>':'')+
+      '</div>'+noDispoWarn+
+      '</div></div>';
   }).join('');
+}
+
+function showAllBensForSlot(sid){
+  var sl=slots.find(function(x){return x.id===sid;});if(!sl)return;
+  var list=document.getElementById('ma-list');
+  var btn=list.querySelector('[onclick*="showAllBensForSlot"]');
+  if(btn&&btn.parentElement)btn.parentElement.remove();
+  bens.forEach(function(b){
+    if(document.getElementById('ba-'+b.id))return;
+    var bc=bCol(b.id);
+    var el=document.createElement('div');
+    el.className='ba-item';el.id='ba-'+b.id;el.style.opacity='0.5';
+    el.innerHTML='<div class="ba-hdr" onclick="toggleBaPanel(''+b.id+'',''+sid+'')">'+
+      '<div class="ba-av" style="background:'+bc+'">'+init(b)+'</div>'+
+      '<div style="flex:1;min-width:0"><div class="ba-nm">'+b.nom+' '+b.prenom+
+      ' <span style="font-size:9px;color:#64748b">fixe: '+b.sec+'</span></div>'+
+      '<div class="ba-meta">'+(b.poste||b.sec)+'</div></div>'+
+      '<div class="ba-arrow">&#9654;</div></div>'+
+      '<div class="ba-days-panel"><div class="ba-days-btns">'+
+      sl.jours.map(function(j){var k=j.split(' ')[0];
+        return '<button type="button" class="ba-day-btn" onclick="toggleDay(\''+b.id+'\',\''+j+'\',\''+sid+'\')"\>'+k+'/06</button>';
+      }).join('')+'</div></div>';
+    list.appendChild(el);
+  });
 }
 
 function toggleBaPanel(bid,sid){
