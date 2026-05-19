@@ -1443,14 +1443,18 @@ function renderAssignList(sid,sl){
     return(a.nom+a.prenom).localeCompare(b.nom+b.prenom);
   });
 
-  // Calculer les jours déjà occupés par chaque bénévole sur d'autres postes
+  // Calculer les jours où le bénévole est DÉJÀ assigné sur un autre slot CE MÊME JOUR
+  // Un vrai doublon = même bénévole, même jour, slots différents
   const getOccupiedDays=(bid)=>{
     const occupied={};
-    Object.entries(_assignDays).forEach(([otherSid,days])=>{
-      if(otherSid===sid)return;
-      (days[bid]||[]).forEach(j=>{
-        const otherSlot=slots.find(x=>x.id===otherSid);
-        occupied[j]=otherSlot?otherSlot.pid:'autre poste';
+    // Pour chaque jour du créneau courant, vérifier si le bénévole est ailleurs ce jour-là
+    allDays.forEach(jour=>{
+      Object.entries(_assignDays).forEach(([otherSid,days])=>{
+        if(otherSid===sid)return; // ignorer le créneau actuel
+        if((days[bid]||[]).includes(jour)){
+          const otherSlot=slots.find(x=>x.id===otherSid);
+          occupied[jour]=otherSlot?otherSlot.pid:'autre poste';
+        }
       });
     });
     return occupied;
