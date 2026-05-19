@@ -1120,7 +1120,7 @@ function renderSemaine(){
 const BEN_LINE_H=16; // px par bénévole dans un créneau
 const SLOT_HDR_H=22; // px pour la ligne heure+ratio
 const SLOT_PAD=6;    // padding top+bottom
-function slotNeededH(nbJ){return SLOT_PAD+SLOT_HDR_H+(nbJ>0?nbJ*BEN_LINE_H:0);}
+function slotNeededH(nbJ,nec2){const n=nec2||2;return SLOT_PAD+SLOT_HDR_H+Math.max(n,nbJ>0?nbJ:0)*BEN_LINE_H;}
 
 function renderJour(){
   const jour=JOURS[dayIdx].lbl;const rows=filteredRows();
@@ -1137,7 +1137,7 @@ function renderJour(){
     const slotH={};
     shs.forEach(sl=>{
       const nbJ=_assignDays[sl.id]?Object.entries(_assignDays[sl.id]).filter(([bid,jrs])=>jrs.includes(jour)).length:0;
-      slotH[sl.id]=slotNeededH(nbJ);
+      slotH[sl.id]=slotNeededH(nbJ,nec);
     });
     const lanes=computeLanes(shs);
     // Hauteur de chaque lane = max des slots qu'elle contient
@@ -1168,11 +1168,14 @@ function renderJour(){
         const bensList=assigns[sl.id]?assigns[sl.id].map(bid=>{const b=bens.find(x=>x.id===bid);if(!b)return null;if(!(_assignDays[sl.id]?.[bid]||[]).includes(jour))return null;return {id:bid,nm:b.prenom+' '+b.nom};}).filter(Boolean):[];
         const nManq=Math.max(0,nec-bensList.length);
         // Générer les vignettes
-        const vigHtml=bensList.map(b=>`<div style="background:#0f172a;border:1px solid #1e3a5f;border-radius:4px;padding:2px 6px;margin:2px 0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e2e8f0;min-height:18px">${b.nm}</div>`).join('')
-          +Array.from({length:nManq},(_,i)=>`<div style="background:#1a0a0a;border:1px solid rgba(248,113,113,.5);border-radius:4px;padding:2px 6px;margin:2px 0;font-size:10px;color:#f87171;cursor:pointer;min-height:18px" onclick="openAssign('${sl.id}',event)">+ Manque bénévole ${bensList.length+i+1}</div>`).join('');
-        h+=`<div class="slot-blk ${isEmpty?'empty':''}" style="left:${left}%;width:calc(${w}% - 3px);top:${top}px;height:${ht-4}px;background:#0a1628;border:1px solid #1e3a5f;border-radius:6px;overflow:hidden" onclick="openAssign('${sl.id}',event)">
-          <div class="sl-row" style="background:#0f1e35;border-bottom:1px solid #1e3a5f;padding:2px 5px"><div class="sl-time" style="color:#94a3b8;font-size:10px">${sl.start_time}–${sl.end_time} <span style="opacity:.6">${fmtH(dur)}</span></div><div style="font-size:11px;font-weight:800;color:#1e293b;background:${rc};border-radius:3px;padding:0 4px">${nbJ}/${nec}</div></div>
-          <div style="padding:2px 3px">${vigHtml}</div>
+        // Hauteur: header(22) + vignette(20px) * nec + marges
+        const vigH=22+Math.max(nec,1)*22+8;
+        const cardBg=bgCol||'rgba(30,58,95,.7)';
+        const vigHtml=bensList.map(b=>`<div style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:2px 7px;margin:2px 3px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f1f5f9;height:18px;line-height:18px;box-sizing:border-box">${b.nm}</div>`).join('')
+          +Array.from({length:nManq},(_,i)=>`<div style="background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.5);border-radius:4px;padding:2px 7px;margin:2px 3px;font-size:10px;color:#f87171;cursor:pointer;height:18px;line-height:18px;box-sizing:border-box;white-space:nowrap" onclick="openAssign('${sl.id}',event)">+ Manque bénévole ${bensList.length+i+1}</div>`).join('');
+        h+=`<div class="slot-blk ${isEmpty?'empty':''}" style="left:${left}%;width:calc(${w}% - 3px);top:${top}px;height:${vigH-4}px;background:${cardBg};border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.08)" onclick="openAssign('${sl.id}',event)">
+          <div class="sl-row" style="padding:2px 5px;border-bottom:1px solid rgba(0,0,0,.2)"><div class="sl-time">${sl.start_time}–${sl.end_time} <span style="opacity:.7">${fmtH(dur)}</span></div><div style="font-size:11px;font-weight:800;color:#000;background:${rc};border-radius:3px;padding:0 4px">${nbJ}/${nec}</div></div>
+          ${vigHtml}
           ${isA()?`<div class="sl-sa"><button type="button" class="slab" onclick="openEditSlot('${sl.id}',event)">✏</button><button type="button" class="slab" onclick="delSlotQ('${sl.id}',event)">✕</button></div>`:''}
         </div>`;
       });
