@@ -1451,8 +1451,9 @@ function renderAssignList(sid,sl){
     allDays.forEach(jour=>{
       Object.entries(_assignDays).forEach(([otherSid,days])=>{
         if(otherSid===sid)return; // ignorer le créneau actuel
+        const otherSlot=slots.find(x=>x.id===otherSid);
+        if(otherSlot&&otherSlot.pid===sl.pid)return; // même poste = pas un doublon
         if((days[bid]||[]).includes(jour)){
-          const otherSlot=slots.find(x=>x.id===otherSid);
           occupied[jour]=otherSlot?otherSlot.pid:'autre poste';
         }
       });
