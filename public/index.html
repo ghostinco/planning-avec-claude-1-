@@ -888,7 +888,7 @@ const DEFAULT_CFG={
   POSTES_NEC:{"P1":9,"P premium":4,"P3-PMR-Buvette":2,"P COF":2,"Moto":1,"STEP":2,"Rond-point":3,"Levant":2,"Landes":2,"Piscine":2,"Navette TPN":2,"Station service":2,"Port Vidoli":2,"Passage piéton":2,"Montage+Démontage":7,"Démontage":3},
   JOURS:[{k:"17",lbl:"17 juin",wd:"Mer."},{k:"18",lbl:"18 juin",wd:"Jeu."},{k:"19",lbl:"19 juin",wd:"Ven."},{k:"20",lbl:"20 juin",wd:"Sam."}],
   SECS:["Parking","Circulation","Entretien"],
-  SCLR:{Parking:"#38bdf8",Circulation:"#fb923c",Entretien:"#34d399"}
+  SCLR:{Parking:"#2a7fa5",Circulation:"#b06a28",Entretien:"#2a7a50"}
 };
 let POSTES_DEF={...DEFAULT_CFG.POSTES_DEF};
 let POSTES_NEC={...DEFAULT_CFG.POSTES_NEC};
@@ -1172,7 +1172,7 @@ function renderJour(){
         const vigH=22+Math.max(nec,1)*22+8;
         const cardBg=bgCol||'rgba(30,58,95,.7)';
         const vigHtml=bensList.map(b=>`<div style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:2px 7px;margin:2px 3px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f1f5f9;height:18px;line-height:18px;box-sizing:border-box">${b.nm}</div>`).join('')
-          +Array.from({length:nManq},(_,i)=>`<div style="background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.5);border-radius:4px;padding:2px 7px;margin:2px 3px;font-size:10px;color:#f87171;cursor:pointer;height:18px;line-height:18px;box-sizing:border-box;white-space:nowrap" onclick="openAssign('${sl.id}',event)">+ Manque bénévole ${bensList.length+i+1}</div>`).join('');
+          +Array.from({length:nManq},(_,i)=>`<div style="background:rgba(0,0,0,.25);border:2px solid rgba(220,60,60,.6);border-radius:4px;padding:2px 7px;margin:2px 3px;font-size:10px;color:#fca5a5;cursor:pointer;height:18px;line-height:14px;box-sizing:border-box;white-space:nowrap" onclick="openAssign('${sl.id}',event)">+ Manque bénévole ${bensList.length+i+1}</div>`).join('');
         h+=`<div class="slot-blk ${isEmpty?'empty':''}" style="left:${left}%;width:calc(${w}% - 3px);top:${top}px;height:${vigH-4}px;background:${cardBg};border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.08)" onclick="openAssign('${sl.id}',event)">
           <div class="sl-row" style="padding:2px 5px;border-bottom:1px solid rgba(0,0,0,.2)"><div class="sl-time">${sl.start_time}–${sl.end_time} <span style="opacity:.7">${fmtH(dur)}</span></div><div style="font-size:11px;font-weight:800;color:#000;background:${rc};border-radius:3px;padding:0 4px">${nbJ}/${nec}</div></div>
           ${vigHtml}
