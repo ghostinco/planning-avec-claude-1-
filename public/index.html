@@ -1164,11 +1164,15 @@ function renderJour(){
         const rc=nbJ>=nec?'#4ade80':nbJ>0?'#fbbf24':'#f87171';
         // Couleur fond slot : plus pale/neutre pour laisser le vert ressortir
         const bgCol=isEmpty?null:col;
-        // Liste noms complets (prénom + nom)
-        const bensList=assigns[sl.id]?assigns[sl.id].map(bid=>{const b=bens.find(x=>x.id===bid);if(!b)return null;if(!(_assignDays[sl.id]?.[bid]||[]).includes(jour))return null;return b.prenom+' '+b.nom;}).filter(Boolean):[];
+        // Vignettes bénévoles assignés + manquants
+        const bensList=assigns[sl.id]?assigns[sl.id].map(bid=>{const b=bens.find(x=>x.id===bid);if(!b)return null;if(!(_assignDays[sl.id]?.[bid]||[]).includes(jour))return null;return {id:bid,nm:b.prenom+' '+b.nom};}).filter(Boolean):[];
+        const nManq=Math.max(0,nec-bensList.length);
+        // Générer les vignettes
+        const vigHtml=bensList.map((b,i)=>`<div class="sl-vig" style="background:${bCol(b.id)}22;border:1px solid ${bCol(b.id)}66;border-radius:4px;padding:1px 5px;margin:1px 0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#e2e8f0">${b.nm}</div>`).join('')
+          +Array.from({length:nManq},(_, i)=>`<div class="sl-vig sl-vig-manq" style="background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:4px;padding:1px 5px;margin:1px 0;font-size:10px;color:#f87171;cursor:pointer" onclick="openAssign('${sl.id}',event)">+ Bénévole ${bensList.length+i+1}</div>`).join('');
         h+=`<div class="slot-blk ${isEmpty?'empty':''}" style="left:${left}%;width:calc(${w}% - 3px);top:${top}px;height:${ht-4}px;${bgCol?'background:'+bgCol+';opacity:.92':''}" onclick="openAssign('${sl.id}',event)">
-          <div class="sl-row"><div class="sl-time">${sl.start_time}–${sl.end_time} <span style="opacity:.7">${fmtH(dur)}</span></div><div class="sl-ratio" style="color:${rc};font-size:11px;font-weight:800">${nbJ}/${nec}</div></div>
-          ${bensList.map(nm=>`<div class="sl-ben-nm">${nm}</div>`).join('')}
+          <div class="sl-row"><div class="sl-time">${sl.start_time}–${sl.end_time} <span style="opacity:.7">${fmtH(dur)}</span></div><div class="sl-ratio" style="color:${rc};font-size:11px;font-weight:800;color:#1e293b">${nbJ}/${nec}</div></div>
+          ${vigHtml}
           ${isA()?`<div class="sl-sa"><button type="button" class="slab" onclick="openEditSlot('${sl.id}',event)">✏</button><button type="button" class="slab" onclick="delSlotQ('${sl.id}',event)">✕</button></div>`:''}
         </div>`;
       });
