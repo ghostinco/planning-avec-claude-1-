@@ -1137,7 +1137,7 @@ function renderJour(){
     const slotH={};
     shs.forEach(sl=>{
       const nbJ=_assignDays[sl.id]?Object.entries(_assignDays[sl.id]).filter(([bid,jrs])=>jrs.includes(jour)).length:0;
-      slotH[sl.id]=slotNeededH(nbJ,nec);
+      slotH[sl.id]=22+Math.max(nec,nbJ>0?nbJ:0)*22+12;
     });
     const lanes=computeLanes(shs);
     // Hauteur de chaque lane = max des slots qu'elle contient
