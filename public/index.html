@@ -56,7 +56,7 @@ body{background:url('/caribana_vert.jpg') center center/cover no-repeat fixed;co
 .rpill:hover{border-color:#38bdf8;color:#38bdf8}
 
 /* VBAR */
-.vbar{background:#120a22;border-bottom:1px solid rgba(56,189,248,.12);padding:7px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.vbar{background:rgba(10,5,20,.82);backdrop-filter:blur(8px);border-bottom:1px solid rgba(56,189,248,.12);padding:7px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
 .vbg{display:flex;background:rgba(12,25,41,.7);border:1px solid rgba(56,189,248,.15);border-radius:8px;overflow:hidden}
 .vb{background:none;border:none;cursor:pointer;padding:5px 13px;font-size:11px;font-weight:700;color:#4d7fa0;transition:all .15s}
 .vb:hover{color:#7fc8e8}
@@ -71,7 +71,7 @@ body{background:url('/caribana_vert.jpg') center center/cover no-repeat fixed;co
 .tbtn.hi{background:linear-gradient(135deg,#f5a623,#e8652a);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(245,166,35,.35)}
 
 /* FILTER BAR */
-.filter-bar{background:#120a22;border-bottom:1px solid rgba(56,189,248,.1);padding:6px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.filter-bar{background:rgba(10,5,20,.75);backdrop-filter:blur(6px);border-bottom:1px solid rgba(56,189,248,.1);padding:6px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
 .fw{position:relative}
 .filter-btn{background:rgba(12,25,41,.6);border:1px solid rgba(56,189,248,.18);border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;color:#7fb8d4;cursor:pointer;transition:all .15s}
 .filter-btn:hover{background:rgba(56,189,248,.1);color:#f0f9ff}
@@ -111,8 +111,8 @@ body{background:url('/caribana_vert.jpg') center center/cover no-repeat fixed;co
 .wk-nm:hover .ned{display:flex}
 .wk-td{border:1px solid rgba(245,166,35,.08);vertical-align:top;padding:3px;min-height:50px;cursor:pointer;background:#0f0a1e;min-width:148px}
 .wk-td:hover{background:#0d2137}
-.wk-td.na{background:#090f18;cursor:default}
-.wk-td.na:hover{background:#090f18}
+.wk-td.na{background:rgba(9,15,24,.7);cursor:default}
+.wk-td.na:hover{background:rgba(9,15,24,.7)}
 .wk-blk{border-radius:6px;padding:5px 7px;margin-bottom:3px;cursor:pointer;position:relative;min-height:38px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .wk-blk:hover{filter:brightness(1.12);transform:translateY(-1px);transition:transform .1s}
 .wk-blk .bt{font-size:11px;font-weight:700;color:#fff}
@@ -209,7 +209,7 @@ body{background:url('/caribana_vert.jpg') center center/cover no-repeat fixed;co
 .nosv{text-align:center;padding:40px;color:#2d5a7a;background:#0f2540;border-radius:10px}
 
 /* ── BÉNÉVOLES ── */
-.ben-pg{padding:14px;background:#0c1929}
+.ben-pg{padding:14px;background:rgba(12,25,41,.85)}
 .ben-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap}
 .ben-hdr h2{font-size:14px;font-weight:800;color:#f0f9ff}
 .bpri{background:linear-gradient(135deg,#f5a623,#e8652a);color:#fff;border:none;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;box-shadow:0 2px 8px rgba(245,166,35,.3)}
@@ -1146,7 +1146,7 @@ function renderJour(){
 
     h+=`<tr class="dv-row-sep"><td class="dv-pos-hdr" style="height:${rowH}px;vertical-align:top"><div class="dv-pos-nm">${pos}</div><div class="dv-pos-sec" style="color:${col}">${sec}</div></td>`;
     const ca=isA()?`onclick="dvClick('${pos}','${jour}',event)"`:'' ;
-    h+=`<td colspan="24" style="height:${rowH}px;padding:0;position:relative;background:#0c1929;border:1px solid rgba(56,189,248,.07);border-bottom:2px solid rgba(56,189,248,.25);cursor:${isA()?'crosshair':'default'}" ${ca}>`;
+    h+=`<td colspan="24" style="height:${rowH}px;padding:0;position:relative;background:rgba(12,25,41,.7);border:1px solid rgba(56,189,248,.07);border-bottom:2px solid rgba(56,189,248,.25);cursor:${isA()?'crosshair':'default'}" ${ca}>`;
     // Grilles verticales
     for(let hr=0;hr<=24;hr++){const pct=(hr/24)*100;const major=hr%6===0;h+=`<div style="position:absolute;top:0;bottom:0;left:${pct}%;width:${major?'1.5':'1'}px;background:${major?'rgba(56,189,248,.1)':'rgba(56,189,248,.04)'};pointer-events:none;z-index:1"></div>`;}
     // Séparateurs de lanes
