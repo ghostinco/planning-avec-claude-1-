@@ -1507,14 +1507,21 @@ function renderAssignList(sid,sl){
             const k=j.split(' ')[0];
             const isDispo=(b.dispos||[]).includes(j);
             const isSel=selectedDays.includes(j);
-            const isOccupied=!!occupied[j]&&!isSel;
-            const isDoublon=!!occupied[j]&&isSel;
+            // Vérifier si déjà assigné sur ce même poste un autre jour (info seulement)
+            const samePosteDays=Object.entries(_assignDays)
+              .filter(([osid])=>osid!==sid&&slots.find(x=>x.id===osid)?.pid===sl.pid)
+              .flatMap(([osid,days])=>(days[bid]||[]).map(jj=>jj.split(' ')[0]));
+            const abbr={'17':'me','18':'je','19':'ve','20':'sa'};
+            const sameDayAbbr=samePosteDays.map(d=>abbr[d]||d).filter((v,i,a)=>a.indexOf(v)===i);
+            const isOccupied=!!occupied[j]&&!isSel; // doublon réel non sélectionné
+            const isDoublon=!!occupied[j]&&isSel;   // doublon réel sélectionné
             let style='';
             if(!isDispo)style='opacity:.4;';
             if(isOccupied)style+='opacity:.25;cursor:not-allowed;border-color:rgba(248,113,113,.3);';
             if(isDoublon)style+='border-color:#f87171;background:rgba(248,113,113,.2);color:#f87171;';
             const title=isOccupied?'Déjà assigné: '+occupied[j]:isDoublon?'⚠ Doublon avec: '+occupied[j]:isDispo?'Disponible':'Non disponible ce jour';
-            return`<button type="button" class="ba-day-btn${isSel?' sel':''}${isOccupied?' occupied':''}" onclick="toggleDay('${b.id}','${j}','${sid}')" style="${style}" title="${title}">${k}/06${isDoublon?' ⚠':''}</button>`;
+            const extraLbl=sameDayAbbr.length>0&&!isSel?` <span style="font-size:9px;color:#64748b;font-weight:400">(${sameDayAbbr.join(',')})</span>`:'';
+            return`<button type="button" class="ba-day-btn${isSel?' sel':''}${isOccupied?' occupied':''}" onclick="toggleDay('${b.id}','${j}','${sid}')" style="${style}" title="${title}">${k}/06${isDoublon?' ⚠':''}${extraLbl}</button>`;
           }).join('')}
         </div>
         ${hasDoublon?`<div class="ba-dispo-warn" style="color:#f87171;margin-bottom:4px">⚠ Doublon: déjà assigné sur ${doublonDays.map(j=>occupied[j]).join(', ')} ce(s) jour(s)</div>`:''}
