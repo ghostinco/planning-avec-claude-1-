@@ -56,7 +56,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .rpill:hover{border-color:#38bdf8;color:#38bdf8}
 
 /* VBAR */
-.vbar{background:rgba(10,5,20,.82);backdrop-filter:blur(8px);border-bottom:1px solid rgba(56,189,248,.12);padding:7px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.vbar{background:rgba(5,10,20,.75);backdrop-filter:blur(6px);border-bottom:1px solid rgba(56,189,248,.12);padding:7px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
 .vbg{display:flex;background:rgba(12,25,41,.7);border:1px solid rgba(56,189,248,.15);border-radius:8px;overflow:hidden}
 .vb{background:none;border:none;cursor:pointer;padding:5px 13px;font-size:11px;font-weight:700;color:#4d7fa0;transition:all .15s}
 .vb:hover{color:#7fc8e8}
@@ -122,10 +122,10 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .wk-add:hover{border-color:#38bdf8;color:#38bdf8}
 
 /* ── VUE JOUR ── */
-.dv-outer{overflow:auto;height:100%;background:url('/caribana_vert.jpg') center center/cover no-repeat fixed}
+.dv-outer{overflow:auto;height:100%}
 .dv-table{border-collapse:collapse;min-width:900px;width:100%}
-.dv-corner{background:#0d2137;border:1px solid rgba(56,189,248,.15);padding:7px 9px;font-size:10px;color:#4d7fa0;font-weight:700;position:sticky;top:0;left:0;z-index:50;white-space:nowrap}
-.dv-hdr-h{background:#0f2744;border:1px solid rgba(56,189,248,.08);padding:5px 0;text-align:center;position:sticky;top:0;z-index:40;font-size:10px;white-space:nowrap;overflow:hidden}
+.dv-corner{background:rgba(8,20,40,.85);border:1px solid rgba(56,189,248,.15);padding:7px 9px;font-size:10px;color:#4d7fa0;font-weight:700;position:sticky;top:0;left:0;z-index:50;white-space:nowrap}
+.dv-hdr-h{background:rgba(10,25,50,.8);border:1px solid rgba(56,189,248,.08);padding:5px 0;text-align:center;position:sticky;top:0;z-index:40;font-size:10px;white-space:nowrap;overflow:hidden}
 .dv-hdr-h.major{color:#7fb8d4;font-weight:700;border-left:1.5px solid rgba(56,189,248,.2);background:#112c4a}
 .dv-hdr-h.minor{color:#2d5a7a;border-left:1px dashed rgba(56,189,248,.07)}
 .dv-sec-tr td{background:#0d2137;border:1px solid rgba(56,189,248,.08);padding:3px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
@@ -472,7 +472,7 @@ textarea.mbe-inp{font-family:inherit}
     </div>
   </div>
 
-  <div id="pg-planning" style="display:flex;flex-direction:column;flex:1;min-height:0">
+  <div id="pg-planning" style="display:flex;flex-direction:column;flex:1;min-height:0;background:url('/caribana_vert.jpg') center center/cover no-repeat fixed">
     <div class="vbar">
       <div class="vbg">
         <button type="button" class="vb act" id="vb-sem" onclick="setView('sem')">Semaine</button>
