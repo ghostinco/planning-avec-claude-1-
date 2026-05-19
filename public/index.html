@@ -401,8 +401,6 @@ textarea.mbe-inp{font-family:inherit}
 .ba-quick button{background:transparent;border:1px solid rgba(56,189,248,.15);border-radius:5px;padding:3px 9px;font-size:10px;color:#4d7fa0;cursor:pointer;transition:all .15s}
 .ba-quick button:hover{color:#38bdf8;border-color:#38bdf8}
 .ba-dispo-warn{font-size:10px;color:#f87171;margin-top:5px}
-.ba-doublon{border-color:rgba(248,113,113,.4)!important;background:rgba(248,113,113,.05)!important}
-.ba-day-btn.occupied{pointer-events:none}
 .slot-info-box{background:#0c1929;border:1px solid rgba(56,189,248,.15);border-radius:9px;padding:9px 11px;font-size:12px;color:#7fb8d4;margin-bottom:14px}
 </style>
 </head>
@@ -1443,62 +1441,21 @@ function renderAssignList(sid,sl){
     return(a.nom+a.prenom).localeCompare(b.nom+b.prenom);
   });
 
-  // Calculer les jours où le bénévole est DÉJÀ assigné sur un autre slot CE MÊME JOUR
-  // Un vrai doublon = même bénévole, même jour, slots différents
-  const getOccupiedDays=(bid)=>{
-    const occupied={};
-    // Pour chaque jour du créneau courant, vérifier si le bénévole est ailleurs ce jour-là
-    allDays.forEach(jour=>{
-      Object.entries(_assignDays).forEach(([otherSid,days])=>{
-        if(otherSid===sid)return; // ignorer le créneau actuel
-        const otherSlot=slots.find(x=>x.id===otherSid);
-        if(otherSlot&&otherSlot.pid===sl.pid)return; // même poste = pas un doublon
-        if((days[bid]||[]).includes(jour)){
-          occupied[jour]=otherSlot?otherSlot.pid:'autre poste';
-        }
-      });
-    });
-    return occupied;
-  };
-
-  // Masquer les bénévoles totalement bloqués (sauf s'ils sont déjà sur ce créneau)
-  const visibleBens=sorted.filter(b=>{
-    const alreadyHere=(window._assignTmpDays[b.id]||[]).length>0;
-    if(alreadyHere)return true;
-    const dispoDays=(b.dispos||[]).filter(d=>allDays.includes(d));
-    if(dispoDays.length===0)return true;
-    const occupied=getOccupiedDays(b.id);
-    const freedays=dispoDays.filter(d=>!occupied[d]);
-    return freedays.length>0;
-  });
-
-  const totalHidden=sorted.length-visibleBens.length;
-
-  document.getElementById('ma-list').innerHTML=(totalHidden>0?`
-    <div style="text-align:center;padding:6px 0;margin-bottom:8px">
-      <button type="button" onclick="toggleShowAllBens('${sid}')" id="btn-show-all-${sid}"
-        style="font-size:10px;background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.3);border-radius:5px;padding:4px 10px;cursor:pointer">
-        👁 ${totalHidden} bénévole${totalHidden>1?'s':''} masqué${totalHidden>1?'s':''} (déjà assigné${totalHidden>1?'s':''} ce jour)
-      </button>
-    </div>`:'')
-  +visibleBens.map(b=>{
+  document.getElementById('ma-list').innerHTML=sorted.map(b=>{
     const bc=bCol(b.id);const col2=SCLR[b.sec]||'#94a3b8';
     const selectedDays=window._assignTmpDays[b.id]||[];
     const hasDays=selectedDays.length>0;
     const isHab=b.type==='fixe'&&b.poste===sl.pid;
     const dispoDays=(b.dispos||[]).filter(d=>allDays.includes(d));
     const summaryTxt=hasDays?selectedDays.map(d=>d.split(' ')[0]+'/06').join(', '):'';
-    const occupied=getOccupiedDays(b.id);
-    const doublonDays=selectedDays.filter(j=>occupied[j]);
-    const hasDoublon=doublonDays.length>0;
-    return`<div class="ba-item${hasDays?' has-days':''}${hasDoublon?' ba-doublon':''}" id="ba-${b.id}">
+    return`<div class="ba-item${hasDays?' has-days':''}" id="ba-${b.id}">
       <div class="ba-hdr" onclick="toggleBaPanel('${b.id}','${sid}')">
         <div class="ba-av" style="background:${bc}">${init(b)}</div>
         <div style="flex:1;min-width:0">
-          <div class="ba-nm">${b.nom} ${b.prenom}${isHab?' <span style="font-size:9px;background:rgba(56,189,248,.12);color:#38bdf8;border-radius:3px;padding:1px 5px;border:1px solid rgba(56,189,248,.25)">poste habituel</span>':''}${hasDoublon?' <span style="font-size:9px;background:rgba(248,113,113,.15);color:#f87171;border-radius:3px;padding:1px 5px;border:1px solid rgba(248,113,113,.4)">⚠ doublon</span>':''}</div>
+          <div class="ba-nm">${b.nom} ${b.prenom}${isHab?' <span style="font-size:9px;background:rgba(56,189,248,.12);color:#38bdf8;border-radius:3px;padding:1px 5px;border:1px solid rgba(56,189,248,.25)">poste habituel</span>':''}</div>
           <div class="ba-meta">${b.poste||b.sec} · <span style="color:${col2}">${b.sec}</span></div>
         </div>
-        ${hasDays?`<div class="ba-days-summary" style="${hasDoublon?'color:#f87171':''}">${summaryTxt}</div>`:''}
+        ${hasDays?`<div class="ba-days-summary">${summaryTxt}</div>`:''}
         <div class="ba-arrow">▶</div>
       </div>
       <div class="ba-days-panel">
@@ -1507,24 +1464,9 @@ function renderAssignList(sid,sl){
             const k=j.split(' ')[0];
             const isDispo=(b.dispos||[]).includes(j);
             const isSel=selectedDays.includes(j);
-            // Vérifier si déjà assigné sur ce même poste un autre jour (info seulement)
-            const samePosteDays=Object.entries(_assignDays)
-              .filter(([osid])=>{if(osid===sid)return false;const os=slots.find(x=>x.id===osid);return os&&os.pid===sl.pid;})
-              .flatMap(([osid,days])=>(days[bid]||[]).map(jj=>jj.split(' ')[0]));
-            const abbr={'17':'me','18':'je','19':'ve','20':'sa'};
-            const sameDayAbbr=samePosteDays.map(d=>abbr[d]||d).filter((v,i,a)=>a.indexOf(v)===i);
-            const isOccupied=!!occupied[j]&&!isSel; // doublon réel non sélectionné
-            const isDoublon=!!occupied[j]&&isSel;   // doublon réel sélectionné
-            let style='';
-            if(!isDispo)style='opacity:.4;';
-            if(isOccupied)style+='opacity:.25;cursor:not-allowed;border-color:rgba(248,113,113,.3);';
-            if(isDoublon)style+='border-color:#f87171;background:rgba(248,113,113,.2);color:#f87171;';
-            const title=isOccupied?'Déjà assigné: '+occupied[j]:isDoublon?'⚠ Doublon avec: '+occupied[j]:isDispo?'Disponible':'Non disponible ce jour';
-            const extraLbl=sameDayAbbr.length>0&&!isSel?` <span style="font-size:9px;color:#64748b;font-weight:400">(${sameDayAbbr.join(',')})</span>`:'';
-            return`<button type="button" class="ba-day-btn${isSel?' sel':''}${isOccupied?' occupied':''}" onclick="toggleDay('${b.id}','${j}','${sid}')" style="${style}" title="${title}">${k}/06${isDoublon?' ⚠':''}${extraLbl}</button>`;
+            return`<button type="button" class="ba-day-btn${isSel?' sel':''}" onclick="toggleDay('${b.id}','${j}','${sid}')" style="${!isDispo?'opacity:.4':''}" title="${isDispo?'Disponible':'Non disponible ce jour'}">${k}/06</button>`;
           }).join('')}
         </div>
-        ${hasDoublon?`<div class="ba-dispo-warn" style="color:#f87171;margin-bottom:4px">⚠ Doublon: déjà assigné sur ${doublonDays.map(j=>occupied[j]).join(', ')} ce(s) jour(s)</div>`:''}
         <div class="ba-quick">
           <button type="button" onclick="selectAllDays('${b.id}','${sid}')">Tous</button>
           <button type="button" onclick="clearDays('${b.id}','${sid}')">Aucun</button>
@@ -1534,53 +1476,6 @@ function renderAssignList(sid,sl){
       </div>
     </div>`;
   }).join('');
-}
-
-
-function toggleShowAllBens(sid){
-  // Réouvrir la fenêtre d'assignation en mode "tout afficher"
-  window._showAllBens=window._showAllBens||{};
-  window._showAllBens[sid]=true;
-  const sl=slots.find(x=>x.id===sid);if(!sl)return;
-  // Re-render avec tous les bénévoles
-  const btn=document.getElementById('btn-show-all-'+sid);
-  if(btn){btn.textContent='✓ Tous affichés';btn.style.background='rgba(52,211,153,.1)';btn.style.color='#34d399';btn.style.borderColor='rgba(52,211,153,.3)';btn.onclick=null;}
-  // Afficher les bénévoles cachés en les ajoutant
-  const sorted=[...bens].sort((a,b)=>{
-    const aAssigned=!!(window._assignTmpDays[a.id]&&window._assignTmpDays[a.id].length>0);
-    const bAssigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
-    if(aAssigned&&!bAssigned)return-1;if(!aAssigned&&bAssigned)return 1;
-    return(a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-  });
-  const getOccupiedDays=(bid)=>{const occupied={};Object.entries(_assignDays).forEach(([otherSid,days])=>{if(otherSid===sid)return;(days[bid]||[]).forEach(j=>{const otherSlot=slots.find(x=>x.id===otherSid);occupied[j]=otherSlot?otherSlot.pid:'autre poste';});});return occupied;};
-  const hiddenBens=sorted.filter(b=>{
-    const alreadyHere=(window._assignTmpDays[b.id]||[]).length>0;if(alreadyHere)return false;
-    const dispoDays=(b.dispos||[]).filter(d=>sl.jours.includes(d));if(dispoDays.length===0)return false;
-    const occupied=getOccupiedDays(b.id);return dispoDays.every(d=>!!occupied[d]);
-  });
-  const list=document.getElementById('ma-list');
-  hiddenBens.forEach(b=>{
-    if(document.getElementById('ba-'+b.id))return;
-    const bc=bCol(b.id);const col2=SCLR[b.sec]||'#94a3b8';
-    const occupied=getOccupiedDays(b.id);
-    const el=document.createElement('div');
-    el.className='ba-item';el.id='ba-'+b.id;
-    el.style.opacity='0.6';el.style.borderColor='rgba(248,113,113,.3)';
-    el.innerHTML=`<div class="ba-hdr" onclick="toggleBaPanel('${b.id}','${sid}')">
-      <div class="ba-av" style="background:${bc}">${init(b)}</div>
-      <div style="flex:1;min-width:0">
-        <div class="ba-nm">${b.nom} ${b.prenom} <span style="font-size:9px;color:#f87171">⛔ déjà placé</span></div>
-        <div class="ba-meta">${Object.entries(occupied).map(([j,p])=>j.split(' ')[0]+'/06: '+p).join(' · ')}</div>
-      </div>
-    </div>
-    <div class="ba-days-panel">
-      <div class="ba-days-btns">
-        ${sl.jours.map(j=>{const k=j.split(' ')[0];const isOcc=!!occupied[j];return`<button type="button" class="ba-day-btn${isOcc?' occupied':''}" onclick="toggleDay('${b.id}','${j}','${sid}')" style="${isOcc?'opacity:.25;cursor:not-allowed;border-color:rgba(248,113,113,.3);':''}" title="${isOcc?'Déjà assigné: '+occupied[j]:'Libre'}">${k}/06</button>`;}).join('')}
-      </div>
-      <div class="ba-dispo-warn">⚠ Déjà assigné ce jour sur d'autres postes</div>
-    </div>`;
-    list.appendChild(el);
-  });
 }
 
 function toggleBaPanel(bid,sid){
