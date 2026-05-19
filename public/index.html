@@ -1146,13 +1146,13 @@ function renderJour(){
 
     h+=`<tr class="dv-row-sep"><td class="dv-pos-hdr" style="height:${rowH}px;vertical-align:top"><div class="dv-pos-nm">${pos}</div><div class="dv-pos-sec" style="color:${col}">${sec}</div></td>`;
     const ca=isA()?`onclick="dvClick('${pos}','${jour}',event)"`:'' ;
-    h+=`<td colspan="24" style="height:${rowH}px;padding:0;position:relative;background:rgba(12,25,41,.7);border:1px solid rgba(56,189,248,.07);border-bottom:2px solid rgba(56,189,248,.25);cursor:${isA()?'crosshair':'default'}" ${ca}>`;
+    h+=`<td colspan="24" style="height:${rowH}px;padding:0;position:relative;background:transparent;border:1px solid rgba(56,189,248,.07);border-bottom:2px solid rgba(56,189,248,.25);cursor:${isA()?'crosshair':'default'}" ${ca}>`;
     // Grilles verticales
     for(let hr=0;hr<=24;hr++){const pct=(hr/24)*100;const major=hr%6===0;h+=`<div style="position:absolute;top:0;bottom:0;left:${pct}%;width:${major?'1.5':'1'}px;background:${major?'rgba(56,189,248,.1)':'rgba(56,189,248,.04)'};pointer-events:none;z-index:1"></div>`;}
     // Séparateurs de lanes
     let laneTop=0;
     lanes.forEach((lane,li)=>{
-      if(li>0)h+=`<div style="position:absolute;left:0;right:0;top:${laneTop}px;height:1px;background:rgba(56,189,248,.06);z-index:2;pointer-events:none"></div>`;
+      if(li>0)h+=`<div style="position:absolute;left:0;right:0;top:${laneTop}px;height:1px;background:rgba(5,12,25,.5);z-index:2;pointer-events:none"></div>`;
       lane.forEach(sl=>{
         const nbJ=_assignDays[sl.id]?Object.entries(_assignDays[sl.id]).filter(([bid,jrs])=>jrs.includes(jour)).length:0;
         const isEmpty=nbJ===0;
@@ -2676,7 +2676,7 @@ function updateImportPreview(){
   // Aperçu — 8 premières lignes
   const preview=valid.slice(0,8);
   let h='<table style="width:100%;border-collapse:collapse">';
-  h+=`<tr style="background:#0c1929;position:sticky;top:0"><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0;font-weight:700">Prénom</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0;font-weight:700">Nom</th></tr>`;
+  h+=`<tr style="background:rgba(5,12,25,.85);position:sticky;top:0"><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0;font-weight:700">Prénom</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0;font-weight:700">Nom</th></tr>`;
   preview.forEach((r,i)=>{h+=`<tr style="background:${i%2===0?'#0c1929':'#0d2137'}"><td style="padding:5px 10px;font-size:12px;color:#e2e8f0">${r.prenom}</td><td style="padding:5px 10px;font-size:12px;color:#e2e8f0">${r.nom}</td></tr>`;});
   if(valid.length>8)h+=`<tr><td colspan="2" style="padding:5px 10px;font-size:11px;color:#4d7fa0;font-style:italic">... et ${valid.length-8} autres</td></tr>`;
   h+='</table>';
