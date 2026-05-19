@@ -33,7 +33,7 @@ body{background:#0c1929;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
 .sync-badge{background:rgba(245,166,35,.08);border:1px solid rgba(245,166,35,.3);border-radius:8px;padding:5px 14px;font-size:11px;color:#f5a623;text-align:center;max-width:320px;width:100%;margin-bottom:18px}
 
 /* ── APP ── */
-#AP{display:none;flex-direction:column;min-height:100vh;background:url('/caribana_vert.jpg') center center/cover no-repeat fixed}
+#AP{display:none;flex-direction:column;min-height:100vh;background:url('/caribana_vert.jpg') center center/cover no-repeat fixed;position:relative}#AP::before{content:'';position:fixed;inset:0;background:rgba(5,12,25,.72);z-index:0;pointer-events:none}#AP>*{position:relative;z-index:1}
 #AP.vis{display:flex}
 
 /* TOPBAR */
