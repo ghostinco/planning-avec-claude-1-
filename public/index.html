@@ -1509,7 +1509,7 @@ function renderAssignList(sid,sl){
             const isSel=selectedDays.includes(j);
             // Vérifier si déjà assigné sur ce même poste un autre jour (info seulement)
             const samePosteDays=Object.entries(_assignDays)
-              .filter(([osid])=>osid!==sid&&slots.find(x=>x.id===osid)?.pid===sl.pid)
+              .filter(([osid])=>{if(osid===sid)return false;const os=slots.find(x=>x.id===osid);return os&&os.pid===sl.pid;})
               .flatMap(([osid,days])=>(days[bid]||[]).map(jj=>jj.split(' ')[0]));
             const abbr={'17':'me','18':'je','19':'ve','20':'sa'};
             const sameDayAbbr=samePosteDays.map(d=>abbr[d]||d).filter((v,i,a)=>a.indexOf(v)===i);
