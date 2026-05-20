@@ -8,34 +8,6 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;min-height:100vh}
-/* == FOND PLANNING == */
-body.plan-on{background:url('/caribana_vert.jpg') center center/cover no-repeat fixed}
-body.plan-on::before{content:'';position:fixed;inset:0;background:rgba(5,12,25,.52);pointer-events:none;z-index:0}
-body.plan-on #AP{background:transparent;position:relative;z-index:1}
-body.plan-on #pg-planning{background:transparent}
-body.plan-on .topbar{background:rgba(10,5,20,.7);backdrop-filter:blur(10px)}
-body.plan-on .vbar{background:rgba(5,8,18,.5) !important;backdrop-filter:blur(10px)}
-body.plan-on .filter-bar{background:rgba(5,8,18,.4) !important;backdrop-filter:blur(10px)}
-body.plan-on .dv-outer{background:transparent}
-body.plan-on .dv-table{background:transparent}
-body.plan-on .dv-corner{background:rgba(5,15,30,.35) !important}
-body.plan-on .dv-hdr-h{background:rgba(5,15,30,.3) !important}
-body.plan-on .dv-hdr-h.major{background:rgba(8,20,45,.4) !important}
-body.plan-on .dv-sec-tr td{background:rgba(5,15,30,.3) !important}
-body.plan-on .dv-pos-hdr{background:rgba(5,15,30,.3) !important}
-body.plan-on .wk-wrap,.wk-table{background:transparent}
-body.plan-on .wk-th-nm{background:rgba(5,15,30,.3) !important}
-body.plan-on .wk-th-day{background:rgba(5,15,30,.25) !important}
-body.plan-on .wk-sec td{background:rgba(5,15,30,.3) !important}
-body.plan-on .wk-nm{background:rgba(5,15,30,.3) !important}
-body.plan-on .wk-td{background:rgba(5,15,30,.15) !important}
-body.plan-on .wk-td:hover{background:rgba(13,33,55,.35) !important}
-body.plan-on .wk-td.na{background:rgba(3,8,16,.25) !important}
-body.plan-on .sv2-right{background:rgba(5,15,30,.3) !important}
-body.plan-on .sv2-grid-hdr{background:rgba(5,15,30,.35) !important}
-body.plan-on .sv2-sec-row{background:rgba(5,15,30,.3) !important}
-body.plan-on .sv2-pos-nm-cell{background:rgba(5,15,30,.3) !important}
-body.plan-on .content{background:transparent !important}
 
 /* ── LOGIN ── */
 #login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;background:url('/caribana-3_2000.jpg') center center/cover no-repeat}
@@ -150,7 +122,7 @@ body.plan-on .content{background:transparent !important}
 .wk-add:hover{border-color:#38bdf8;color:#38bdf8}
 
 /* ── VUE JOUR ── */
-.dv-outer{overflow:auto;height:100%}
+.dv-outer{overflow:auto;height:100%;background:url('/caribana_vert.jpg') left top/auto repeat}
 .dv-table{border-collapse:collapse;min-width:900px;width:100%}
 .dv-corner{background:rgba(8,20,40,.85);border:1px solid rgba(56,189,248,.15);padding:7px 9px;font-size:10px;color:#4d7fa0;font-weight:700;position:sticky;top:0;left:0;z-index:50;white-space:nowrap}
 .dv-hdr-h{background:rgba(10,25,50,.8);border:1px solid rgba(56,189,248,.08);padding:5px 0;text-align:center;position:sticky;top:0;z-index:40;font-size:10px;white-space:nowrap;overflow:hidden}
@@ -500,7 +472,7 @@ textarea.mbe-inp{font-family:inherit}
     </div>
   </div>
 
-  <div id="pg-planning" style="display:flex;flex-direction:column;flex:1;min-height:0;background:transparent">
+  <div id="pg-planning" style="display:flex;flex-direction:column;flex:1;min-height:0">
     <div class="vbar">
       <div class="vbg">
         <button type="button" class="vb act" id="vb-sem" onclick="setView('sem')">Semaine</button>
@@ -950,7 +922,7 @@ function setSync(s,t){const d=document.getElementById('sdot'),tx=document.getEle
 function selR(r){rSel=r;document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('rc-'+r).classList.add('sel');if(r==='admin'){document.getElementById('pz').classList.add('show');document.getElementById('pi').value='';document.getElementById('pe').style.display='none';document.getElementById('be').disabled=true;setTimeout(()=>document.getElementById('pi').focus(),60);}else{document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=false;}}
 document.getElementById('pi').addEventListener('input',function(){const v=this.value;document.getElementById('pe').style.display='none';if(v.length===4){const ok=v===PIN;document.getElementById('be').disabled=!ok;if(!ok)document.getElementById('pe').style.display='block';}else document.getElementById('be').disabled=true;});
 document.getElementById('pi').addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('be').disabled)goIn();});
-function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';document.getElementById('btn-sync-sheets').style.display=isA()?'block':'none';document.getElementById('btn-import-festival').style.display=isA()?'block':'none';document.getElementById('btn-exports').style.display=isA()?'flex':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';document.body.classList.add('plan-on');loadAll();}
+function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';document.getElementById('btn-sync-sheets').style.display=isA()?'block':'none';document.getElementById('btn-import-festival').style.display=isA()?'block':'none';document.getElementById('btn-exports').style.display=isA()?'flex':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';loadAll();}
 function deco(){role=null;rSel=null;document.getElementById('AP').className='';document.getElementById('AP').style.display='none';document.getElementById('login').style.display='flex';document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=true;}
 const isA=()=>role==='admin';
 function stab(n){
@@ -958,7 +930,7 @@ function stab(n){
     const btn=document.querySelectorAll('.nt')[i];
     if(btn)btn.classList.toggle('act',tab===n);
   });
-  document.getElementById('pg-planning').style.display=n==='planning'?'flex':'none';document.body.classList.toggle('plan-on',n==='planning');
+  document.getElementById('pg-planning').style.display=n==='planning'?'flex':'none';
   document.getElementById('pg-benevoles').style.display=n==='benevoles'?'block':'none';
   document.getElementById('pg-stats').style.display=n==='stats'?'block':'none';
   document.getElementById('pg-params').style.display=n==='params'?'block':'none';
