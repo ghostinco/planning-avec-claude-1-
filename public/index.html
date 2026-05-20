@@ -122,8 +122,7 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 .wk-add:hover{border-color:#38bdf8;color:#38bdf8}
 
 /* ── VUE JOUR ── */
-.dv-outer{overflow:auto;height:100%;background:url('/caribana_vert.jpg') center center/cover no-repeat}
-.dv-outer td,.dv-outer th{background:transparent !important}
+.dv-outer{overflow:auto;height:100%}
 .dv-table{border-collapse:collapse;min-width:900px;width:100%}
 .dv-corner{background:rgba(8,20,40,.85);border:1px solid rgba(56,189,248,.15);padding:7px 9px;font-size:10px;color:#4d7fa0;font-weight:700;position:sticky;top:0;left:0;z-index:50;white-space:nowrap}
 .dv-hdr-h{background:rgba(10,25,50,.8);border:1px solid rgba(56,189,248,.08);padding:5px 0;text-align:center;position:sticky;top:0;z-index:40;font-size:10px;white-space:nowrap;overflow:hidden}
@@ -404,6 +403,47 @@ textarea.mbe-inp{font-family:inherit}
 .ba-dispo-warn{font-size:10px;color:#f87171;margin-top:5px}.ba-doublon{border-color:rgba(248,113,113,.4)!important;background:rgba(248,113,113,.05)!important}.ba-day-btn.occupied{pointer-events:none}
 .slot-info-box{background:rgba(12,25,41,.55);border:1px solid rgba(56,189,248,.15);border-radius:9px;padding:9px 11px;font-size:12px;color:#7fb8d4;margin-bottom:14px}
 </style>
+<style id="debug-layers">
+/* COUCHE 1 - body */
+body { background: red !important; }
+
+/* COUCHE 2 - #AP */
+#AP { background: orange !important; }
+
+/* COUCHE 3 - #pg-planning */
+#pg-planning { background: yellow !important; }
+
+/* COUCHE 4 - .vbar */
+.vbar { background: lime !important; }
+
+/* COUCHE 5 - .filter-bar */
+.filter-bar { background: cyan !important; }
+
+/* COUCHE 6 - .content */
+.content { background: magenta !important; }
+
+/* COUCHE 7 - .dv-outer */
+.dv-outer { background: blue !important; }
+
+/* COUCHE 8 - .dv-table */
+.dv-table { background: purple !important; }
+
+/* COUCHE 9 - .dv-corner */
+.dv-corner { background: pink !important; }
+
+/* COUCHE 10 - .dv-hdr-h */
+.dv-hdr-h { background: gold !important; }
+
+/* COUCHE 11 - .dv-sec-tr td */
+.dv-sec-tr td { background: tomato !important; }
+
+/* COUCHE 12 - .dv-pos-hdr */
+.dv-pos-hdr { background: springgreen !important; }
+
+/* COUCHE 13 - td colspan 24 (cellule grille horaire) */
+.dv-outer td[colspan="24"] { background: deepskyblue !important; }
+</style>
+
 </head>
 <body>
 
