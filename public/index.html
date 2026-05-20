@@ -8,12 +8,16 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;min-height:100vh}
+
 /* ── FOND IMAGE PLANNING ──
-   background-attachment:fixed ne fonctionne pas sur un div avec overflow:auto.
-   Solution : mettre l'image sur <html>, body et #AP transparents quand planning actif. */
-html.pg-plan{background:url('/caribana_vert.jpg') center center/cover no-repeat fixed}
-html.pg-plan body{background:rgba(8,15,28,.6)}
-html.pg-plan #AP{background:transparent}
+   background-attachment:fixed est ignoré dans tout élément avec overflow:auto/scroll.
+   Solution : un div position:fixed derrière tout, visible seulement sur l'onglet planning. */
+#plan-bg{display:none;position:fixed;inset:0;z-index:0;background:url('/caribana_vert.jpg') center center/cover no-repeat;pointer-events:none}
+#plan-bg.on{display:block}
+/* Quand le fond est actif, rendre body et #AP transparents */
+body.plan-on{background:rgba(8,15,28,.55)}
+body.plan-on #AP{background:transparent}
+body.plan-on #pg-planning{background:transparent}
 
 /* ── LOGIN ── */
 #login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;background:url('/caribana-3_2000.jpg') center center/cover no-repeat}
@@ -77,7 +81,7 @@ html.pg-plan #AP{background:transparent}
 .tbtn.hi{background:linear-gradient(135deg,#f5a623,#e8652a);border-color:transparent;color:#fff;box-shadow:0 2px 8px rgba(245,166,35,.35)}
 
 /* FILTER BAR */
-.filter-bar{background:rgba(10,5,20,.5);backdrop-filter:blur(8px);border-bottom:1px solid rgba(56,189,248,.1);padding:6px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
+.filter-bar{background:rgba(10,5,20,.45);backdrop-filter:blur(8px);border-bottom:1px solid rgba(56,189,248,.1);padding:6px 14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;flex-shrink:0}
 .fw{position:relative}
 .filter-btn{background:rgba(12,25,41,.6);border:1px solid rgba(56,189,248,.18);border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;color:#7fb8d4;cursor:pointer;transition:all .15s}
 .filter-btn:hover{background:rgba(56,189,248,.1);color:#f0f9ff}
@@ -100,25 +104,25 @@ html.pg-plan #AP{background:transparent}
 /* ── VUE SEMAINE ── */
 .wk-wrap{overflow-x:auto}
 .wk-table{border-collapse:collapse;width:100%;min-width:580px;table-layout:fixed}
-.wk-th-nm{width:145px;min-width:130px;background:rgba(13,33,55,.45);border:1px solid rgba(56,189,248,.1);padding:9px 10px;text-align:left;position:sticky;left:0;top:0;z-index:25}
-.wk-th-day{background:rgba(15,39,68,.45);border:1px solid rgba(56,189,248,.1);text-align:center;position:sticky;top:0;z-index:15;min-width:148px}
+.wk-th-nm{width:145px;min-width:130px;background:rgba(13,33,55,.4);border:1px solid rgba(56,189,248,.1);padding:9px 10px;text-align:left;position:sticky;left:0;top:0;z-index:25}
+.wk-th-day{background:rgba(15,39,68,.4);border:1px solid rgba(56,189,248,.1);text-align:center;position:sticky;top:0;z-index:15;min-width:148px}
 .wk-th-day-in{padding:8px 5px}
 .wkwd{font-size:10px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.6px}
 .wkdt{font-size:15px;font-weight:800;color:#f0f9ff;margin-top:2px}
 .wkmq{font-size:10px;font-weight:700;margin-top:3px}
-.wk-sec td{background:rgba(13,33,55,.45);border:1px solid rgba(56,189,248,.1);padding:5px 10px}
+.wk-sec td{background:rgba(13,33,55,.4);border:1px solid rgba(56,189,248,.1);padding:5px 10px}
 .wk-sec-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
-.wk-nm{background:rgba(13,33,55,.45);border-right:1px solid rgba(56,189,248,.15);padding:7px 9px;vertical-align:middle;width:145px;min-width:130px;position:sticky;left:0;z-index:5}
+.wk-nm{background:rgba(13,33,55,.4);border-right:1px solid rgba(56,189,248,.15);padding:7px 9px;vertical-align:middle;width:145px;min-width:130px;position:sticky;left:0;z-index:5}
 .wk-nm .nn{font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wk-nm .np{font-size:10px;color:#4d7fa0;margin-top:1px}
 .nty{font-size:9px;font-weight:700;border-radius:3px;padding:1px 4px;display:inline-block;margin-top:1px}
 .nfix{background:#1e3a5f;color:#60a5fa}.nrot{background:#1c1917;color:#a8a29e}
 .ned{display:none;float:right;background:rgba(56,189,248,.15);border:none;color:#7fc8e8;border-radius:3px;width:18px;height:18px;font-size:10px;cursor:pointer;align-items:center;justify-content:center;margin-top:1px}
 .wk-nm:hover .ned{display:flex}
-.wk-td{border:1px solid rgba(245,166,35,.08);vertical-align:top;padding:3px;min-height:50px;cursor:pointer;background:rgba(8,15,28,.3);min-width:148px}
-.wk-td:hover{background:rgba(13,33,55,.45)}
-.wk-td.na{background:rgba(5,10,18,.45);cursor:default}
-.wk-td.na:hover{background:rgba(5,10,18,.45)}
+.wk-td{border:1px solid rgba(245,166,35,.08);vertical-align:top;padding:3px;min-height:50px;cursor:pointer;background:rgba(8,15,28,.25);min-width:148px}
+.wk-td:hover{background:rgba(13,33,55,.4)}
+.wk-td.na{background:rgba(5,10,18,.35);cursor:default}
+.wk-td.na:hover{background:rgba(5,10,18,.35)}
 .wk-blk{border-radius:6px;padding:5px 7px;margin-bottom:3px;cursor:pointer;position:relative;min-height:38px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .wk-blk:hover{filter:brightness(1.12);transform:translateY(-1px);transition:transform .1s}
 .wk-blk .bt{font-size:11px;font-weight:700;color:#fff}
@@ -130,12 +134,12 @@ html.pg-plan #AP{background:transparent}
 /* ── VUE JOUR ── */
 .dv-outer{overflow:auto;height:100%}
 .dv-table{border-collapse:collapse;min-width:900px;width:100%}
-.dv-corner{background:rgba(8,20,40,.55);border:1px solid rgba(56,189,248,.15);padding:7px 9px;font-size:10px;color:#4d7fa0;font-weight:700;position:sticky;top:0;left:0;z-index:50;white-space:nowrap}
-.dv-hdr-h{background:rgba(10,25,50,.55);border:1px solid rgba(56,189,248,.08);padding:5px 0;text-align:center;position:sticky;top:0;z-index:40;font-size:10px;white-space:nowrap;overflow:hidden}
-.dv-hdr-h.major{color:#7fb8d4;font-weight:700;border-left:1.5px solid rgba(56,189,248,.2);background:rgba(17,44,74,.6)}
+.dv-corner{background:rgba(8,20,40,.5);border:1px solid rgba(56,189,248,.15);padding:7px 9px;font-size:10px;color:#4d7fa0;font-weight:700;position:sticky;top:0;left:0;z-index:50;white-space:nowrap}
+.dv-hdr-h{background:rgba(10,25,50,.5);border:1px solid rgba(56,189,248,.08);padding:5px 0;text-align:center;position:sticky;top:0;z-index:40;font-size:10px;white-space:nowrap;overflow:hidden}
+.dv-hdr-h.major{color:#7fb8d4;font-weight:700;border-left:1.5px solid rgba(56,189,248,.2);background:rgba(17,44,74,.55)}
 .dv-hdr-h.minor{color:#2d5a7a;border-left:1px dashed rgba(56,189,248,.07)}
-.dv-sec-tr td{background:rgba(13,33,55,.45);border:1px solid rgba(56,189,248,.08);padding:3px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
-.dv-pos-hdr{background:rgba(13,33,55,.45);border:1px solid rgba(56,189,248,.12);border-right:2px solid rgba(56,189,248,.25);border-bottom:2px solid rgba(56,189,248,.35);padding:7px 9px;vertical-align:middle;position:sticky;left:0;z-index:15;min-width:158px;width:158px}
+.dv-sec-tr td{background:rgba(13,33,55,.4);border:1px solid rgba(56,189,248,.08);padding:3px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+.dv-pos-hdr{background:rgba(13,33,55,.4);border:1px solid rgba(56,189,248,.12);border-right:2px solid rgba(56,189,248,.25);border-bottom:2px solid rgba(56,189,248,.35);padding:7px 9px;vertical-align:middle;position:sticky;left:0;z-index:15;min-width:158px;width:158px}
 .dv-row-sep{border-bottom:2px solid rgba(56,189,248,.25) !important}
 .dv-pos-nm{font-size:12px;font-weight:700;color:#e2e8f0}
 .dv-pos-sec{font-size:10px;color:#4d7fa0;margin-top:1px}
@@ -157,7 +161,7 @@ html.pg-plan #AP{background:transparent}
 /* ── VUE CRÉNEAUX (nouveau layout) ── */
 .sv2-outer{display:flex;height:100%;overflow:hidden}
 .sv2-left{flex:1;overflow:auto;min-width:0}
-.sv2-right{width:220px;flex-shrink:0;background:rgba(13,33,55,.45);border-left:1px solid rgba(56,189,248,.15);display:flex;flex-direction:column}
+.sv2-right{width:220px;flex-shrink:0;background:rgba(13,33,55,.4);border-left:1px solid rgba(56,189,248,.15);display:flex;flex-direction:column}
 .sv2-right-hdr{padding:10px 12px 8px;border-bottom:1px solid rgba(56,189,248,.12);flex-shrink:0}
 .sv2-right-hdr h3{font-size:12px;font-weight:800;color:#f0f9ff;margin-bottom:7px}
 .sv2-search{width:100%;background:rgba(12,25,41,.55);border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:6px 9px;font-size:12px;outline:none}
@@ -172,19 +176,19 @@ html.pg-plan #AP{background:transparent}
 .sv2-sec-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 /* Grille postes */
 .sv2-grid{min-width:680px}
-.sv2-grid-hdr{display:grid;grid-template-columns:160px repeat(4,1fr);border-bottom:2px solid rgba(56,189,248,.2);position:sticky;top:0;z-index:10;background:rgba(13,33,55,.45)}
+.sv2-grid-hdr{display:grid;grid-template-columns:160px repeat(4,1fr);border-bottom:2px solid rgba(56,189,248,.2);position:sticky;top:0;z-index:10;background:rgba(13,33,55,.4)}
 .sv2-hdr-poste{padding:8px 10px;font-size:10px;font-weight:800;color:#4d7fa0;text-transform:uppercase;letter-spacing:.4px;border-right:1px solid rgba(56,189,248,.1)}
 .sv2-hdr-jour{padding:8px 6px;text-align:center;border-right:1px solid rgba(56,189,248,.1)}
 .sv2-hdr-jour .hj-wd{font-size:10px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.5px}
 .sv2-hdr-jour .hj-dt{font-size:14px;font-weight:800;color:#f0f9ff}
 .sv2-hdr-jour .hj-mq{font-size:10px;font-weight:700;margin-top:2px}
 /* Ligne secteur */
-.sv2-sec-row{display:grid;grid-template-columns:160px repeat(4,1fr);background:rgba(13,33,55,.45);border-top:2px solid rgba(56,189,248,.15)}
+.sv2-sec-row{display:grid;grid-template-columns:160px repeat(4,1fr);background:rgba(13,33,55,.4);border-top:2px solid rgba(56,189,248,.15)}
 .sv2-sec-lbl{grid-column:1/-1;padding:5px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
 /* Ligne poste */
 .sv2-pos-row{display:grid;grid-template-columns:160px repeat(4,1fr);border-top:1px solid rgba(56,189,248,.1)}
 .sv2-pos-row:hover{background:rgba(56,189,248,.02)}
-.sv2-pos-nm-cell{padding:8px 10px;border-right:1px solid rgba(56,189,248,.12);display:flex;flex-direction:column;justify-content:center;background:rgba(13,33,55,.45);position:sticky;left:0;z-index:5}
+.sv2-pos-nm-cell{padding:8px 10px;border-right:1px solid rgba(56,189,248,.12);display:flex;flex-direction:column;justify-content:center;background:rgba(13,33,55,.4);position:sticky;left:0;z-index:5}
 .sv2-pos-nm-cell .pnm{font-size:12px;font-weight:700;color:#e2e8f0}
 .sv2-pos-nm-cell .pnec{font-size:10px;color:#4d7fa0;margin-top:2px}
 /* Cellule jour d'un poste */
@@ -478,7 +482,7 @@ textarea.mbe-inp{font-family:inherit}
     </div>
   </div>
 
-  <div id="pg-planning" style="display:flex;flex-direction:column;flex:1;min-height:0;background:transparent">
+  <div id="pg-planning" style="display:flex;flex-direction:column;flex:1;min-height:0;position:relative;z-index:1">
     <div class="vbar">
       <div class="vbg">
         <button type="button" class="vb act" id="vb-sem" onclick="setView('sem')">Semaine</button>
@@ -928,7 +932,11 @@ function setSync(s,t){const d=document.getElementById('sdot'),tx=document.getEle
 function selR(r){rSel=r;document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('rc-'+r).classList.add('sel');if(r==='admin'){document.getElementById('pz').classList.add('show');document.getElementById('pi').value='';document.getElementById('pe').style.display='none';document.getElementById('be').disabled=true;setTimeout(()=>document.getElementById('pi').focus(),60);}else{document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=false;}}
 document.getElementById('pi').addEventListener('input',function(){const v=this.value;document.getElementById('pe').style.display='none';if(v.length===4){const ok=v===PIN;document.getElementById('be').disabled=!ok;if(!ok)document.getElementById('pe').style.display='block';}else document.getElementById('be').disabled=true;});
 document.getElementById('pi').addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('be').disabled)goIn();});
-function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';document.getElementById('btn-sync-sheets').style.display=isA()?'block':'none';document.getElementById('btn-import-festival').style.display=isA()?'block':'none';document.getElementById('btn-exports').style.display=isA()?'flex':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';document.documentElement.classList.add('pg-plan');loadAll();}
+function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';document.getElementById('btn-sync-sheets').style.display=isA()?'block':'none';document.getElementById('btn-import-festival').style.display=isA()?'block':'none';document.getElementById('btn-exports').style.display=isA()?'flex':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';
+  // Créer le div fond image s'il n'existe pas encore
+  if(!document.getElementById('plan-bg')){const bg=document.createElement('div');bg.id='plan-bg';document.body.insertBefore(bg,document.body.firstChild);}
+  document.getElementById('plan-bg').classList.add('on');document.body.classList.add('plan-on');
+  loadAll();}
 function deco(){role=null;rSel=null;document.getElementById('AP').className='';document.getElementById('AP').style.display='none';document.getElementById('login').style.display='flex';document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=true;}
 const isA=()=>role==='admin';
 function stab(n){
@@ -940,8 +948,9 @@ function stab(n){
   document.getElementById('pg-benevoles').style.display=n==='benevoles'?'block':'none';
   document.getElementById('pg-stats').style.display=n==='stats'?'block':'none';
   document.getElementById('pg-params').style.display=n==='params'?'block':'none';
-  // Image fond verte : activée uniquement sur l'onglet planning
-  document.documentElement.classList.toggle('pg-plan', n==='planning');
+  // Fond image planning : activé seulement sur cet onglet
+  const planBg=document.getElementById('plan-bg');
+  if(planBg){planBg.classList.toggle('on',n==='planning');document.body.classList.toggle('plan-on',n==='planning');}
   if(n==='stats')renderStats();
   if(n==='benevoles')renderBens();
   if(n==='params')renderParams();
@@ -1090,7 +1099,7 @@ function renderSemaine(){
   const semaines=getSemainesCalendaires();
   const totalSem=semaines.length;
   const semLabel=totalSem>1?`Semaine ${weekOffset+1}/${totalSem}`:'';
-  let h=`<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(8,5,18,.55);border-bottom:1px solid rgba(245,166,35,.1);flex-shrink:0">`;
+  let h=`<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(8,5,18,.45);border-bottom:1px solid rgba(245,166,35,.1);flex-shrink:0">`;
   if(totalSem>1){
     h+=`<button type="button" class="dnb" onclick="prevWeek()" ${weekOffset===0?'disabled style="opacity:.3"':''}>◀</button>`;
     h+=`<span style="font-size:12px;font-weight:700;color:#f5a623;min-width:100px;text-align:center">${semLabel}</span>`;
@@ -1216,7 +1225,7 @@ function renderSV(){
   // Navigation semaine
   let navHtml='';
   if(totalSem>1){
-    navHtml=`<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(8,5,18,.55);border-bottom:1px solid rgba(245,166,35,.1)">
+    navHtml=`<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:rgba(8,5,18,.45);border-bottom:1px solid rgba(245,166,35,.1)">
       <button type="button" class="dnb" onclick="weekOffset=Math.max(0,weekOffset-1);renderSV()" ${weekOffset===0?'disabled style="opacity:.3"':''}>◀</button>
       <span style="font-size:12px;font-weight:700;color:#f5a623">Semaine ${weekOffset+1}/${totalSem}</span>
       <button type="button" class="dnb" onclick="weekOffset=Math.min(${totalSem-1},weekOffset+1);renderSV()" ${weekOffset>=totalSem-1?'disabled style="opacity:.3"':''}>▶</button>
