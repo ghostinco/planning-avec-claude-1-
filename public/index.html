@@ -87,32 +87,32 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 .fd-footer button.pri{background:linear-gradient(135deg,#0ea5e9,#0284c7);border-color:transparent;color:#fff}
 .chip{background:rgba(56,189,248,.12);color:#7dd3fc;border:1px solid rgba(56,189,248,.25);border-radius:5px;padding:2px 8px;font-size:11px;display:flex;align-items:center;gap:4px}
 .chip-x{cursor:pointer;opacity:.7;font-size:10px}
-.content{flex:1;overflow:auto;min-width:0}
+.content{flex:1;overflow:auto;min-width:0;background:transparent !important}
 .loading-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:#4d7fa0;gap:12px}
 .spinner{width:28px;height:28px;border:3px solid rgba(56,189,248,.15);border-top-color:#38bdf8;border-radius:50%;animation:spin .8s linear infinite}
 
 /* ── VUE SEMAINE ── */
 .wk-wrap{overflow-x:auto}
 .wk-table{border-collapse:collapse;width:100%;min-width:580px;table-layout:fixed}
-.wk-th-nm{width:145px;min-width:130px;background:rgba(13,33,55,.65);border:1px solid rgba(56,189,248,.1);padding:9px 10px;text-align:left;position:sticky;left:0;top:0;z-index:25}
-.wk-th-day{background:rgba(15,39,68,.65);border:1px solid rgba(56,189,248,.1);text-align:center;position:sticky;top:0;z-index:15;min-width:148px}
+.wk-th-nm{width:145px;min-width:130px;background:rgba(13,33,55,.55);border:1px solid rgba(56,189,248,.1);padding:9px 10px;text-align:left;position:sticky;left:0;top:0;z-index:25}
+.wk-th-day{background:rgba(15,39,68,.55);border:1px solid rgba(56,189,248,.1);text-align:center;position:sticky;top:0;z-index:15;min-width:148px}
 .wk-th-day-in{padding:8px 5px}
 .wkwd{font-size:10px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.6px}
 .wkdt{font-size:15px;font-weight:800;color:#f0f9ff;margin-top:2px}
 .wkmq{font-size:10px;font-weight:700;margin-top:3px}
-.wk-sec td{background:rgba(13,33,55,.65);border:1px solid rgba(56,189,248,.1);padding:5px 10px}
+.wk-sec td{background:rgba(13,33,55,.5);border:1px solid rgba(56,189,248,.1);padding:5px 10px}
 .wk-sec-lbl{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
-.wk-nm{background:rgba(13,33,55,.65);border-right:1px solid rgba(56,189,248,.15);padding:7px 9px;vertical-align:middle;width:145px;min-width:130px;position:sticky;left:0;z-index:5}
+.wk-nm{background:rgba(13,33,55,.5);border-right:1px solid rgba(56,189,248,.15);padding:7px 9px;vertical-align:middle;width:145px;min-width:130px;position:sticky;left:0;z-index:5}
 .wk-nm .nn{font-size:12px;font-weight:700;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .wk-nm .np{font-size:10px;color:#4d7fa0;margin-top:1px}
 .nty{font-size:9px;font-weight:700;border-radius:3px;padding:1px 4px;display:inline-block;margin-top:1px}
 .nfix{background:#1e3a5f;color:#60a5fa}.nrot{background:#1c1917;color:#a8a29e}
 .ned{display:none;float:right;background:rgba(56,189,248,.15);border:none;color:#7fc8e8;border-radius:3px;width:18px;height:18px;font-size:10px;cursor:pointer;align-items:center;justify-content:center;margin-top:1px}
 .wk-nm:hover .ned{display:flex}
-.wk-td{border:1px solid rgba(245,166,35,.08);vertical-align:top;padding:3px;min-height:50px;cursor:pointer;background:rgba(15,10,30,.55);min-width:148px}
-.wk-td:hover{background:rgba(13,33,55,.65)}
-.wk-td.na{background:rgba(9,15,24,.7);cursor:default}
-.wk-td.na:hover{background:rgba(9,15,24,.7)}
+.wk-td{border:1px solid rgba(245,166,35,.08);vertical-align:top;padding:3px;min-height:50px;cursor:pointer;background:rgba(15,10,30,.35);min-width:148px}
+.wk-td:hover{background:rgba(13,33,55,.5)}
+.wk-td.na{background:rgba(9,15,24,.5);cursor:default}
+.wk-td.na:hover{background:rgba(9,15,24,.5)}
 .wk-blk{border-radius:6px;padding:5px 7px;margin-bottom:3px;cursor:pointer;position:relative;min-height:38px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
 .wk-blk:hover{filter:brightness(1.12);transform:translateY(-1px);transition:transform .1s}
 .wk-blk .bt{font-size:11px;font-weight:700;color:#fff}
@@ -121,15 +121,23 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 .wk-add{width:100%;background:transparent;border:1px dashed rgba(56,189,248,.2);border-radius:5px;padding:3px;color:#2d5a7a;font-size:10px;cursor:pointer;text-align:center;margin-top:2px;transition:all .15s}
 .wk-add:hover{border-color:#38bdf8;color:#38bdf8}
 
+/* ── IMAGE FOND PLANNING ── */
+#pg-planning{position:relative}
+#pg-planning::before{content:'';position:fixed;inset:0;background:rgba(8,15,30,.6);pointer-events:none;z-index:0}
+#pg-planning>.vbar,#pg-planning>.filter-bar,#pg-planning>.content{position:relative;z-index:1}
+#pg-planning .vbar{background:rgba(5,10,20,.55) !important;backdrop-filter:blur(8px)}
+#pg-planning .filter-bar{background:rgba(5,10,15,.5) !important;backdrop-filter:blur(8px)}
+#pg-planning .dv-outer{background:transparent !important}
+
 /* ── VUE JOUR ── */
 .dv-outer{overflow:auto;height:100%}
 .dv-table{border-collapse:collapse;min-width:900px;width:100%}
-.dv-corner{background:rgba(8,20,40,.85);border:1px solid rgba(56,189,248,.15);padding:7px 9px;font-size:10px;color:#4d7fa0;font-weight:700;position:sticky;top:0;left:0;z-index:50;white-space:nowrap}
-.dv-hdr-h{background:rgba(10,25,50,.8);border:1px solid rgba(56,189,248,.08);padding:5px 0;text-align:center;position:sticky;top:0;z-index:40;font-size:10px;white-space:nowrap;overflow:hidden}
-.dv-hdr-h.major{color:#7fb8d4;font-weight:700;border-left:1.5px solid rgba(56,189,248,.2);background:#112c4a}
+.dv-corner{background:rgba(8,20,40,.7);border:1px solid rgba(56,189,248,.15);padding:7px 9px;font-size:10px;color:#4d7fa0;font-weight:700;position:sticky;top:0;left:0;z-index:50;white-space:nowrap}
+.dv-hdr-h{background:rgba(10,25,50,.65);border:1px solid rgba(56,189,248,.08);padding:5px 0;text-align:center;position:sticky;top:0;z-index:40;font-size:10px;white-space:nowrap;overflow:hidden}
+.dv-hdr-h.major{color:#7fb8d4;font-weight:700;border-left:1.5px solid rgba(56,189,248,.2);background:rgba(17,44,74,.7)}
 .dv-hdr-h.minor{color:#2d5a7a;border-left:1px dashed rgba(56,189,248,.07)}
-.dv-sec-tr td{background:rgba(13,33,55,.65);border:1px solid rgba(56,189,248,.08);padding:3px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
-.dv-pos-hdr{background:rgba(13,33,55,.65);border:1px solid rgba(56,189,248,.12);border-right:2px solid rgba(56,189,248,.25);border-bottom:2px solid rgba(56,189,248,.35);padding:7px 9px;vertical-align:middle;position:sticky;left:0;z-index:15;min-width:158px;width:158px}
+.dv-sec-tr td{background:rgba(13,33,55,.5);border:1px solid rgba(56,189,248,.08);padding:3px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+.dv-pos-hdr{background:rgba(13,33,55,.55);border:1px solid rgba(56,189,248,.12);border-right:2px solid rgba(56,189,248,.25);border-bottom:2px solid rgba(56,189,248,.35);padding:7px 9px;vertical-align:middle;position:sticky;left:0;z-index:15;min-width:158px;width:158px}
 .dv-row-sep{border-bottom:2px solid rgba(56,189,248,.25) !important}
 .dv-pos-nm{font-size:12px;font-weight:700;color:#e2e8f0}
 .dv-pos-sec{font-size:10px;color:#4d7fa0;margin-top:1px}
@@ -151,7 +159,7 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 /* ── VUE CRÉNEAUX (nouveau layout) ── */
 .sv2-outer{display:flex;height:100%;overflow:hidden}
 .sv2-left{flex:1;overflow:auto;min-width:0}
-.sv2-right{width:220px;flex-shrink:0;background:rgba(13,33,55,.65);border-left:1px solid rgba(56,189,248,.15);display:flex;flex-direction:column}
+.sv2-right{width:220px;flex-shrink:0;background:rgba(13,33,55,.5);border-left:1px solid rgba(56,189,248,.15);display:flex;flex-direction:column}
 .sv2-right-hdr{padding:10px 12px 8px;border-bottom:1px solid rgba(56,189,248,.12);flex-shrink:0}
 .sv2-right-hdr h3{font-size:12px;font-weight:800;color:#f0f9ff;margin-bottom:7px}
 .sv2-search{width:100%;background:rgba(12,25,41,.55);border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:6px 9px;font-size:12px;outline:none}
@@ -166,19 +174,19 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 .sv2-sec-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 /* Grille postes */
 .sv2-grid{min-width:680px}
-.sv2-grid-hdr{display:grid;grid-template-columns:160px repeat(4,1fr);border-bottom:2px solid rgba(56,189,248,.2);position:sticky;top:0;z-index:10;background:rgba(13,33,55,.65)}
+.sv2-grid-hdr{display:grid;grid-template-columns:160px repeat(4,1fr);border-bottom:2px solid rgba(56,189,248,.2);position:sticky;top:0;z-index:10;background:rgba(13,33,55,.55)}
 .sv2-hdr-poste{padding:8px 10px;font-size:10px;font-weight:800;color:#4d7fa0;text-transform:uppercase;letter-spacing:.4px;border-right:1px solid rgba(56,189,248,.1)}
 .sv2-hdr-jour{padding:8px 6px;text-align:center;border-right:1px solid rgba(56,189,248,.1)}
 .sv2-hdr-jour .hj-wd{font-size:10px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.5px}
 .sv2-hdr-jour .hj-dt{font-size:14px;font-weight:800;color:#f0f9ff}
 .sv2-hdr-jour .hj-mq{font-size:10px;font-weight:700;margin-top:2px}
 /* Ligne secteur */
-.sv2-sec-row{display:grid;grid-template-columns:160px repeat(4,1fr);background:rgba(13,33,55,.65);border-top:2px solid rgba(56,189,248,.15)}
+.sv2-sec-row{display:grid;grid-template-columns:160px repeat(4,1fr);background:rgba(13,33,55,.5);border-top:2px solid rgba(56,189,248,.15)}
 .sv2-sec-lbl{grid-column:1/-1;padding:5px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
 /* Ligne poste */
 .sv2-pos-row{display:grid;grid-template-columns:160px repeat(4,1fr);border-top:1px solid rgba(56,189,248,.1)}
 .sv2-pos-row:hover{background:rgba(56,189,248,.02)}
-.sv2-pos-nm-cell{padding:8px 10px;border-right:1px solid rgba(56,189,248,.12);display:flex;flex-direction:column;justify-content:center;background:rgba(13,33,55,.65);position:sticky;left:0;z-index:5}
+.sv2-pos-nm-cell{padding:8px 10px;border-right:1px solid rgba(56,189,248,.12);display:flex;flex-direction:column;justify-content:center;background:rgba(13,33,55,.5);position:sticky;left:0;z-index:5}
 .sv2-pos-nm-cell .pnm{font-size:12px;font-weight:700;color:#e2e8f0}
 .sv2-pos-nm-cell .pnec{font-size:10px;color:#4d7fa0;margin-top:2px}
 /* Cellule jour d'un poste */
