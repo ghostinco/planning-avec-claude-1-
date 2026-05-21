@@ -1613,36 +1613,35 @@ function toggleBaPanel(bid,sid){
 function openAssignNew(sid,ev){
   if(ev)ev.stopPropagation();
   openAssign(sid,null);
-  // Après ouverture : cacher la liste gauche, focus sur recherche droite
-  setTimeout(()=>{
-    document.querySelectorAll('#ma-list .ba-item').forEach(el=>{
-      el.style.display=el.classList.contains('has-days')?'':'none';
+  // Vider la liste gauche sauf les déjà assignés, focus recherche droite
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      document.querySelectorAll('#ma-list .ba-item').forEach(el=>{
+        el.style.display=el.classList.contains('has-days')?'':'none';
+      });
+      const search=document.getElementById('ba-search');
+      if(search)search.focus();
     });
-    // Message d'invitation à droite
-    const search=document.getElementById('ba-search');
-    if(search)search.focus();
-    // Highlight liste droite
-    document.querySelectorAll('#ma-ben-list .sv2-ben-item').forEach(el=>{
-      el.style.opacity='1';
-    });
-  },50);
+  });
 }
 function openAssignSingle(sid,bid,ev){
   if(ev)ev.stopPropagation();
   openAssign(sid,null);
-  // Après ouverture, filtrer la liste gauche pour ne montrer que ce bénévole
-  setTimeout(()=>{
-    document.querySelectorAll('#ma-list .ba-item').forEach(el=>{
-      el.style.display=el.id==='ba-'+bid?'':'none';
+  requestAnimationFrame(()=>{
+    requestAnimationFrame(()=>{
+      // Ne montrer que ce bénévole à gauche
+      document.querySelectorAll('#ma-list .ba-item').forEach(el=>{
+        el.style.display=el.id==='ba-'+bid?'':'none';
+      });
+      // Ouvrir son panel automatiquement
+      const el=document.getElementById('ba-'+bid);
+      if(el&&!el.classList.contains('open'))el.classList.add('open');
+      // Atténuer les autres dans la liste droite
+      document.querySelectorAll('#ma-ben-list .sv2-ben-item').forEach(el2=>{
+        el2.style.opacity=el2.getAttribute('data-bid')===bid?'1':'0.35';
+      });
     });
-    // Ouvrir automatiquement son panel
-    const el=document.getElementById('ba-'+bid);
-    if(el&&!el.classList.contains('open'))el.classList.add('open');
-    // Mettre en évidence dans la liste droite
-    document.querySelectorAll('#ma-ben-list .sv2-ben-item').forEach(el2=>{
-      el2.style.opacity=el2.getAttribute('data-bid')===bid?'1':'0.35';
-    });
-  },50);
+  });
 }
 
 function toggleDay(bid,jour,sid){
