@@ -1270,7 +1270,9 @@ function renderSV(){
                 ${isA()&&!isLocked?`<span class="sv2-tag-x" onclick="removeAssignDay('${sl.id}','${bid}','${j.lbl}')">✕</span>`:''}
               </div>`;
             });
-            if(!bidsJ.length)grid+=`<div style="font-size:10px;font-weight:700;color:#f87171;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:4px;padding:4px 8px;text-align:center">Manque bénévole</div>`;
+            // Placeholders pour les bénévoles manquants
+            const manquants=slNec-bidsJ.length;
+            for(let m=0;m<manquants;m++)grid+=`<div style="font-size:10px;font-weight:700;color:#f87171;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:4px;padding:4px 8px;text-align:center">+ Manque bénévole</div>`;
             grid+=`</div>`;
           });
         } else {
