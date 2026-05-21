@@ -113,11 +113,11 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 .wk-td:hover{background:rgba(13,33,55,.65)}
 .wk-td.na{background:rgba(9,15,24,.7);cursor:default}
 .wk-td.na:hover{background:rgba(9,15,24,.7)}
-.wk-blk{border-radius:6px;padding:5px 7px;margin-bottom:3px;cursor:pointer;position:relative;height:54px;box-shadow:0 2px 6px rgba(0,0,0,.25);overflow:hidden}
+.wk-blk{border-radius:6px;padding:5px 7px;margin-bottom:3px;cursor:pointer;position:relative;min-height:54px;box-shadow:0 2px 6px rgba(0,0,0,.25);overflow:hidden;display:flex;flex-direction:column;justify-content:center}
 .wk-blk:hover{filter:brightness(1.12);transform:translateY(-1px);transition:transform .1s}
-.wk-blk .bt{font-size:11px;font-weight:700;color:#fff}
-.wk-blk .bp{font-size:10px;color:rgba(255,255,255,.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:28px}
-.wk-blk .bct{position:absolute;top:5px;right:6px;font-size:10px;font-weight:800;color:rgba(255,255,255,.95)}
+.wk-blk .bt{font-size:12px;font-weight:700;color:#fff}
+.wk-blk .bp{font-size:12px;color:rgba(255,255,255,.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:28px}
+.wk-blk .bct{position:absolute;top:5px;right:6px;font-size:12px;font-weight:800;color:rgba(255,255,255,.95)}
 .wk-add{width:100%;background:transparent;border:1px dashed rgba(56,189,248,.2);border-radius:5px;padding:3px;color:#2d5a7a;font-size:10px;cursor:pointer;text-align:center;margin-top:2px;transition:all .15s}
 .wk-add:hover{border-color:#38bdf8;color:#38bdf8}
 
@@ -138,10 +138,10 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 .slot-blk.empty{background:#0f2540;border:1.5px dashed rgba(56,189,248,.25)}
 .slot-blk.empty:hover{background:#1a3a5e;border-color:#38bdf8}
 .sl-row{display:flex;align-items:center;justify-content:space-between;gap:3px}
-.sl-time{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl-time{font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .slot-blk.empty .sl-time{color:#7fb8d4}
 .slot-blk:not(.empty) .sl-time{color:#fff}
-.sl-ratio{font-size:10px;font-weight:800;flex-shrink:0}
+.sl-ratio{font-size:12px;font-weight:800;flex-shrink:0}
 .sl-bens{font-size:9px;color:rgba(255,255,255,.8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
 .sl-ben-nm{font-size:11px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.45;padding:0 2px}
 .sl-sa{display:none;position:absolute;top:2px;right:2px;gap:1px}
@@ -1196,8 +1196,8 @@ function renderJour(){
         // Hauteur: header(22) + vignette(20px) * nec + marges
         const vigH=22+Math.max(nec,1)*22+8;
         const cardBg=bgCol||'rgba(30,58,95,.7)';
-        const vigHtml=bensList.map(b=>`<div style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:2px 7px;margin:2px 3px;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f1f5f9;height:18px;line-height:18px;box-sizing:border-box">${b.nm}</div>`).join('')
-          +Array.from({length:nManq},(_,i)=>`<div style="background:rgba(0,0,0,.25);border:2px solid rgba(220,60,60,.6);border-radius:4px;padding:2px 7px;margin:2px 3px;font-size:10px;color:#fca5a5;cursor:pointer;height:18px;line-height:14px;box-sizing:border-box;white-space:nowrap" onclick="openAssign('${sl.id}',event)">+ Manque bénévole ${bensList.length+i+1}</div>`).join('');
+        const vigHtml=bensList.map(b=>`<div style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:3px 8px;margin:2px 3px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f1f5f9;height:22px;line-height:22px;box-sizing:border-box;cursor:pointer;display:flex;align-items:center" onclick="openAssignSingle('${sl.id}','${b.id}',event)">${b.nm}</div>`).join('')
+          +Array.from({length:nManq},(_,i)=>`<div style="background:rgba(0,0,0,.25);border:2px solid rgba(220,60,60,.6);border-radius:4px;padding:3px 8px;margin:2px 3px;font-size:12px;color:#fca5a5;cursor:pointer;height:22px;line-height:22px;box-sizing:border-box;white-space:nowrap;display:flex;align-items:center" onclick="openAssign('${sl.id}',event)">+ Manque bénévole</div>`).join('');
         h+=`<div class="slot-blk ${isEmpty?'empty':''}" style="left:${left}%;width:calc(${w}% - 3px);top:${top}px;height:${vigH-4}px;background:${cardBg};border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.08)" onclick="openAssign('${sl.id}',event)">
           <div class="sl-row" style="padding:2px 5px;border-bottom:1px solid rgba(0,0,0,.2)"><div class="sl-time">${sl.start_time}–${sl.end_time} <span style="opacity:.7">${fmtH(dur)}</span></div><div style="font-size:11px;font-weight:800;color:#000;background:${rc};border-radius:3px;padding:0 4px">${nbJ}/${nec}</div></div>
           ${vigHtml}
