@@ -402,6 +402,14 @@ textarea.mbe-inp{font-family:inherit}
 .ba-quick button:hover{color:#38bdf8;border-color:#38bdf8}
 .ba-dispo-warn{font-size:10px;color:#f87171;margin-top:5px}.ba-doublon{border-color:rgba(248,113,113,.4)!important;background:rgba(248,113,113,.05)!important}.ba-day-btn.occupied{pointer-events:none}
 .slot-info-box{background:rgba(12,25,41,.55);border:1px solid rgba(56,189,248,.15);border-radius:9px;padding:9px 11px;font-size:12px;color:#7fb8d4;margin-bottom:14px}
+
+/* ── IMAGE FOND PLANNING ── */
+#pg-planning{background:url('/caribana_vert.jpg') center center/cover no-repeat !important}
+#pg-planning .content{background:transparent !important}
+#pg-planning .dv-outer{background:transparent !important}
+#pg-planning td[colspan="24"]{background:transparent !important}
+#pg-planning .wk-td{background:rgba(5,12,25,.3) !important}
+#pg-planning .sv2-cell{background:rgba(5,12,25,.2) !important}
 </style>
 </head>
 <body>
@@ -442,8 +450,8 @@ textarea.mbe-inp{font-family:inherit}
     <div style="position:absolute;top:30%;left:5%;width:2px;height:2px;border-radius:50%;background:#34d399;opacity:.5"></div>
     <div style="position:absolute;top:12%;left:45%;width:4px;height:4px;border-radius:50%;background:#fbbf24;opacity:.9"></div>
   </div>
-  <div style="font-size:38px;font-weight:900;color:#fff;text-align:center;margin-bottom:6px;letter-spacing:-.5px;text-shadow:0 2px 24px rgba(245,166,35,.6)"><b style="color:#f5a623">Planning</b> by LFMR</div>
-  <div style="font-size:20px;font-weight:700;color:rgba(255,220,150,.9);text-align:center;margin-bottom:28px;letter-spacing:.5px;text-shadow:0 2px 12px rgba(0,0,0,.7)">Caribana 2026 · 17–20 juin</div>
+  <div style="font-size:42px;font-weight:900;color:#fff;text-align:center;margin-bottom:8px;letter-spacing:-.5px;text-shadow:0 2px 24px rgba(245,166,35,.6)"><b style="color:#f5a623">Planning</b> by LFMR</div>
+  <div style="font-size:22px;font-weight:700;color:rgba(255,220,150,.9);text-align:center;margin-bottom:28px;letter-spacing:.5px;text-shadow:0 2px 12px rgba(0,0,0,.8)">Caribana 2026 · 17–20 juin</div>
   <div class="lcard" id="rc-admin" onclick="selR('admin')"><div class="ct">🔑 Administrateur</div><div class="cs">Accès complet</div></div>
   <div class="lcard" id="rc-obs" onclick="selR('obs')"><div class="ct">👁 Observation</div><div class="cs">Lecture seule — sans code</div></div>
   <div class="lpin" id="pz">
@@ -920,7 +928,7 @@ function setSync(s,t){const d=document.getElementById('sdot'),tx=document.getEle
 function selR(r){rSel=r;document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('rc-'+r).classList.add('sel');if(r==='admin'){document.getElementById('pz').classList.add('show');document.getElementById('pi').value='';document.getElementById('pe').style.display='none';document.getElementById('be').disabled=true;setTimeout(()=>document.getElementById('pi').focus(),60);}else{document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=false;}}
 document.getElementById('pi').addEventListener('input',function(){const v=this.value;document.getElementById('pe').style.display='none';if(v.length===4){const ok=v===PIN;document.getElementById('be').disabled=!ok;if(!ok)document.getElementById('pe').style.display='block';}else document.getElementById('be').disabled=true;});
 document.getElementById('pi').addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('be').disabled)goIn();});
-function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';document.getElementById('btn-sync-sheets').style.display=isA()?'block':'none';document.getElementById('btn-import-festival').style.display=isA()?'block':'none';document.getElementById('btn-exports').style.display=isA()?'flex':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';document.body.classList.add('plan-on');loadAll();}
+function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';document.getElementById('btn-sync-sheets').style.display=isA()?'block':'none';document.getElementById('btn-import-festival').style.display=isA()?'block':'none';document.getElementById('btn-exports').style.display=isA()?'flex':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';loadAll();}
 function deco(){role=null;rSel=null;document.getElementById('AP').className='';document.getElementById('AP').style.display='none';document.getElementById('login').style.display='flex';document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=true;}
 const isA=()=>role==='admin';
 function stab(n){
@@ -930,7 +938,6 @@ function stab(n){
   });
   document.getElementById('pg-planning').style.display=n==='planning'?'flex':'none';
   document.getElementById('pg-benevoles').style.display=n==='benevoles'?'block':'none';
-  document.body.classList.toggle('plan-on',n==='planning');
   document.getElementById('pg-stats').style.display=n==='stats'?'block':'none';
   document.getElementById('pg-params').style.display=n==='params'?'block':'none';
   if(n==='stats')renderStats();
