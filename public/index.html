@@ -10,7 +10,7 @@
 body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;font-size:13px;min-height:100vh}
 
 /* ── LOGIN ── */
-#login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;position:relative;overflow:hidden;background:url('/caribana-3_2000.jpg') center center/cover no-repeat}
+#login{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:48px;padding:48px 24px 24px;position:relative;overflow:hidden;background:url('/caribana-3_2000.jpg') center center/cover no-repeat}
 #login::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Cellipse cx='400' cy='420' rx='420' ry='80' fill='rgba(255,180,0,.08)'/%3E%3Ccircle cx='400' cy='320' r='120' fill='rgba(255,140,0,.12)'/%3E%3Ccircle cx='400' cy='320' r='60' fill='rgba(255,200,50,.18)'/%3E%3C/svg%3E") center 60%/cover no-repeat;pointer-events:none;z-index:0}
 #login::after{content:'';position:absolute;bottom:0;left:0;right:0;height:220px;background:linear-gradient(0deg,rgba(10,5,20,.85) 0%,transparent 100%);pointer-events:none;z-index:0}
 #login>*{position:relative;z-index:1}
@@ -113,7 +113,7 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 .wk-td:hover{background:rgba(13,33,55,.65)}
 .wk-td.na{background:rgba(9,15,24,.7);cursor:default}
 .wk-td.na:hover{background:rgba(9,15,24,.7)}
-.wk-blk{border-radius:6px;padding:5px 7px;margin-bottom:3px;cursor:pointer;position:relative;min-height:38px;box-shadow:0 2px 6px rgba(0,0,0,.25)}
+.wk-blk{border-radius:6px;padding:5px 7px;margin-bottom:3px;cursor:pointer;position:relative;height:54px;box-shadow:0 2px 6px rgba(0,0,0,.25);overflow:hidden}
 .wk-blk:hover{filter:brightness(1.12);transform:translateY(-1px);transition:transform .1s}
 .wk-blk .bt{font-size:11px;font-weight:700;color:#fff}
 .wk-blk .bp{font-size:10px;color:rgba(255,255,255,.85);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:28px}
@@ -408,7 +408,7 @@ textarea.mbe-inp{font-family:inherit}
 #pg-planning .content{background:transparent !important}
 #pg-planning .dv-outer{background:transparent !important}
 #pg-planning td[colspan="24"]{background:transparent !important}
-#pg-planning .wk-td{background:rgba(5,12,25,.3) !important}
+#pg-planning .wk-td{background:rgba(5,12,25,.35) !important}
 #pg-planning .sv2-cell{background:rgba(5,12,25,.2) !important}
 </style>
 </head>
@@ -450,8 +450,8 @@ textarea.mbe-inp{font-family:inherit}
     <div style="position:absolute;top:30%;left:5%;width:2px;height:2px;border-radius:50%;background:#34d399;opacity:.5"></div>
     <div style="position:absolute;top:12%;left:45%;width:4px;height:4px;border-radius:50%;background:#fbbf24;opacity:.9"></div>
   </div>
-  <div style="font-size:42px;font-weight:900;color:#fff;text-align:center;margin-bottom:8px;letter-spacing:-.5px;text-shadow:0 2px 24px rgba(245,166,35,.6)"><b style="color:#f5a623">Planning</b> by LFMR</div>
-  <div style="font-size:22px;font-weight:700;color:rgba(255,220,150,.9);text-align:center;margin-bottom:28px;letter-spacing:.5px;text-shadow:0 2px 12px rgba(0,0,0,.8)">Caribana 2026 · 17–20 juin</div>
+  <div style="font-size:46px;font-weight:900;color:#fff;text-align:center;margin-bottom:8px;letter-spacing:-.5px;text-shadow:0 2px 28px rgba(0,0,0,.9),0 2px 20px rgba(245,166,35,.4)"><b style="color:#f5a623">Planning</b> by LFMR</div>
+  <div style="font-size:22px;font-weight:700;color:rgba(255,220,150,.95);text-align:center;margin-bottom:32px;letter-spacing:.5px;text-shadow:0 2px 16px rgba(0,0,0,.9)">Caribana 2026 · 17–20 juin</div>
   <div class="lcard" id="rc-admin" onclick="selR('admin')"><div class="ct">🔑 Administrateur</div><div class="cs">Accès complet</div></div>
   <div class="lcard" id="rc-obs" onclick="selR('obs')"><div class="ct">👁 Observation</div><div class="cs">Lecture seule — sans code</div></div>
   <div class="lpin" id="pz">
@@ -1112,7 +1112,7 @@ function renderSemaine(){
   joursVis.forEach(j=>{const dis=(b.dispos||[]).includes(j.lbl);
   const mySlots=slots.filter(sl=>sl.jours.includes(j.lbl)&&assigns[sl.id]&&assigns[sl.id].includes(b.id)&&(_assignDays[sl.id]?.[b.id]||[]).includes(j.lbl));
   if(!dis){h+=`<td class="wk-td na"><div style="height:100%;display:flex;align-items:center;justify-content:center;opacity:.1">—</div></td>`;}
-  else{h+=`<td class="wk-td">`;mySlots.forEach(sl=>{const nec=POSTES_NEC[sl.pid]||2;const nbJ=nbBensOnPosteJour(sl.pid,j.lbl);const rc=nbJ>=nec?'#34d399':nbJ>0?'#fbbf24':'#f87171';h+=`<div class="wk-blk" style="background:${bc}" onclick="openAssign('${sl.id}',event)"><div class="bt">${sl.start_time}–${sl.end_time}</div><div class="bp">${sl.pid}</div><div class="bct" style="color:${rc}">${nbJ}/${nec}</div></div>`;});if(isA())h+=`<button type="button" class="wk-add" onclick="openNewSlotDay('${j.lbl}',event)">+ créneau</button>`;h+=`</td>`;}});
+  else{h+=`<td class="wk-td">`;mySlots.forEach(sl=>{const nec=POSTES_NEC[sl.pid]||2;const nbJ=nbBensOnPosteJour(sl.pid,j.lbl);const rc=nbJ>=nec?'#34d399':nbJ>0?'#fbbf24':'#f87171';const emptyCard=nbJ===0?`<div style="font-size:10px;font-weight:800;color:#f87171;text-align:center;padding:2px 0">VIDE</div>`:'';h+=`<div class="wk-blk" style="background:${bc};${nbJ===0?'border:1.5px solid #f87171;background:rgba(248,113,113,.08)':''}" onclick="openAssign('${sl.id}',event)"><div class="bt">${sl.start_time}–${sl.end_time}</div><div class="bp">${sl.pid}</div><div class="bct" style="color:${rc}">${nbJ}/${nec}</div>${emptyCard}</div>`;});if(isA())h+=`<button type="button" class="wk-add" onclick="openNewSlotDay('${j.lbl}',event)">+ créneau</button>`;h+=`</td>`;}});
   h+=`</tr>`;});});
   if(semSearch&&totalVisible===0)h+=`<tr><td colspan="${joursVis.length+1}" style="text-align:center;padding:30px;color:#2d5a7a">Aucun résultat.</td></tr>`;
   h+='</tbody></table></div>';
