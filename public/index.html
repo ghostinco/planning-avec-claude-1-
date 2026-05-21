@@ -1283,7 +1283,7 @@ function renderSV(){
               const b=bens.find(x=>x.id===bid);if(!b)return;
               const bc=bCol(bid);
               const isLocked=(_locks[sl.id]?.[bid]||new Set()).has(j.lbl);
-              grid+=`<div class="sv2-tag${isLocked?' sv2-locked':''}" style="margin-top:3px" onclick="openAssign('${sl.id}',event)" title="${isLocked?'🔒 Verrouillé — cliquer pour déverrouiller':isA()?'Cliquer pour modifier':''}">
+              grid+=`<div class="sv2-tag${isLocked?' sv2-locked':''}" style="margin-top:3px" onclick="openAssignSingle('${sl.id}','${bid}',event)" title="${isLocked?'🔒 Verrouillé':'Cliquer pour modifier ce bénévole'}">
                 <div class="sv2-av" style="background:${bc};width:20px;height:20px;font-size:9px">${init(b)}</div>
                 <span style="font-size:12px">${b.prenom} ${b.nom}</span>
                 ${isA()?`<span class="sv2-tag-lock${isLocked?' locked':''}" onclick="event.stopPropagation();toggleLock('${sl.id}','${bid}','${j.lbl}')" title="${isLocked?'Déverrouiller':'Verrouiller'}">${isLocked?'🔒':'🔓'}</span>`:''}
@@ -1450,7 +1450,7 @@ function openAssign(sid,ev){
     benListEl.innerHTML=sorted.map(b=>{
       const bc=bCol(b.id);
       const assigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
-      return`<div class="sv2-ben-item${assigned?' has-days':''}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}" onclick="toggleBaPanel('${b.id}','${sl.id}')">
+      return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}" onclick="toggleBaPanel('${b.id}','${sl.id}')">
         <div class="sv2-av" style="background:${bc};width:26px;height:26px;font-size:10px;flex-shrink:0">${init(b)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:12px;font-weight:700;color:#f0f9ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.prenom} ${b.nom}</div>
@@ -1607,6 +1607,25 @@ function showHiddenBens(sid){
 function toggleBaPanel(bid,sid){
   const el=document.getElementById('ba-'+bid);if(!el)return;
   el.classList.toggle('open');
+}
+
+// Ouvre la sidebar pour UN seul bénévole (clic sur vignette individuelle)
+function openAssignSingle(sid,bid,ev){
+  if(ev)ev.stopPropagation();
+  openAssign(sid,null);
+  // Après ouverture, filtrer la liste gauche pour ne montrer que ce bénévole
+  setTimeout(()=>{
+    document.querySelectorAll('#ma-list .ba-item').forEach(el=>{
+      el.style.display=el.id==='ba-'+bid?'':'none';
+    });
+    // Ouvrir automatiquement son panel
+    const el=document.getElementById('ba-'+bid);
+    if(el&&!el.classList.contains('open'))el.classList.add('open');
+    // Mettre en évidence dans la liste droite
+    document.querySelectorAll('#ma-ben-list .sv2-ben-item').forEach(el2=>{
+      el2.style.opacity=el2.getAttribute('data-bid')===bid?'1':'0.35';
+    });
+  },50);
 }
 
 function toggleDay(bid,jour,sid){
