@@ -166,19 +166,18 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 .sv2-sec-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 /* Grille postes */
 .sv2-grid{min-width:680px}
-.sv2-grid-hdr{display:grid;grid-template-columns:160px repeat(4,1fr);border-bottom:2px solid rgba(56,189,248,.2);position:sticky;top:0;z-index:10;background:rgba(13,33,55,.65)}
+.sv2-grid-hdr{display:grid;grid-template-columns:160px repeat(4,minmax(200px,1fr));border-bottom:2px solid rgba(56,189,248,.2);position:sticky;top:0;z-index:10;background:rgba(13,33,55,.65)}
 .sv2-hdr-poste{padding:8px 10px;font-size:10px;font-weight:800;color:#4d7fa0;text-transform:uppercase;letter-spacing:.4px;border-right:1px solid rgba(56,189,248,.1)}
 .sv2-hdr-jour{padding:8px 6px;text-align:center;border-right:1px solid rgba(56,189,248,.1)}
 .sv2-hdr-jour .hj-wd{font-size:10px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.5px}
 .sv2-hdr-jour .hj-dt{font-size:14px;font-weight:800;color:#f0f9ff}
 .sv2-hdr-jour .hj-mq{font-size:10px;font-weight:700;margin-top:2px}
 /* Ligne secteur */
-.sv2-sec-row{display:grid;grid-template-columns:160px repeat(4,1fr);background:rgba(13,33,55,.65);border-top:2px solid rgba(56,189,248,.15)}
+.sv2-sec-row{display:grid;grid-template-columns:160px repeat(4,minmax(200px,1fr));background:rgba(13,33,55,.65);border-top:2px solid rgba(56,189,248,.15)}
 .sv2-sec-lbl{grid-column:1/-1;padding:5px 10px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
 /* Ligne poste */
-.sv2-pos-row{display:grid;grid-template-columns:160px repeat(4,1fr);border-top:1px solid rgba(56,189,248,.1)}
-.sv2-pos-row:hover{background:rgba(56,189,248,.02)}
-.sv2-pos-nm-cell{padding:8px 10px;border-right:1px solid rgba(56,189,248,.12);display:flex;flex-direction:column;justify-content:center;background:rgba(13,33,55,.65);position:sticky;left:0;z-index:5}
+.sv2-cell{padding:5px 6px;border-right:1px solid rgba(56,189,248,.08);min-height:52px;height:100%;transition:background .15s;position:relative;box-sizing:border-box}
+.sv2-pos-row{display:grid;grid-template-columns:160px repeat(4,minmax(200px,1fr));border-top:1px solid rgba(56,189,248,.1);align-items:stretch}.sv2-pos-nm-cell{padding:8px 10px;border-right:1px solid rgba(56,189,248,.12);display:flex;flex-direction:column;justify-content:center;background:rgba(13,33,55,.65);position:sticky;left:0;z-index:5}
 .sv2-pos-nm-cell .pnm{font-size:12px;font-weight:700;color:#e2e8f0}
 .sv2-pos-nm-cell .pnec{font-size:10px;color:#4d7fa0;margin-top:2px}
 /* Cellule jour d'un poste */
@@ -186,7 +185,7 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 .sv2-cell.drag-over{background:rgba(56,189,248,.12);border:1.5px dashed #38bdf8}
 .sv2-cell-inner{display:flex;flex-direction:column;gap:3px}
 /* Tag bénévole dans cellule */
-.sv2-tag{display:flex;align-items:center;gap:4px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:5px;padding:2px 6px;font-size:11px;color:#f0f9ff;cursor:pointer;transition:all .15s}
+.sv2-tag{display:flex;align-items:center;gap:4px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:5px;padding:2px 8px;font-size:11px;color:#f0f9ff;cursor:pointer;transition:all .15s;white-space:nowrap;overflow:hidden}
 .sv2-tag:hover{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.3);color:#fca5a5}
 .sv2-tag .sv2-tag-x{font-size:9px;color:#4d7fa0;margin-left:1px}
 .sv2-tag:hover .sv2-tag-x{color:#f87171}
@@ -1271,7 +1270,7 @@ function renderSV(){
                 ${isA()&&!isLocked?`<span class="sv2-tag-x" onclick="removeAssignDay('${sl.id}','${bid}','${j.lbl}')">✕</span>`:''}
               </div>`;
             });
-            if(!bidsJ.length)grid+=`<div style="font-size:10px;color:#2d5a7a;font-style:italic">Aucun bénévole</div>`;
+            if(!bidsJ.length)grid+=`<div style="font-size:10px;font-weight:700;color:#f87171;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:4px;padding:4px 8px;text-align:center">Manque bénévole</div>`;
             grid+=`</div>`;
           });
         } else {
