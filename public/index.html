@@ -1197,7 +1197,7 @@ function renderJour(){
         const vigH=22+Math.max(nec,1)*22+8;
         const cardBg=bgCol||'rgba(30,58,95,.7)';
         const vigHtml=bensList.map(b=>`<div style="background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:3px 8px;margin:2px 3px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f1f5f9;height:22px;line-height:22px;box-sizing:border-box;cursor:pointer;display:flex;align-items:center" onclick="openAssignSingle('${sl.id}','${b.id}',event)">${b.nm}</div>`).join('')
-          +Array.from({length:nManq},(_,i)=>`<div style="background:rgba(0,0,0,.25);border:2px solid rgba(220,60,60,.6);border-radius:4px;padding:3px 8px;margin:2px 3px;font-size:12px;color:#fca5a5;cursor:pointer;height:22px;line-height:22px;box-sizing:border-box;white-space:nowrap;display:flex;align-items:center" onclick="openAssign('${sl.id}',event)">+ Manque bénévole</div>`).join('');
+          +Array.from({length:nManq},(_,i)=>`<div style="background:rgba(0,0,0,.25);border:2px solid rgba(220,60,60,.6);border-radius:4px;padding:3px 8px;margin:2px 3px;font-size:12px;color:#fca5a5;cursor:pointer;height:22px;line-height:22px;box-sizing:border-box;white-space:nowrap;display:flex;align-items:center" onclick="openAssignNew('${sl.id}',event)">+ Manque bénévole</div>`).join('');
         h+=`<div class="slot-blk ${isEmpty?'empty':''}" style="left:${left}%;width:calc(${w}% - 3px);top:${top}px;height:${vigH-4}px;background:${cardBg};border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.08)" onclick="openAssign('${sl.id}',event)">
           <div class="sl-row" style="padding:2px 5px;border-bottom:1px solid rgba(0,0,0,.2)"><div class="sl-time">${sl.start_time}–${sl.end_time} <span style="opacity:.7">${fmtH(dur)}</span></div><div style="font-size:11px;font-weight:800;color:#000;background:${rc};border-radius:3px;padding:0 4px">${nbJ}/${nec}</div></div>
           ${vigHtml}
@@ -1292,7 +1292,7 @@ function renderSV(){
             });
             // Placeholders pour les bénévoles manquants
             const manquants=slNec-bidsJ.length;
-            for(let m=0;m<manquants;m++)grid+=`<div style="font-size:12px;font-weight:700;color:#f87171;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:4px;padding:5px 8px;text-align:center;cursor:pointer;margin-top:3px" onclick="openAssign('${sl.id}',event)">+ Manque bénévole</div>`;
+            for(let m=0;m<manquants;m++)grid+=`<div style="font-size:12px;font-weight:700;color:#f87171;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:4px;padding:5px 8px;text-align:center;cursor:pointer;margin-top:3px" onclick="openAssignNew('${sl.id}',event)">+ Manque bénévole</div>`;
             grid+=`</div>`;
           });
         } else {
@@ -1609,7 +1609,24 @@ function toggleBaPanel(bid,sid){
   el.classList.toggle('open');
 }
 
-// Ouvre la sidebar pour UN seul bénévole (clic sur vignette individuelle)
+// Ouvre la sidebar pour AJOUTER un bénévole manquant (clic sur vignette vide)
+function openAssignNew(sid,ev){
+  if(ev)ev.stopPropagation();
+  openAssign(sid,null);
+  // Après ouverture : cacher la liste gauche, focus sur recherche droite
+  setTimeout(()=>{
+    document.querySelectorAll('#ma-list .ba-item').forEach(el=>{
+      el.style.display=el.classList.contains('has-days')?'':'none';
+    });
+    // Message d'invitation à droite
+    const search=document.getElementById('ba-search');
+    if(search)search.focus();
+    // Highlight liste droite
+    document.querySelectorAll('#ma-ben-list .sv2-ben-item').forEach(el=>{
+      el.style.opacity='1';
+    });
+  },50);
+}
 function openAssignSingle(sid,bid,ev){
   if(ev)ev.stopPropagation();
   openAssign(sid,null);
