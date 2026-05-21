@@ -199,7 +199,7 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 /* Drop hint */
 .sv2-drop-hint{font-size:10px;color:#2d5a7a;text-align:center;padding:6px 0;border:1px dashed rgba(56,189,248,.12);border-radius:5px;margin-top:2px}
 /* Cadre shift dans vue Créneaux */
-.sv2-shift-box{background:#0f2540;border:1px solid rgba(56,189,248,.18);border-radius:9px;padding:7px 8px;margin-bottom:4px}
+.sv2-shift-box{background:#0f2540;border:1px solid rgba(56,189,248,.18);border-radius:9px;padding:8px 10px;margin-bottom:6px}
 .sv2-shift-box:last-child{margin-bottom:0}
 /* Recherche vue Semaine */
 .sem-search{background:rgba(12,25,41,.7);border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:7px;padding:5px 10px;font-size:12px;outline:none;width:180px;transition:border-color .15s}
@@ -1283,16 +1283,16 @@ function renderSV(){
               const b=bens.find(x=>x.id===bid);if(!b)return;
               const bc=bCol(bid);
               const isLocked=(_locks[sl.id]?.[bid]||new Set()).has(j.lbl);
-              grid+=`<div class="sv2-tag${isLocked?' sv2-locked':''}" title="${isLocked?'🔒 Verrouillé — cliquer pour déverrouiller':isA()?'Cliquer pour retirer':''}">
-                <div class="sv2-av" style="background:${bc};width:18px;height:18px;font-size:8px">${init(b)}</div>
-                <span style="font-size:11px">${b.prenom} ${b.nom}</span>
-                ${isA()?`<span class="sv2-tag-lock${isLocked?' locked':''}" onclick="toggleLock('${sl.id}','${bid}','${j.lbl}')" title="${isLocked?'Déverrouiller':'Verrouiller'}">${isLocked?'🔒':'🔓'}</span>`:''}
-                ${isA()&&!isLocked?`<span class="sv2-tag-x" onclick="removeAssignDay('${sl.id}','${bid}','${j.lbl}')">✕</span>`:''}
+              grid+=`<div class="sv2-tag${isLocked?' sv2-locked':''}" style="margin-top:3px" onclick="openAssign('${sl.id}',event)" title="${isLocked?'🔒 Verrouillé — cliquer pour déverrouiller':isA()?'Cliquer pour modifier':''}">
+                <div class="sv2-av" style="background:${bc};width:20px;height:20px;font-size:9px">${init(b)}</div>
+                <span style="font-size:12px">${b.prenom} ${b.nom}</span>
+                ${isA()?`<span class="sv2-tag-lock${isLocked?' locked':''}" onclick="event.stopPropagation();toggleLock('${sl.id}','${bid}','${j.lbl}')" title="${isLocked?'Déverrouiller':'Verrouiller'}">${isLocked?'🔒':'🔓'}</span>`:''}
+                ${isA()&&!isLocked?`<span class="sv2-tag-x" onclick="event.stopPropagation();removeAssignDay('${sl.id}','${bid}','${j.lbl}')">✕</span>`:''}
               </div>`;
             });
             // Placeholders pour les bénévoles manquants
             const manquants=slNec-bidsJ.length;
-            for(let m=0;m<manquants;m++)grid+=`<div style="font-size:10px;font-weight:700;color:#f87171;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:4px;padding:4px 8px;text-align:center">+ Manque bénévole</div>`;
+            for(let m=0;m<manquants;m++)grid+=`<div style="font-size:12px;font-weight:700;color:#f87171;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:4px;padding:5px 8px;text-align:center;cursor:pointer;margin-top:3px" onclick="openAssign('${sl.id}',event)">+ Manque bénévole</div>`;
             grid+=`</div>`;
           });
         } else {
