@@ -346,6 +346,14 @@ textarea.mbe-inp{font-family:inherit}
 .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;align-items:flex-end;justify-content:center;backdrop-filter:blur(2px)}
 .ov.open{display:flex}
 .sht{background:rgba(13,33,55,.65);border-top:3px solid #f5a623;border-radius:18px 18px 0 0;padding:20px 20px 32px;width:100%;max-width:520px;max-height:92vh;overflow-y:auto}
+/* Sidebar m-assign */
+#m-assign{align-items:stretch;justify-content:flex-end;background:rgba(0,0,0,.6)}
+#m-assign .sht{border-radius:0;border-top:none;border-left:3px solid #f5a623;max-width:760px;width:100%;max-height:100vh;height:100vh;display:flex;flex-direction:column;padding:0;overflow:hidden;transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+#m-assign.open .sht{transform:translateX(0)}
+.assign-sidebar-body{display:flex;flex:1;overflow:hidden;gap:0}
+.assign-sidebar-left{flex:1;overflow-y:auto;padding:16px 12px 16px 20px;border-right:1px solid rgba(56,189,248,.15)}
+.assign-sidebar-right{width:260px;flex-shrink:0;overflow-y:auto;padding:16px 16px 16px 12px;background:rgba(5,12,25,.4)}
+.assign-sidebar-hdr{padding:16px 20px 12px;border-bottom:1px solid rgba(56,189,248,.15);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:rgba(8,20,40,.7)}
 .sh-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
 .sh-ttl{font-weight:800;font-size:15px;color:#f0f9ff}
 .xb{background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);color:#7fb8d4;cursor:pointer;border-radius:50%;width:28px;height:28px;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
@@ -657,17 +665,27 @@ textarea.mbe-inp{font-family:inherit}
 <!-- Modal assignation -->
 <div class="ov" id="m-assign">
   <div class="sht">
-    <div class="sh-hdr"><div class="sh-ttl" id="ma-ttl">Assigner des bénévoles</div><button type="button" class="xb" onclick="cm('m-assign')">✕</button></div>
-    <div class="slot-info-box" id="ma-info"></div>
-    <div style="font-size:11px;color:#4d7fa0;margin-bottom:8px">Développer un bénévole pour choisir ses jours</div>
-    <input class="ba-search" id="ba-search" type="text" placeholder="🔍 Rechercher un bénévole..." oninput="filterBaList()"/>
-    <div class="ba-list" id="ma-list"></div>
-    <div class="aw" id="ma-w"></div>
-    <button type="button" class="btn btn-p" onclick="saveAssign()">Confirmer</button>
-    <div class="sep"></div>
-    <div class="brow">
-      <button type="button" class="btn" onclick="editSlotFromAssign()">✏ Modifier créneau</button>
-      <button type="button" class="btn btn-d" onclick="deleteSlot()">Supprimer créneau</button>
+    <div class="assign-sidebar-hdr">
+      <div class="sh-ttl" id="ma-ttl">Assigner des bénévoles</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button type="button" class="btn btn-d" onclick="deleteSlot()" style="font-size:11px;padding:4px 10px">Supprimer</button>
+        <button type="button" class="btn" onclick="editSlotFromAssign()" style="font-size:11px;padding:4px 10px">✏ Modifier</button>
+        <button type="button" class="xb" onclick="cm('m-assign')">✕</button>
+      </div>
+    </div>
+    <div class="slot-info-box" id="ma-info" style="margin:10px 20px 0"></div>
+    <div class="assign-sidebar-body">
+      <div class="assign-sidebar-left">
+        <div style="font-size:11px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Bénévoles assignés</div>
+        <div class="ba-list" id="ma-list"></div>
+        <div class="aw" id="ma-w"></div>
+        <button type="button" class="btn btn-p" onclick="saveAssign()" style="width:100%;margin-top:12px">Confirmer</button>
+      </div>
+      <div class="assign-sidebar-right">
+        <div style="font-size:11px;font-weight:700;color:#4d7fa0;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Liste des bénévoles</div>
+        <input class="ba-search sv2-search" id="ba-search" type="text" placeholder="🔍 Rechercher..." oninput="filterBaList()" style="margin-bottom:10px;width:100%;box-sizing:border-box"/>
+        <div id="ma-ben-list" style="display:flex;flex-direction:column;gap:4px"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -1309,7 +1327,7 @@ function renderSV(){
   });
   benCol+=`</div></div>`;
 
-  c.innerHTML=navHtml+`<div class="sv2-outer"><div class="sv2-left">${grid}</div>${isA()?benCol:''}</div>`;
+  c.innerHTML=navHtml+`<div class="sv2-outer"><div class="sv2-left">${grid}</div></div>`;
 }
 
 // ── Drag & drop ──
@@ -1425,6 +1443,23 @@ function openAssign(sid,ev){
   renderAssignList(sid,sl);hA('ma-w');
   // Reset recherche
   const bs=document.getElementById('ba-search');if(bs)bs.value='';
+  // Liste bénévoles côté droit de la sidebar
+  const benListEl=document.getElementById('ma-ben-list');
+  if(benListEl){
+    const sorted=[...bens].sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom));
+    benListEl.innerHTML=sorted.map(b=>{
+      const bc=bCol(b.id);
+      const assigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
+      return`<div class="sv2-ben-item${assigned?' has-days':''}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}" onclick="toggleBaPanel('${b.id}','${sl.id}')">
+        <div class="sv2-av" style="background:${bc};width:26px;height:26px;font-size:10px;flex-shrink:0">${init(b)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:700;color:#f0f9ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.prenom} ${b.nom}</div>
+          <div style="font-size:10px;color:#4d7fa0">${b.poste||b.sec}</div>
+        </div>
+        ${assigned?'<span style="color:#34d399;font-size:12px">✓</span>':''}
+      </div>`;
+    }).join('');
+  }
   document.getElementById('m-assign').classList.add('open');
 }
 
@@ -1432,6 +1467,10 @@ function filterBaList(){
   const q=(document.getElementById('ba-search')?.value||'').toLowerCase();
   document.querySelectorAll('#ma-list .ba-item').forEach(el=>{
     const nm=el.querySelector('.ba-nm')?.textContent.toLowerCase()||'';
+    el.style.display=(!q||nm.includes(q))?'':'none';
+  });
+  document.querySelectorAll('#ma-ben-list .sv2-ben-item').forEach(el=>{
+    const nm=el.querySelector('div>div')?.textContent.toLowerCase()||'';
     el.style.display=(!q||nm.includes(q))?'':'none';
   });
 }
