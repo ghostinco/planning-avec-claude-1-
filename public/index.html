@@ -1430,7 +1430,7 @@ async function doDelSlot(sid){
 }
 
 // ═══ ASSIGNATION PAR JOUR ═══
-function openAssign(sid,ev){
+function openAssign(sid,ev,focusBid){
   if(ev)ev.stopPropagation();const sl=slots.find(x=>x.id===sid);if(!sl)return;
   assignEditing=sid;
   // Copie profonde de _assignDays pour ce créneau (état temporaire pour édition)
@@ -1440,7 +1440,7 @@ function openAssign(sid,ev){
   const sec=secOfPos(sl.pid);const col=SCLR[sec]||'#94a3b8';const nec=POSTES_NEC[sl.pid]||2;
   document.getElementById('ma-ttl').textContent=sl.pid+' · '+sl.start_time+'–'+sl.end_time;
   document.getElementById('ma-info').innerHTML=`<b>${sl.pid}</b> · <span style="color:${col}">${sec}</span> · ${sl.start_time}–${sl.end_time} (${fmtH(durH(sl.start_time,sl.end_time))}) · ${sl.jours.map(j=>j.split(' ')[0]+'/06').join(', ')} · Besoin : <b>${nec}</b>`;
-  renderAssignList(sid,sl);hA('ma-w');
+  renderAssignList(sid,sl,focusBid);hA('ma-w');
   // Reset recherche
   const bs=document.getElementById('ba-search');if(bs)bs.value='';
   // Liste bénévoles côté droit de la sidebar
@@ -1450,7 +1450,8 @@ function openAssign(sid,ev){
     benListEl.innerHTML=sorted.map(b=>{
       const bc=bCol(b.id);
       const assigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
-      return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}" onclick="toggleBaPanel('${b.id}','${sl.id}')">
+      const dimmed=focusBid&&focusBid!=='new'&&focusBid!==b.id;
+      return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}${dimmed?';opacity:0.3':''}" onclick="toggleBaPanel('${b.id}','${sl.id}')">
         <div class="sv2-av" style="background:${bc};width:26px;height:26px;font-size:10px;flex-shrink:0">${init(b)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:12px;font-weight:700;color:#f0f9ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.prenom} ${b.nom}</div>
@@ -1475,7 +1476,7 @@ function filterBaList(){
   });
 }
 
-function renderAssignList(sid,sl){
+function renderAssignList(sid,sl,focusBid){
   const allDays=sl.jours;
   const sorted=[...bens].sort((a,b)=>{
     const aD=(a.dispos||[]).some(d=>allDays.includes(d));
@@ -1530,9 +1531,10 @@ function renderAssignList(sid,sl){
   const nHidden=sorted.length-visible.length;
   const abbrJ={'17':'me','18':'je','19':'ve','20':'sa'};
 
+  const _visFiltered=focusBid&&focusBid!=='new'?visible.filter(b=>b.id===focusBid):focusBid==='new'?visible.filter(b=>(window._assignTmpDays[b.id]||[]).length>0):visible;
   document.getElementById('ma-list').innerHTML=
     (nHidden>0?`<div style="text-align:center;padding:6px 0;margin-bottom:8px"><button type="button" onclick="showHiddenBens('${sid}')" style="font-size:10px;background:rgba(148,163,184,.1);color:#94a3b8;border:1px solid rgba(148,163,184,.3);border-radius:5px;padding:4px 10px;cursor:pointer">👁 ${nHidden} masqué${nHidden>1?'s':''} (fixe autre secteur)</button></div>`:'')
-  +visible.map(b=>{
+  +_visFiltered.map(b=>{
     const bc=bCol(b.id);const col2=SCLR[b.sec]||'#94a3b8';
     const selectedDays=window._assignTmpDays[b.id]||[];
     const hasDays=selectedDays.length>0;
@@ -1612,36 +1614,11 @@ function toggleBaPanel(bid,sid){
 // Ouvre la sidebar pour AJOUTER un bénévole manquant (clic sur vignette vide)
 function openAssignNew(sid,ev){
   if(ev)ev.stopPropagation();
-  openAssign(sid,null);
-  // Vider la liste gauche sauf les déjà assignés, focus recherche droite
-  requestAnimationFrame(()=>{
-    requestAnimationFrame(()=>{
-      document.querySelectorAll('#ma-list .ba-item').forEach(el=>{
-        el.style.display=el.classList.contains('has-days')?'':'none';
-      });
-      const search=document.getElementById('ba-search');
-      if(search)search.focus();
-    });
-  });
+  openAssign(sid,null,'new');
 }
 function openAssignSingle(sid,bid,ev){
   if(ev)ev.stopPropagation();
-  openAssign(sid,null);
-  requestAnimationFrame(()=>{
-    requestAnimationFrame(()=>{
-      // Ne montrer que ce bénévole à gauche
-      document.querySelectorAll('#ma-list .ba-item').forEach(el=>{
-        el.style.display=el.id==='ba-'+bid?'':'none';
-      });
-      // Ouvrir son panel automatiquement
-      const el=document.getElementById('ba-'+bid);
-      if(el&&!el.classList.contains('open'))el.classList.add('open');
-      // Atténuer les autres dans la liste droite
-      document.querySelectorAll('#ma-ben-list .sv2-ben-item').forEach(el2=>{
-        el2.style.opacity=el2.getAttribute('data-bid')===bid?'1':'0.35';
-      });
-    });
-  });
+  openAssign(sid,null,bid);
 }
 
 function toggleDay(bid,jour,sid){
