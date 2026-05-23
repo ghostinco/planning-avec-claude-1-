@@ -409,7 +409,7 @@ textarea.mbe-inp{font-family:inherit}
 .ba-quick{display:flex;gap:5px;margin-top:5px}
 .ba-quick button{background:transparent;border:1px solid rgba(56,189,248,.15);border-radius:5px;padding:3px 9px;font-size:10px;color:#4d7fa0;cursor:pointer;transition:all .15s}
 .ba-quick button:hover{color:#38bdf8;border-color:#38bdf8}
-.ba-dispo-warn{font-size:10px;color:#f87171;margin-top:5px}.ba-doublon{border-color:rgba(248,113,113,.4)!important;background:rgba(248,113,113,.05)!important}.ba-day-btn.occupied{pointer-events:none}
+.ba-dispo-warn{font-size:10px;color:#f87171;margin-top:5px}.ba-doublon{border-color:rgba(248,113,113,.4)!important;background:rgba(248,113,113,.05)!important}.ba-day-btn.occupied{color:rgba(255,255,255,.35);border-color:rgba(255,255,255,.1)}.ba-day-btn.has-doublon{border-color:#f87171!important}
 .slot-info-box{background:rgba(12,25,41,.55);border:1px solid rgba(56,189,248,.15);border-radius:9px;padding:9px 11px;font-size:12px;color:#7fb8d4;margin-bottom:14px}
 
 /* ── IMAGE FOND PLANNING ── */
@@ -1549,7 +1549,7 @@ function renderAssignList(sid,sl,focusBid){
       <div class="ba-hdr" onclick="toggleBaPanel('${b.id}','${sid}')">
         <div class="ba-av" style="background:${bc}">${init(b)}</div>
         <div style="flex:1;min-width:0">
-          <div class="ba-nm">${b.nom} ${b.prenom}${isHab?' <span style="font-size:9px;background:rgba(56,189,248,.12);color:#38bdf8;border-radius:3px;padding:1px 5px;border:1px solid rgba(56,189,248,.25)">poste habituel</span>':''}${hasDoublon?' <span style="font-size:9px;background:rgba(248,113,113,.15);color:#f87171;border-radius:3px;padding:1px 5px;border:1px solid rgba(248,113,113,.4)">⚠ doublon</span>':''}</div>
+          <div class="ba-nm">${b.nom} ${b.prenom}${isHab?' <span style="font-size:9px;background:rgba(56,189,248,.12);color:#38bdf8;border-radius:3px;padding:1px 5px;border:1px solid rgba(56,189,248,.25)">poste habituel</span>':''}${hasDoublon?' <span style="font-size:9px;background:rgba(248,113,113,.15);color:#f87171;border-radius:3px;padding:1px 5px;border:1px solid rgba(248,113,113,.4)">⚠ doublon ce jour</span>':''}</div>
           <div class="ba-meta">${b.poste||b.sec} · <span style="color:${col2}">${b.sec}</span></div>
         </div>
         ${hasDays?`<div class="ba-days-summary" style="${hasDoublon?'color:#f87171':''}">${summaryTxt}</div>`:''}
@@ -1568,10 +1568,11 @@ function renderAssignList(sid,sl,focusBid){
             if(isOcc&&isSel)st+='border-color:#f87171;background:rgba(248,113,113,.2);color:#f87171;';
             const sameLbl=isSamePid&&!isSel?`<span style="font-size:8px;color:#475569;margin-left:1px">(${abbrJ[k]||k})</span>`:'';
             const mark=isOcc&&isSel?' ⚠':'';
-            return`<button type="button" class="ba-day-btn${isSel?' sel':''}${isOcc&&!isSel?' occupied':''}" onclick="toggleDay('${b.id}','${j}','${sid}')" style="${st}" title="${isOcc?'Doublon: '+occ[j]+' ce jour':isDispo?'Disponible':'Non disponible'}">${k}/06${mark}${sameLbl}</button>`;
+            const softMark=isOcc&&!isSel?' ·':'';
+            return`<button type="button" class="ba-day-btn${isSel?' sel':''}${isOcc&&!isSel?' occupied':''}${isOcc&&isSel?' has-doublon':''}" onclick="toggleDay('${b.id}','${j}','${sid}')" style="${st}" title="${isOcc?(isSel?'⚠ Doublon: '+occ[j]+' ce jour':'Autre poste: '+occ[j]):isDispo?'Disponible':'Non disponible'}">${k}/06${mark}${softMark}${sameLbl}</button>`;
           }).join('')}
         </div>
-        ${hasDoublon?`<div class="ba-dispo-warn" style="color:#f87171">⚠ Doublon: déjà sur ${doublonDays.map(j=>occ[j]).join(', ')} ce jour</div>`:''}
+        ${hasDoublon?`<div class="ba-dispo-warn" style="color:#f87171;font-size:10px">⚠ Déjà sur ${doublonDays.map(j=>occ[j]).join(', ')} ce même jour</div>`:''}
         <div class="ba-quick">
           <button type="button" onclick="selectAllDays('${b.id}','${sid}')">Tous</button>
           <button type="button" onclick="clearDays('${b.id}','${sid}')">Aucun</button>
