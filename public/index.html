@@ -1461,20 +1461,11 @@ function openAssign(sid,ev,focusBid,jourContext){
   // Liste bénévoles côté droit de la sidebar
   const benListEl=document.getElementById('ma-ben-list');
   if(benListEl){
-    const sorted=[...bens].sort((a,b)=>a.prenom.localeCompare(b.prenom));
-    benListEl.innerHTML=sorted.map(b=>{
-      const bc=bCol(b.id);
-      const assigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
-      const dimmed=focusBid&&focusBid!=='new'&&focusBid!==b.id;
-      return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}${dimmed?';opacity:0.3':''}" onclick="selectBenFromList('${b.id}','${sl.id}','${jourContext||''}')">
-        <div class="sv2-av" style="background:${bc};width:26px;height:26px;font-size:10px;flex-shrink:0">${init(b)}</div>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:12px;font-weight:700;color:#f0f9ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.prenom} ${b.nom}</div>
-          <div style="font-size:10px;color:#4d7fa0">${b.poste||b.sec}</div>
-        </div>
-        ${assigned?'<span style="color:#34d399;font-size:12px">✓</span>':''}
-      </div>`;
-    }).join('');
+    window._sidebarShowAll=false;
+    window._sidebarSlId=sl.id;
+    window._sidebarJour=jourContext||sl.jours[0];
+    window._sidebarFocusBid=focusBid;
+    renderBenList(sl,focusBid,jourContext||sl.jours[0]);
   }
   document.getElementById('m-assign').classList.add('open');
 }
@@ -1648,7 +1639,47 @@ function selectBenFromList(bid,sid,jour){
     if(el){el.classList.add('open');el.scrollIntoView({behavior:'smooth',block:'center'});}
   },50);
 }
-function toggleBaPanel(bid,sid){
+function renderBenList(sl,focusBid,jour){
+  const benListEl=document.getElementById('ma-ben-list');
+  if(!benListEl)return;
+  const sid=sl.id;
+  const showAll=window._sidebarShowAll||false;
+
+  // Bénévoles déjà occupés ce jour sur un AUTRE poste
+  const occupesJour=new Set();
+  Object.entries(_assignDays).forEach(([osid,days])=>{
+    if(osid===sid)return;
+    Object.entries(days).forEach(([bid,jrs])=>{if(jrs.includes(jour))occupesJour.add(bid);});
+  });
+
+  const sorted=[...bens].sort((a,b)=>a.prenom.localeCompare(b.prenom));
+  const libres=sorted.filter(b=>!occupesJour.has(b.id)||!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0));
+  const liste=showAll?sorted:libres;
+  const nbOccupes=sorted.length-libres.length;
+
+  const items=liste.map(b=>{
+    const bc=bCol(b.id);
+    const assigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
+    const dimmed=focusBid&&focusBid!=='new'&&focusBid!==b.id;
+    const occupe=occupesJour.has(b.id)&&!assigned;
+    return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}${dimmed?';opacity:0.3':''}${occupe?';opacity:0.4':''}${occupe?';border-color:rgba(248,113,113,.2)':''}" onclick="selectBenFromList('${b.id}','${sid}','${jour||''}')" title="${occupe?'Déjà sur un autre poste ce jour':''}">
+      <div class="sv2-av" style="background:${bc};width:26px;height:26px;font-size:10px;flex-shrink:0">${init(b)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:700;color:#f0f9ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.prenom} ${b.nom}</div>
+        <div style="font-size:10px;color:#4d7fa0">${b.poste||b.sec}</div>
+      </div>
+      ${assigned?'<span style="color:#34d399;font-size:12px">✓</span>':occupe?'<span style="color:#f87171;font-size:10px">✗</span>':''}
+    </div>`;
+  }).join('');
+
+  const btnLabel=showAll
+    ?`▲ Libres seulement`
+    :`▼ Voir les ${nbOccupes} occupés ce jour`;
+
+  benListEl.innerHTML=items+(nbOccupes>0?`<button onclick="window._sidebarShowAll=!window._sidebarShowAll;renderBenList(slots.find(x=>x.id==='${sid}'),window._sidebarFocusBid,window._sidebarJour)" style="width:100%;margin-top:8px;padding:6px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:6px;color:#4d7fa0;font-size:11px;cursor:pointer">${btnLabel}</button>`:'');
+}
+
+function toggleBenListAll(){}
   const el=document.getElementById('ba-'+bid);if(!el)return;
   el.classList.toggle('open');
 }
