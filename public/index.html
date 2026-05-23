@@ -2419,7 +2419,7 @@ function renderStats(){
         const nb=Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(j.lbl)).length;
         // Éviter doublons de postes
         const existing=parSec[sec].find(p=>p.pos===sl.pid);
-        if(existing){existing.nb+=nb;existing.nec+=nec;}
+        if(existing){existing.nb+=nb;existing.nec+=nec;existing.full=existing.nb>=existing.nec;}
         else parSec[sec].push({pos:sl.pid,nb,nec,full:nb>=nec});
       });
       const allPostes=Object.values(parSec).flat();
