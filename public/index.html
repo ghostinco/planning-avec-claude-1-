@@ -1732,8 +1732,8 @@ function renderBenList(sl,focusBid,jour){
     if(!dispo)return false; // pas disponible ce jour
     const info=postesParBen[b.id];
     if(!info)return true; // aucun poste ce jour → ok
-    // Accepter si heures totales + ce créneau ≤ 9h (permet 2 équipes de 3h)
-    return(info.heures+durCreneau)<=9;
+    // Accepter si heures totales + ce créneau ≤ 6h max par jour
+    return(info.heures+durCreneau)<=6;
   });
 
   const nbExclus=sorted.length-eligibles.length;
