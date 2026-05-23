@@ -55,19 +55,25 @@ async function getGoogleToken() {
 
 function parseDispos(text) {
   if (!text) return [];
+  // Map jour → nom complet
+  const jourMap = {'lundi':'Lundi','mardi':'Mardi','mercredi':'Mercredi','jeudi':'Jeudi','vendredi':'Vendredi','samedi':'Samedi','dimanche':'Dimanche'};
   const moisMap = {'janvier':1,'fevrier':2,'mars':3,'avril':4,'mai':5,'juin':6,'juillet':7,'aout':8,'septembre':9,'octobre':10,'novembre':11,'decembre':12,'février':2,'août':8};
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
   return text.split(',').map(s => s.trim()).filter(Boolean).map(s => {
-    const parts = s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(' ');
-    for (let i = 0; i < parts.length - 1; i++) {
-      const day = parseInt(parts[i]);
-      const monthKey = parts[i+1];
-      const month = moisMap[monthKey];
-      if (!isNaN(day) && month) {
-        const orig = s.trim().split(' ');
-        const monthName = orig.find(p => moisMap[p.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')] === month) || monthKey;
-        return `${day} ${monthName.charAt(0).toUpperCase()+monthName.slice(1).toLowerCase()}`;
+    const parts = s.trim().split(/\s+/);
+    // Chercher un jour de semaine, un numéro et un mois
+    let jourSem='', day=0, monthName='';
+    for (const p of parts) {
+      const n = norm(p);
+      if (jourMap[n]) jourSem = jourMap[n];
+      else if (!isNaN(parseInt(p)) && parseInt(p) > 0 && parseInt(p) <= 31) day = parseInt(p);
+      else if (moisMap[n]) {
+        // Garder le nom du mois en minuscule avec majuscule
+        monthName = p.charAt(0).toUpperCase() + p.slice(1).toLowerCase();
       }
     }
+    if (day && monthName && jourSem) return `${jourSem} ${day} ${monthName}`;
+    if (day && monthName) return `${day} ${monthName}`;
     return null;
   }).filter(Boolean);
 }
@@ -130,19 +136,23 @@ exports.handler = async (event) => {
       // Prénom : index exact de 'prenom' (sans 'nom' seul)
       const cP = headers.findIndex(h => h==='prenom' || h.startsWith('prenom') || h==='first name' || h==='firstname');
       const cGenre = col(['genre','gender','sexe','sex']);
-      // Nom : chercher 'nom' mais pas dans 'prenom'
       const cN = headers.findIndex((h,i) => i !== cP && (h==='nom' || h==='last name' || h==='lastname' || h==='surname'));
       const cD = col(['naissance','birth','ddn']); const cT = col(['telephone','tel','phone','mobile','+41']);
       const cTa = col(['taille','t-shirt','tshirt','shirt']); const cDi = col(['disponible','dispo','present','quand']);
       const cR = col(['remarque','comment','note']);
+      const cE = col(['email','courriel','mail','e-mail']);
+      const cV = col(['ville','city','ort','localite','localit']);
+      const cNpa = col(['npa','code postal','zip','plz','postal']);
       if (cP===-1||cN===-1) return err('Colonnes Prenom/Nom introuvables');
       const existing = await supa(`bens?event_id=eq.${event_id}&select=*`);
       const benMap = {};
       (Array.isArray(existing)?existing:[]).forEach(b=>{
-        // Indexer dans les deux sens pour matcher peu importe l'ordre
         benMap[(b.nom+' '+b.prenom).toLowerCase().trim()]=b;
         benMap[(b.prenom+' '+b.nom).toLowerCase().trim()]=b;
       });
+      // Récupérer le secteur par défaut (SPF/Non défini)
+      const allSlots = await supa(`slots?event_id=eq.${event_id}&select=sec,pid&limit=1`);
+      const defSec = 'Non défini'; const defPos = 'SPF';
       let added=0,updated=0,skipped=0;
       for (const row of rows.slice(1)) {
         const prenom=String(row[cP]||'').trim(); const nom=String(row[cN]||'').trim();
@@ -152,30 +162,40 @@ exports.handler = async (event) => {
         const taille=cTa>=0?String(row[cTa]||'').trim():'';
         const dispos=cDi>=0?parseDispos(String(row[cDi]||'')):[];
         const rmq=cR>=0?String(row[cR]||'').trim():'';
+        const email=cE>=0?String(row[cE]||'').trim():'';
+        const ville=cV>=0?String(row[cV]||'').trim():'';
+        const npa=cNpa>=0?String(row[cNpa]||'').trim():'';
         const genre_raw=cGenre>=0?String(row[cGenre]||'').trim().toLowerCase():'';
-        const genre=genre_raw.includes('f')||genre_raw.includes('femme')||genre_raw.includes('female')?'F':genre_raw.includes('m')||genre_raw.includes('homme')||genre_raw.includes('male')?'M':''
-        // Chercher dans les deux sens (nom+prenom et prenom+nom)
+        const genre=genre_raw.includes('f')||genre_raw.includes('femme')||genre_raw.includes('female')?'F':genre_raw.includes('m')||genre_raw.includes('homme')||genre_raw.includes('male')?'M':'';
         const key1=(nom+' '+prenom).toLowerCase().trim();
         const key2=(prenom+' '+nom).toLowerCase().trim();
         const b=benMap[key1]||benMap[key2];
         try {
           if (b) {
             const upd={};
-            // DDN : compléter si absent ou vide
-            if(ddn&&(!b.ddn||b.ddn===''))upd.ddn=ddn;
-            // Tel : compléter si absent
-            if(tel&&(!b.tel||b.tel===''))upd.tel=tel;
-            // Taille : toujours mettre à jour depuis le formulaire bénévole
-            if(taille)upd.taille=taille;
-            // Dispos : toujours mettre à jour
-            if(dispos.length>0)upd.dispos=dispos;
+            // DDN : mettre à jour si le Sheet a une valeur (même si déjà renseigné — le Sheet fait foi)
+            if(ddn) upd.ddn=ddn;
+            // Tel : compléter si absent seulement (le bénévole peut avoir corrigé manuellement)
+            if(tel&&(!b.tel||b.tel==='')) upd.tel=tel;
+            // Email : mettre à jour si le Sheet a une valeur
+            if(email) upd.email=email;
+            // Taille : mettre à jour uniquement si le Sheet a une valeur
+            if(taille) upd.taille=taille;
+            // Dispos : toujours mettre à jour depuis le formulaire (source de vérité)
+            if(dispos.length>0) upd.dispos=dispos;
             // Remarques : compléter si absent
-            if(rmq&&(!b.rmq||b.rmq===''))upd.rmq=rmq;
-            if(genre&&!b.genre)upd.genre=genre;
-            await supa(`bens?id=eq.${b.id}`,'PATCH',upd);
-            updated++;
+            if(rmq&&(!b.rmq||b.rmq==='')) upd.rmq=rmq;
+            // Genre : compléter si absent
+            if(genre&&!b.genre) upd.genre=genre;
+            // Ville/NPA : compléter si absent
+            if(ville&&(!b.ville||b.ville==='')) upd.ville=ville;
+            if(npa&&(!b.npa||b.npa==='')) upd.npa=npa;
+            if(Object.keys(upd).length>0){
+              await supa(`bens?id=eq.${b.id}`,'PATCH',upd);
+              updated++;
+            } else { skipped++; }
           } else {
-            await supa('bens','POST',{prenom,nom,ddn,tel,taille,dispos,rmq,genre:genre||'',email:'',sec:'Parking',poste:'P1',type:'rotatif',acces:[],type_ben:null,roles:[],event_id});
+            await supa('bens','POST',{prenom,nom,ddn,tel,taille,dispos,rmq,email,ville,npa,genre:genre||'',sec:defSec,poste:defPos,type:'rotatif',acces:[],type_ben:null,roles:[],event_id});
             added++;
           }
         } catch(e){console.error(e);skipped++;}

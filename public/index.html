@@ -706,6 +706,7 @@ textarea.mbe-inp{font-family:inherit}
       </div>
     </div>
     <div class="bdd-body">
+      <div id="mbd-rmq"></div>
       <div class="bdd-section">
         <div class="bdd-section-title">Informations</div>
         <div class="bdd-grid" id="mbd-grid"></div>
@@ -718,7 +719,6 @@ textarea.mbe-inp{font-family:inherit}
         <div class="bdd-section-title">Zones d'accès</div>
         <div class="bdd-tags" id="mbd-acces"></div>
       </div>
-      <div id="mbd-rmq"></div>
     </div>
     <div class="bdd-actions" id="mbd-actions">
       <button type="button" class="bdd-btn-edit" id="mbd-edit-btn" onclick="openEditFromDetail()" style="display:none">✏ Modifier</button>
@@ -2107,8 +2107,18 @@ function openBenDetail(id){
   const aSec=document.getElementById('mbd-acces-sec');
   aSec.style.display=acces.length?'block':'none';
   document.getElementById('mbd-acces').innerHTML=acces.map(a=>`<span class="bdd-tag" style="background:rgba(251,191,36,.12);color:#fbbf24;border:1px solid rgba(251,191,36,.3)">${a}</span>`).join('');
-  // Remarques
-  document.getElementById('mbd-rmq').innerHTML=b.rmq?`<div class="bdd-field" style="margin-top:4px"><div class="bdd-field-label">💬 Remarques</div><div class="bdd-field-val" style="font-style:italic">"${b.rmq}"</div></div>`:'';
+  // Remarques — affichées en évidence si présentes
+  const rmqEl=document.getElementById('mbd-rmq');
+  if(b.rmq){
+    rmqEl.style.display='block';
+    rmqEl.innerHTML=`<div style="background:rgba(245,166,35,.12);border:1.5px solid rgba(245,166,35,.4);border-radius:10px;padding:10px 14px;margin:12px 0 4px">
+      <div style="font-size:10px;font-weight:800;color:#f5a623;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">💬 Remarques</div>
+      <div style="font-size:13px;color:#fde68a;line-height:1.5">${b.rmq}</div>
+    </div>`;
+  } else {
+    rmqEl.style.display='none';
+    rmqEl.innerHTML='';
+  }
   document.getElementById('m-ben-detail').classList.add('open');
 }
 
