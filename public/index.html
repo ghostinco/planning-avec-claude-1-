@@ -1127,7 +1127,7 @@ function renderSemaine(){
   else if(semSort==='nom-za')sorted.sort((a,b)=>b.nom.localeCompare(a.nom,'fr'));
   h+=`<tr class="wk-sec"><td colspan="${joursVis.length+1}"><span class="wk-sec-lbl" style="color:${col}">● ${sec}</span></td></tr>`;
   sorted.forEach(b=>{const bc=bCol(b.id);
-  h+=`<tr><td class="wk-nm" onclick="openEditBen('${b.id}')" style="cursor:pointer" title="Voir la fiche de ${b.prenom} ${b.nom}"><div class="nn">${semSort.startsWith('prenom')?b.prenom+' '+b.nom:b.nom+' '+b.prenom}</div><div class="np" style="color:${col}">${b.poste||sec}</div><span class="nty ${b.type==='fixe'?'nfix':'nrot'}">${b.type==='fixe'?'📌':'🔄'}</span>${isA()?`<button type="button" class="ned" onclick="openEditBen('${b.id}')">✏</button>`:''}</td>`;
+  h+=`<tr><td class="wk-nm" onclick="openBenDetail('${b.id}')" style="cursor:pointer" title="Voir la fiche de ${b.prenom} ${b.nom}"><div class="nn">${semSort.startsWith('prenom')?b.prenom+' '+b.nom:b.nom+' '+b.prenom}</div><div class="np" style="color:${col}">${b.poste||sec}</div><span class="nty ${b.type==='fixe'?'nfix':'nrot'}">${b.type==='fixe'?'📌':'🔄'}</span>${isA()?`<button type="button" class="ned" onclick="openEditBen('${b.id}')">✏</button>`:''}</td>`;
   joursVis.forEach(j=>{const dis=(b.dispos||[]).includes(j.lbl);
   const mySlots=slots.filter(sl=>sl.jours.includes(j.lbl)&&assigns[sl.id]&&assigns[sl.id].includes(b.id)&&(_assignDays[sl.id]?.[b.id]||[]).includes(j.lbl));
   if(!dis){h+=`<td class="wk-td na"><div style="height:100%;display:flex;align-items:center;justify-content:center;opacity:.1">—</div></td>`;}
