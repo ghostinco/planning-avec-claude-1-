@@ -1157,7 +1157,7 @@ function renderJour(){
     const col=SCLR[sec]||'#94a3b8';
     if(sec!==lastSec){lastSec=sec;h+=`<tr class="dv-sec-tr"><td colspan="25" style="color:${col}">● ${sec}</td></tr>`;}
     const nec=POSTES_NEC[pos]||2;
-    const shs=slotsForPJ(pos,jour);
+    const shs=slotsForPJ(pos,jour).sort((a,b)=>a.start_time.localeCompare(b.start_time));
     // Calculer hauteur nécessaire pour chaque slot
     const slotH={};
     shs.forEach(sl=>{
@@ -1257,7 +1257,7 @@ function renderSV(){
       grid+=`</div>`;
       joursVis.forEach(j=>{
         // Trouver les slots de ce poste ce jour
-        const posSlots=slotsForPJ(pos,j.lbl);
+        const posSlots=slotsForPJ(pos,j.lbl).sort((a,b)=>a.start_time.localeCompare(b.start_time));
         const nbJ=nbBensOnPosteJour(pos,j.lbl);
         const rc=nbJ>=nec?'full':nbJ>0?'part':'empty';
         grid+=`<div class="sv2-cell" id="cell-${pos.replace(/[^a-z0-9]/gi,'_')}-${j.k}"
@@ -1275,7 +1275,7 @@ function renderSV(){
             grid+=`<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px">`;
             grid+=`<span style="font-size:10px;font-weight:700;color:#7fb8d4">${sl.start_time}–${sl.end_time}</span>`;
             grid+=`<span class="sv2-ratio ${slRc}">${slNbJ}/${slNec}</span>`;
-            if(isA())grid+=`<button type="button" class="srbtn" style="padding:1px 4px;font-size:9px;margin-left:auto" onclick="openAssign('${sl.id}',event)">👥</button><button type="button" class="srbtn" style="padding:1px 4px;font-size:9px" onclick="openEditSlot('${sl.id}',null)">✏</button>`;
+            if(isA())grid+=`<button type="button" class="srbtn" style="padding:1px 4px;font-size:9px;margin-left:auto" onclick="openAssign('${sl.id}',event)" title="Assigner bénévoles">👥</button><button type="button" class="srbtn" style="padding:1px 4px;font-size:9px" onclick="openEditSlot('${sl.id}',null)" title="Modifier créneau">✏</button><button type="button" class="srbtn" style="padding:1px 4px;font-size:9px" onclick="dupSlot('${sl.id}','${j.lbl}',event)" title="Dupliquer sur un autre jour">📋</button>`;
             grid+=`</div>`;
             // Tags bénévoles assignés ce jour
             const bidsJ=(assigns[sl.id]||[]).filter(bid=>(_assignDays[sl.id]?.[bid]||[]).includes(j.lbl));
@@ -1360,6 +1360,21 @@ function svDrop(ev,pos,jour){
     const el=document.getElementById('ba-'+_dragBenId);
     if(el){el.classList.add('open');refreshBaItem(_dragBenId,sl.id);}
   },80);
+}
+
+function dupSlot(sid,jourActuel,ev){
+  if(ev)ev.stopPropagation();
+  const sl=slots.find(x=>x.id===sid);if(!sl)return;
+  // Proposer les autres jours du festival
+  const autresJours=JOURS.filter(j=>j.lbl!==jourActuel);
+  const choix=autresJours.map((j,i)=>`${i+1}. ${j.lbl}`).join('\n');
+  const rep=prompt(`Dupliquer "${sl.pid} ${sl.start_time}–${sl.end_time}" sur quel jour ?\n\n${choix}\n\nEntrez le numéro :`);
+  if(!rep)return;
+  const idx=parseInt(rep)-1;
+  if(isNaN(idx)||idx<0||idx>=autresJours.length)return;
+  const jourCible=autresJours[idx].lbl;
+  // Créer un nouveau slot identique sans bénévoles
+  _prepSlot(sl.pid,jourCible,sl.start_time,sl.end_time,null,sl.rmq||'');
 }
 
 async function removeAssignDay(sid,bid,jour){
