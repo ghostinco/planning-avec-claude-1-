@@ -1704,39 +1704,64 @@ function renderBenList(sl,focusBid,jour){
   if(!benListEl)return;
   const sid=sl.id;
   const showAll=window._sidebarShowAll||false;
+  const durCreneau=durH(sl.start_time,sl.end_time); // heures du créneau actuel
 
-  // Bénévoles déjà occupés ce jour sur un AUTRE poste
-  const occupesJour=new Set();
+  // Pour chaque bénévole : compter ses postes ce jour + leur durée cumulée
+  const postesParBen={};
   Object.entries(_assignDays).forEach(([osid,days])=>{
     if(osid===sid)return;
-    Object.entries(days).forEach(([bid,jrs])=>{if(jrs.includes(jour))occupesJour.add(bid);});
+    const sl2=slots.find(x=>x.id===osid);if(!sl2)return;
+    const dur2=durH(sl2.start_time,sl2.end_time);
+    Object.entries(days).forEach(([bid,jrs])=>{
+      if(!jrs.includes(jour))return;
+      if(!postesParBen[bid])postesParBen[bid]={count:0,heures:0};
+      postesParBen[bid].count++;
+      postesParBen[bid].heures+=dur2;
+    });
   });
 
+  // Déjà assignés à CE créneau (via tmp)
+  const dejaIci=new Set(Object.keys(window._assignTmpDays||{}).filter(bid=>(window._assignTmpDays[bid]||[]).includes(jour)));
+
   const sorted=[...bens].sort((a,b)=>a.prenom.localeCompare(b.prenom));
-  const libres=sorted.filter(b=>!occupesJour.has(b.id)||!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0));
-  const liste=showAll?sorted:libres;
-  const nbOccupes=sorted.length-libres.length;
+
+  // Filtrer : dispo ce jour + pas saturé (≤1 poste ou total heures+ce créneau ≤ raisonnable)
+  const eligibles=sorted.filter(b=>{
+    if(dejaIci.has(b.id))return false; // déjà sur ce créneau
+    const dispo=(b.dispos||[]).includes(jour);
+    if(!dispo)return false; // pas disponible ce jour
+    const info=postesParBen[b.id];
+    if(!info)return true; // aucun poste ce jour → ok
+    // Accepter si heures totales + ce créneau ≤ 9h (permet 2 équipes de 3h)
+    return(info.heures+durCreneau)<=9;
+  });
+
+  const nbExclus=sorted.length-eligibles.length;
+  const liste=showAll?sorted.filter(b=>(b.dispos||[]).includes(jour)):eligibles;
 
   const items=liste.map(b=>{
     const bc=bCol(b.id);
-    const assigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
+    const assigned=dejaIci.has(b.id)||!!(window._assignTmpDays[b.id]&&(window._assignTmpDays[b.id]||[]).includes(jour));
     const dimmed=focusBid&&focusBid!=='new'&&focusBid!==b.id;
-    const occupe=occupesJour.has(b.id)&&!assigned;
-    return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}${dimmed?';opacity:0.3':''}${occupe?';opacity:0.4':''}${occupe?';border-color:rgba(248,113,113,.2)':''}" onclick="selectBenFromList('${b.id}','${sid}','${jour||''}')" title="${occupe?'Déjà sur un autre poste ce jour':''}">
+    const info=postesParBen[b.id];
+    const aUnPoste=info&&info.count>0;
+    return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" 
+      style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}${dimmed?';opacity:0.3':''}" 
+      onclick="selectBenFromList('${b.id}','${sid}','${jour||''}')" 
+      title="${aUnPoste?`Déjà ${info.heures}h ce jour`:'Libre'}">
       <div class="sv2-av" style="background:${bc};width:26px;height:26px;font-size:10px;flex-shrink:0">${init(b)}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:700;color:#f0f9ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.prenom} ${b.nom}</div>
-        <div style="font-size:10px;color:#4d7fa0">${b.poste||b.sec}</div>
+        <div style="font-size:10px;color:#4d7fa0">${aUnPoste?`${info.heures}h déjà ce jour`:b.poste||b.sec}</div>
       </div>
-      ${assigned?'<span style="color:#34d399;font-size:12px">✓</span>':occupe?'<span style="color:#f87171;font-size:10px">✗</span>':''}
+      ${assigned?'<span style="color:#34d399;font-size:12px">✓</span>':aUnPoste?'<span style="font-size:10px;color:#fbbf24">½</span>':''}
     </div>`;
   }).join('');
 
-  const btnLabel=showAll
-    ?`▲ Libres seulement`
-    :`▼ Voir les ${nbOccupes} occupés ce jour`;
+  const nbNonDispo=sorted.filter(b=>!(b.dispos||[]).includes(jour)).length;
+  const btnLabel=showAll?`▲ Disponibles seulement`:`▼ Voir tous les disponibles (${sorted.filter(b=>(b.dispos||[]).includes(jour)).length-eligibles.length} avec autre poste)`;
 
-  benListEl.innerHTML=items+(nbOccupes>0?`<button onclick="window._sidebarShowAll=!window._sidebarShowAll;renderBenList(slots.find(x=>x.id==='${sid}'),window._sidebarFocusBid,window._sidebarJour)" style="width:100%;margin-top:8px;padding:6px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:6px;color:#4d7fa0;font-size:11px;cursor:pointer">${btnLabel}</button>`:'');
+  benListEl.innerHTML=items+(nbExclus>0&&!showAll?`<button onclick="window._sidebarShowAll=!window._sidebarShowAll;renderBenList(slots.find(x=>x.id==='${sid}'),window._sidebarFocusBid,window._sidebarJour)" style="width:100%;margin-top:8px;padding:6px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:6px;color:#4d7fa0;font-size:11px;cursor:pointer">${btnLabel}</button>`:showAll?`<button onclick="window._sidebarShowAll=false;renderBenList(slots.find(x=>x.id==='${sid}'),window._sidebarFocusBid,window._sidebarJour)" style="width:100%;margin-top:8px;padding:6px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:6px;color:#4d7fa0;font-size:11px;cursor:pointer">▲ Disponibles seulement</button>`:'');
 }
 
 function toggleBenListAll(){}
