@@ -1446,12 +1446,12 @@ function openAssign(sid,ev,focusBid){
   // Liste bénévoles côté droit de la sidebar
   const benListEl=document.getElementById('ma-ben-list');
   if(benListEl){
-    const sorted=[...bens].sort((a,b)=>(a.nom+a.prenom).localeCompare(b.nom+b.prenom));
+    const sorted=[...bens].sort((a,b)=>a.prenom.localeCompare(b.prenom));
     benListEl.innerHTML=sorted.map(b=>{
       const bc=bCol(b.id);
       const assigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
       const dimmed=focusBid&&focusBid!=='new'&&focusBid!==b.id;
-      return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}${dimmed?';opacity:0.3':''}" onclick="toggleBaPanel('${b.id}','${sl.id}')">
+      return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}${dimmed?';opacity:0.3':''}" onclick="selectBenFromList('${b.id}','${sl.id}')">
         <div class="sv2-av" style="background:${bc};width:26px;height:26px;font-size:10px;flex-shrink:0">${init(b)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:12px;font-weight:700;color:#f0f9ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.prenom} ${b.nom}</div>
@@ -1606,6 +1606,22 @@ function showHiddenBens(sid){
   });
 }
 
+function selectBenFromList(bid,sid){
+  // Rendre le bénévole visible dans la liste gauche s'il est caché
+  const el=document.getElementById('ba-'+bid);
+  if(el){
+    el.style.display='';
+    if(!el.classList.contains('open'))el.classList.add('open');
+    el.scrollIntoView({behavior:'smooth',block:'center'});
+  } else {
+    // S'il n'est pas encore dans la liste gauche, déclencher toggleBaPanel pour l'ajouter
+    toggleBaPanel(bid,sid);
+    setTimeout(()=>{
+      const el2=document.getElementById('ba-'+bid);
+      if(el2){el2.style.display='';el2.classList.add('open');el2.scrollIntoView({behavior:'smooth',block:'center'});}
+    },100);
+  }
+}
 function toggleBaPanel(bid,sid){
   const el=document.getElementById('ba-'+bid);if(!el)return;
   el.classList.toggle('open');
