@@ -1680,6 +1680,11 @@ function renderBenList(sl,focusBid,jour){
 }
 
 function toggleBenListAll(){}
+
+function toggleBaPanel(bid,sid){
+  const el=document.getElementById('ba-'+bid);if(!el)return;
+  el.classList.toggle('open');
+}
   const el=document.getElementById('ba-'+bid);if(!el)return;
   el.classList.toggle('open');
 }
