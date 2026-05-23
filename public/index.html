@@ -835,15 +835,12 @@ textarea.mbe-inp{font-family:inherit}
 
 <!-- Modal import -->
 <div class="ov" id="m-import">
-  <div class="sht">
+  <div class="sht" style="max-width:680px;width:100%">
     <div class="sh-hdr"><div class="sh-ttl">📥 Importer des bénévoles</div><button type="button" class="xb" onclick="cm('m-import')">✕</button></div>
-    <div style="font-size:11px;color:#7fb8d4;margin-bottom:12px">Colonnes détectées — vérifie la correspondance avant d'importer.</div>
-    <div style="display:flex;gap:8px;margin-bottom:12px">
-      <div class="fl" style="flex:1;margin:0"><label>Colonne Prénom</label><select id="imp-prenom" style="width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:13px;outline:none"></select></div>
-      <div class="fl" style="flex:1;margin:0"><label>Colonne Nom</label><select id="imp-nom" style="width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:13px;outline:none"></select></div>
-    </div>
+    <div style="font-size:11px;color:#7fb8d4;margin-bottom:12px">Colonnes détectées automatiquement — vérifie avant d'importer.</div>
+    <div id="imp-mapping" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px"></div>
     <div style="font-size:11px;color:#4d7fa0;margin-bottom:6px" id="imp-count"></div>
-    <div id="imp-preview" style="max-height:240px;overflow-y:auto;margin-bottom:12px;border:1px solid rgba(56,189,248,.12);border-radius:8px"></div>
+    <div id="imp-preview" style="max-height:220px;overflow-y:auto;margin-bottom:12px;border:1px solid rgba(56,189,248,.12);border-radius:8px"></div>
     <div class="ae" id="imp-err"></div>
     <button type="button" class="btn btn-p" onclick="confirmImport()">Importer <span id="imp-btn-count"></span></button>
   </div>
@@ -2856,58 +2853,134 @@ function parseImportCSV(text){
 
 function openImportModal(){
   if(!_importHeaders.length){alert('Fichier vide.');return;}
-  const opts=_importHeaders.map((h,i)=>`<option value="${i}">${h||'Colonne '+(i+1)}</option>`).join('');
-  // Auto-détecter les colonnes
-  const guessIdx=(keywords)=>_importHeaders.findIndex(h=>keywords.some(k=>h.toLowerCase().includes(k)));
-  const pIdx=Math.max(0,guessIdx(['prenom','prénom','first','fname','given']));
-  const nIdx=Math.max(0,guessIdx(['nom','last','name','surname','family']));
-  document.getElementById('imp-prenom').innerHTML=opts;
-  document.getElementById('imp-nom').innerHTML=opts;
-  document.getElementById('imp-prenom').value=pIdx;
-  document.getElementById('imp-nom').value=nIdx;
+  // Définir les champs à détecter avec leurs synonymes
+  const FIELDS=[
+    {key:'prenom', label:'Prénom *', syns:['prenom','prénom','first','fname','given name','vorname'], required:true},
+    {key:'nom',    label:'Nom *',    syns:['nom','last','surname','family','nachname','name'], required:true},
+    {key:'email',  label:'Email',    syns:['email','courriel','mail','e-mail','adresse mail']},
+    {key:'tel',    label:'Téléphone',syns:['tel','téléphone','telephone','phone','mobile','natel','portable']},
+    {key:'ddn',    label:'Date naissance', syns:['date de naissance','ddn','naissance','birth','birthdate','born','geburtstag']},
+    {key:'taille', label:'Taille T-shirt', syns:['taille','t-shirt','shirt','size','tshirt']},
+    {key:'rmq',    label:'Remarques', syns:['remarque','remarques','note','notes','commentaire','info']},
+    {key:'ville',  label:'Ville',     syns:['ville','city','ort','localite','localité']},
+    {key:'npa',    label:'Code postal',syns:['npa','code postal','zip','plz','postal']},
+  ];
+  const guess=syns=>_importHeaders.findIndex(h=>syns.some(s=>h.toLowerCase().replace(/[^a-z0-9éèêëàâùûîïôç]/g,'').includes(s.toLowerCase().replace(/[^a-z0-9éèêëàâùûîïôç]/g,''))));
+  // Construire le mapping détecté
+  window._importMapping={};
+  FIELDS.forEach(f=>{const idx=guess(f.syns);window._importMapping[f.key]=idx>=0?idx:-1;});
+  // Construire le HTML des selects
+  const opts='<option value="-1">— Ignorer —</option>'+_importHeaders.map((h,i)=>`<option value="${i}">${h||'Colonne '+(i+1)}</option>`).join('');
+  const mapEl=document.getElementById('imp-mapping');
+  mapEl.innerHTML=FIELDS.map(f=>`
+    <div class="fl" style="margin:0">
+      <label style="font-size:11px">${f.label}</label>
+      <select id="imp-f-${f.key}" style="width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:6px 10px;font-size:12px;outline:none" onchange="updateImportPreview()">
+        ${opts}
+      </select>
+    </div>`).join('');
+  FIELDS.forEach(f=>{
+    const sel=document.getElementById('imp-f-'+f.key);
+    if(sel)sel.value=window._importMapping[f.key];
+  });
   updateImportPreview();
   document.getElementById('m-import').classList.add('open');
-  document.getElementById('imp-prenom').onchange=updateImportPreview;
-  document.getElementById('imp-nom').onchange=updateImportPreview;
 }
 
 function updateImportPreview(){
-  const pi=parseInt(document.getElementById('imp-prenom').value);
-  const ni=parseInt(document.getElementById('imp-nom').value);
-  const valid=_importRows.filter(r=>(r[pi]||'').trim()||(r[ni]||'').trim()).map(r=>({prenom:(r[pi]||'').trim(),nom:(r[ni]||'').trim()})).filter(r=>r.prenom||r.nom);
-  document.getElementById('imp-count').textContent=valid.length+' bénévoles détectés';
-  document.getElementById('imp-btn-count').textContent='('+valid.length+')';
-  // Aperçu — 8 premières lignes
+  const get=key=>{const el=document.getElementById('imp-f-'+key);return el?parseInt(el.value):-1;};
+  const pi=get('prenom'),ni=get('nom');
+  const norm=s=>String(s||'').trim().toLowerCase();
+  const valid=_importRows.filter(r=>(r[pi]||'').trim()||(r[ni]||'').trim())
+    .map(r=>({
+      prenom:String(r[pi]||'').trim(),
+      nom:String(r[ni]||'').trim(),
+    })).filter(r=>r.prenom||r.nom);
+  // Comparer avec existants (normalisé)
+  const nouveaux=valid.filter(r=>!bens.some(b=>norm(b.nom)===norm(r.nom)&&norm(b.prenom)===norm(r.prenom)));
+  const aJour=valid.filter(r=>bens.some(b=>norm(b.nom)===norm(r.nom)&&norm(b.prenom)===norm(r.prenom)));
+  document.getElementById('imp-count').innerHTML=
+    `<span style="color:#34d399">${nouveaux.length} nouveaux</span> · <span style="color:#fbbf24">${aJour.length} déjà existants (mise à jour possible)</span>`;
+  document.getElementById('imp-btn-count').textContent=`(${nouveaux.length} nouveaux)`;
   const preview=valid.slice(0,8);
-  let h='<table style="width:100%;border-collapse:collapse">';
-  h+=`<tr style="background:rgba(5,12,25,.85);position:sticky;top:0"><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0;font-weight:700">Prénom</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0;font-weight:700">Nom</th></tr>`;
-  preview.forEach((r,i)=>{h+=`<tr style="background:${i%2===0?'#0c1929':'#0d2137'}"><td style="padding:5px 10px;font-size:12px;color:#e2e8f0">${r.prenom}</td><td style="padding:5px 10px;font-size:12px;color:#e2e8f0">${r.nom}</td></tr>`;});
-  if(valid.length>8)h+=`<tr><td colspan="2" style="padding:5px 10px;font-size:11px;color:#4d7fa0;font-style:italic">... et ${valid.length-8} autres</td></tr>`;
+  let h='<table style="width:100%;border-collapse:collapse"><tr style="background:rgba(5,12,25,.85);position:sticky;top:0"><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0">Prénom</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0">Nom</th><th style="padding:6px 10px;text-align:left;font-size:11px;color:#4d7fa0">Statut</th></tr>';
+  preview.forEach((r,i)=>{
+    const exists=bens.some(b=>norm(b.nom)===norm(r.nom)&&norm(b.prenom)===norm(r.prenom));
+    h+=`<tr style="background:${i%2===0?'#0c1929':'#0d2137'}">
+      <td style="padding:5px 10px;font-size:12px;color:#e2e8f0">${r.prenom}</td>
+      <td style="padding:5px 10px;font-size:12px;color:#e2e8f0">${r.nom}</td>
+      <td style="padding:5px 10px;font-size:11px;color:${exists?'#fbbf24':'#34d399'}">${exists?'existe déjà':'nouveau'}</td>
+    </tr>`;
+  });
+  if(valid.length>8)h+=`<tr><td colspan="3" style="padding:5px 10px;font-size:11px;color:#4d7fa0;font-style:italic">... et ${valid.length-8} autres</td></tr>`;
   h+='</table>';
   document.getElementById('imp-preview').innerHTML=h;
 }
 
 async function confirmImport(){
-  const pi=parseInt(document.getElementById('imp-prenom').value);
-  const ni=parseInt(document.getElementById('imp-nom').value);
-  const toImport=_importRows.filter(r=>(r[pi]||'').trim()||(r[ni]||'').trim()).map(r=>({prenom:(r[pi]||'').trim(),nom:(r[ni]||'').trim()})).filter(r=>r.prenom||r.nom);
+  const get=key=>{const el=document.getElementById('imp-f-'+key);return el?parseInt(el.value):-1;};
+  const pi=get('prenom'),ni=get('nom'),ei=get('email'),ti=get('tel'),di=get('ddn'),tai=get('taille'),ri=get('rmq'),vi=get('ville'),npai=get('npa');
+  if(pi<0&&ni<0){sA('imp-err','Sélectionne au moins Prénom ou Nom.');return;}
+  const norm=s=>String(s||'').trim().toLowerCase();
+  const val=s=>String(s||'').trim();
+
+  const toImport=_importRows.filter(r=>(r[pi]||'').trim()||(r[ni]||'').trim()).map(r=>({
+    prenom:val(r[pi]),nom:val(r[ni]),
+    email:ei>=0?val(r[ei]):'',
+    tel:ti>=0?val(r[ti]):'',
+    ddn:di>=0?val(r[di]):'',
+    taille:tai>=0?val(r[tai]):'',
+    rmq:ri>=0?val(r[ri]):'',
+    ville:vi>=0?val(r[vi]):'',
+    npa:npai>=0?val(r[npai]):'',
+  })).filter(r=>r.prenom||r.nom);
+
   if(!toImport.length){sA('imp-err','Aucun bénévole valide trouvé.');return;}
-  // Dédoublonner avec existants
-  const nouveaux=toImport.filter(r=>!bens.some(b=>b.nom.toLowerCase()===r.nom.toLowerCase()&&b.prenom.toLowerCase()===r.prenom.toLowerCase()));
-  if(!nouveaux.length){sA('imp-err','Tous ces bénévoles existent déjà.');return;}
+
+  const nouveaux=toImport.filter(r=>!bens.some(b=>norm(b.nom)===norm(r.nom)&&norm(b.prenom)===norm(r.prenom)));
+  const existants=toImport.filter(r=>bens.some(b=>norm(b.nom)===norm(r.nom)&&norm(b.prenom)===norm(r.prenom)));
+
+  let updateExisting=false;
+  if(existants.length>0){
+    updateExisting=confirm(`${existants.length} bénévoles existent déjà.\nOK = mettre à jour leurs infos (email, tél, DDN, taille, remarques)\nAnnuler = ignorer les existants`);
+  }
+
   cm('m-import');
-  setSync('syncing',`Import ${nouveaux.length} bén...`);
-  let ok=0;
+  setSync('syncing',`Import...`);
+  const spfSec=SECS.find(s=>(POSTES_DEF[s]||[]).some(p=>p.toLowerCase().includes('spf')||p.toLowerCase().includes('non')))|| 'Non défini';
+  const spfPos=(POSTES_DEF[spfSec]||[])[0]||'Non défini';
+  let okNew=0,okUpd=0;
+
+  // Importer les nouveaux
   for(const r of nouveaux){
     try{
-      const spfSec2=SECS.find(s=>(POSTES_DEF[s]||[]).some(p=>p.toLowerCase().includes('spf')||p.toLowerCase().includes('non')))|| 'Non défini';const spfPos2=(POSTES_DEF[spfSec2]||[])[0]||'Non défini';const d={nom:r.nom,prenom:r.prenom,tel:'',email:'',sec:spfSec2,poste:spfPos2,type:'rotatif',dispos:JOURS.map(j=>j.lbl),rmq:'',event_id:currentEvent.id};
+      const d={nom:r.nom,prenom:r.prenom,tel:r.tel,email:r.email,ddn:r.ddn,taille:r.taille,rmq:r.rmq,
+        sec:spfSec,poste:spfPos,type:'rotatif',dispos:JOURS.map(j=>j.lbl),event_id:currentEvent.id};
       const res=await apiPost('/bens',d);
-      bens.push({id:res.id,...d,event_id:currentEvent.id});ok++;
+      bens.push({id:res.id,...d});okNew++;
     }catch(e){console.error(e);}
   }
-  setSync('ok',`${ok} importés`);
+
+  // Mettre à jour les existants si demandé
+  if(updateExisting){
+    for(const r of existants){
+      const b=bens.find(b=>norm(b.nom)===norm(r.nom)&&norm(b.prenom)===norm(r.prenom));
+      if(!b)continue;
+      const patch={};
+      if(r.email&&r.email!==b.email)patch.email=r.email;
+      if(r.tel&&r.tel!==b.tel)patch.tel=r.tel;
+      if(r.ddn&&r.ddn!==b.ddn)patch.ddn=r.ddn;
+      if(r.taille&&r.taille!==b.taille)patch.taille=r.taille;
+      if(r.rmq&&r.rmq!==b.rmq)patch.rmq=r.rmq;
+      if(!Object.keys(patch).length)continue;
+      try{await apiPatch('/bens/'+b.id,patch);Object.assign(b,patch);okUpd++;}
+      catch(e){console.error(e);}
+    }
+  }
+
+  setSync('ok',`${okNew} importés · ${okUpd} mis à jour`);
   renderBens();updMq();
-  if(toImport.length-nouveaux.length>0)alert(`${ok} bénévoles importés.\n${toImport.length-nouveaux.length} ignorés (déjà existants).`);
+  alert(`✅ ${okNew} nouveaux bénévoles importés.\n${okUpd} mis à jour.\n${existants.length-okUpd} ignorés.`);
 }
 
 // ═══ MIGRATION SPF ═══
