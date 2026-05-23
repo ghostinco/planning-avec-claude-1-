@@ -1283,7 +1283,7 @@ function renderSV(){
               const b=bens.find(x=>x.id===bid);if(!b)return;
               const bc=bCol(bid);
               const isLocked=(_locks[sl.id]?.[bid]||new Set()).has(j.lbl);
-              grid+=`<div class="sv2-tag${isLocked?' sv2-locked':''}" style="margin-top:3px" onclick="openAssignSingle('${sl.id}','${bid}',event)" title="${isLocked?'🔒 Verrouillé':'Cliquer pour modifier ce bénévole'}">
+              grid+=`<div class="sv2-tag${isLocked?' sv2-locked':''}" style="margin-top:3px" onclick="openAssignSingle('${sl.id}','${bid}',event,'${j.lbl}')" title="${isLocked?'🔒 Verrouillé':'Cliquer pour modifier ce bénévole'}">
                 <div class="sv2-av" style="background:${bc};width:20px;height:20px;font-size:9px">${init(b)}</div>
                 <span style="font-size:12px">${b.prenom} ${b.nom}</span>
                 ${isA()?`<span class="sv2-tag-lock${isLocked?' locked':''}" onclick="event.stopPropagation();toggleLock('${sl.id}','${bid}','${j.lbl}')" title="${isLocked?'Déverrouiller':'Verrouiller'}">${isLocked?'🔒':'🔓'}</span>`:''}
@@ -1292,7 +1292,7 @@ function renderSV(){
             });
             // Placeholders pour les bénévoles manquants
             const manquants=slNec-bidsJ.length;
-            for(let m=0;m<manquants;m++)grid+=`<div style="font-size:12px;font-weight:700;color:#f87171;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:4px;padding:5px 8px;text-align:center;cursor:pointer;margin-top:3px" onclick="openAssignNew('${sl.id}',event)">+ Manque bénévole</div>`;
+            for(let m=0;m<manquants;m++)grid+=`<div style="font-size:12px;font-weight:700;color:#f87171;background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.4);border-radius:4px;padding:5px 8px;text-align:center;cursor:pointer;margin-top:3px" onclick="openAssignNew('${sl.id}',event,'${j.lbl}')">+ Manque bénévole</div>`;
             grid+=`</div>`;
           });
         } else {
@@ -1430,7 +1430,7 @@ async function doDelSlot(sid){
 }
 
 // ═══ ASSIGNATION PAR JOUR ═══
-function openAssign(sid,ev,focusBid){
+function openAssign(sid,ev,focusBid,jourContext){
   if(ev)ev.stopPropagation();const sl=slots.find(x=>x.id===sid);if(!sl)return;
   assignEditing=sid;
   // Copie profonde de _assignDays pour ce créneau (état temporaire pour édition)
@@ -1451,7 +1451,7 @@ function openAssign(sid,ev,focusBid){
       const bc=bCol(b.id);
       const assigned=!!(window._assignTmpDays[b.id]&&window._assignTmpDays[b.id].length>0);
       const dimmed=focusBid&&focusBid!=='new'&&focusBid!==b.id;
-      return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}${dimmed?';opacity:0.3':''}" onclick="selectBenFromList('${b.id}','${sl.id}')">
+      return`<div class="sv2-ben-item${assigned?' has-days':''}" data-bid="${b.id}" style="${assigned?'border-color:rgba(52,211,153,.4);background:rgba(52,211,153,.08)':''}${dimmed?';opacity:0.3':''}" onclick="selectBenFromList('${b.id}','${sl.id}','${jourContext||''}')">
         <div class="sv2-av" style="background:${bc};width:26px;height:26px;font-size:10px;flex-shrink:0">${init(b)}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:12px;font-weight:700;color:#f0f9ff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.prenom} ${b.nom}</div>
@@ -1607,15 +1607,13 @@ function showHiddenBens(sid){
   });
 }
 
-function selectBenFromList(bid,sid){
+function selectBenFromList(bid,sid,jour){
   const sl=slots.find(x=>x.id===sid);if(!sl)return;
-  // Assigner tous les jours du créneau à ce bénévole
-  if(!window._assignTmpDays[bid]||window._assignTmpDays[bid].length===0){
-    window._assignTmpDays[bid]=[...sl.jours];
-  } else {
-    // Si déjà assigné, retirer (toggle)
-    window._assignTmpDays[bid]=[];
-  }
+  if(!window._assignTmpDays[bid])window._assignTmpDays[bid]=[];
+  const days=window._assignTmpDays[bid];
+  const targetDay=jour||sl.jours[0];
+  const idx=days.indexOf(targetDay);
+  if(idx>=0){days.splice(idx,1);}else{days.push(targetDay);}
   // Re-rendre la liste gauche et mettre à jour l'icône ✓ dans la liste droite
   renderAssignList(sid,sl,null);
   // Mettre à jour le ✓ dans la liste droite
@@ -1641,13 +1639,13 @@ function toggleBaPanel(bid,sid){
 }
 
 // Ouvre la sidebar pour AJOUTER un bénévole manquant (clic sur vignette vide)
-function openAssignNew(sid,ev){
+function openAssignNew(sid,ev,jour){
   if(ev)ev.stopPropagation();
-  openAssign(sid,null,'new');
+  openAssign(sid,null,'new',jour);
 }
-function openAssignSingle(sid,bid,ev){
+function openAssignSingle(sid,bid,ev,jour){
   if(ev)ev.stopPropagation();
-  openAssign(sid,null,bid);
+  openAssign(sid,null,bid,jour);
 }
 
 function toggleDay(bid,jour,sid){
