@@ -2518,14 +2518,17 @@ function renderStats(){
         if(!parSec[sec])parSec[sec]=[];
         const nec=POSTES_NEC[sl.pid]||2;
         const nb=Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(j.lbl)).length;
-        // Éviter doublons de postes
+        const dur=durH(sl.start_time,sl.end_time)||6; // durée en heures, défaut 6h
+        const poids=dur/6; // 6h = 1 poste, 3h = 0.5 poste
         const existing=parSec[sec].find(p=>p.pos===sl.pid);
-        if(existing){existing.nb+=nb;existing.nec+=nec;existing.full=existing.nb>=existing.nec;}
-        else parSec[sec].push({pos:sl.pid,nb,nec,full:nb>=nec});
+        if(existing){existing.nb+=nb;existing.nec+=nec;existing.full=existing.nb>=existing.nec;existing.poids=(existing.poids||1)+poids;}
+        else parSec[sec].push({pos:sl.pid,nb,nec,full:nb>=nec,poids});
       });
       const allPostes=Object.values(parSec).flat();
-      const nbFull=allPostes.filter(p=>p.full).length;
-      const pct=allPostes.length>0?Math.round(nbFull/allPostes.length*100):0;
+      // Poids total et poids des postes complets
+      const poidsTotal=allPostes.reduce((s,p)=>s+(p.poids||1),0);
+      const poidsFull=allPostes.filter(p=>p.full).reduce((s,p)=>s+(p.poids||1),0);
+      const pct=poidsTotal>0?Math.round(poidsFull/poidsTotal*100):0;
       const couleurPct=pct===100?'#34d399':pct>=60?'#fbbf24':'#f87171';
 
       h+=`<div style="background:#0f1f33;border:1.5px solid rgba(56,189,248,.08);border-radius:14px;overflow:hidden">
