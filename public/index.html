@@ -1607,20 +1607,32 @@ function showHiddenBens(sid){
 }
 
 function selectBenFromList(bid,sid){
-  // Rendre le bénévole visible dans la liste gauche s'il est caché
-  const el=document.getElementById('ba-'+bid);
-  if(el){
-    el.style.display='';
-    if(!el.classList.contains('open'))el.classList.add('open');
-    el.scrollIntoView({behavior:'smooth',block:'center'});
+  const sl=slots.find(x=>x.id===sid);if(!sl)return;
+  // Assigner tous les jours du créneau à ce bénévole
+  if(!window._assignTmpDays[bid]||window._assignTmpDays[bid].length===0){
+    window._assignTmpDays[bid]=[...sl.jours];
   } else {
-    // S'il n'est pas encore dans la liste gauche, déclencher toggleBaPanel pour l'ajouter
-    toggleBaPanel(bid,sid);
-    setTimeout(()=>{
-      const el2=document.getElementById('ba-'+bid);
-      if(el2){el2.style.display='';el2.classList.add('open');el2.scrollIntoView({behavior:'smooth',block:'center'});}
-    },100);
+    // Si déjà assigné, retirer (toggle)
+    window._assignTmpDays[bid]=[];
   }
+  // Re-rendre la liste gauche et mettre à jour l'icône ✓ dans la liste droite
+  renderAssignList(sid,sl,null);
+  // Mettre à jour le ✓ dans la liste droite
+  document.querySelectorAll('#ma-ben-list .sv2-ben-item').forEach(el=>{
+    const b2=el.getAttribute('data-bid');
+    const isAssigned=!!(window._assignTmpDays[b2]&&window._assignTmpDays[b2].length>0);
+    el.classList.toggle('has-days',isAssigned);
+    el.style.borderColor=isAssigned?'rgba(52,211,153,.4)':'';
+    el.style.background=isAssigned?'rgba(52,211,153,.08)':'';
+    const check=el.querySelector('.ben-check');
+    if(isAssigned&&!check){const s=document.createElement('span');s.className='ben-check';s.style.color='#34d399';s.style.fontSize='12px';s.textContent='✓';el.appendChild(s);}
+    else if(!isAssigned&&check)check.remove();
+  });
+  // Scroll vers le bénévole dans la liste gauche
+  setTimeout(()=>{
+    const el=document.getElementById('ba-'+bid);
+    if(el){el.classList.add('open');el.scrollIntoView({behavior:'smooth',block:'center'});}
+  },50);
 }
 function toggleBaPanel(bid,sid){
   const el=document.getElementById('ba-'+bid);if(!el)return;
