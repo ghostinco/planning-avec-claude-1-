@@ -1498,6 +1498,18 @@ function openAssign(sid,ev,focusBid,jourContext){
   window._assignTmpDays={};
   const cur=_assignDays[sid]||{};
   Object.keys(cur).forEach(bid=>{window._assignTmpDays[bid]=[...cur[bid]];});
+  // Sauvegarder l'état précédent de tous les siblings pour le diff dans saveAssign
+  const siblingsOnOpen=slots.filter(s=>s.pid===slots.find(x=>x.id===sid)?.pid&&s.start_time===slots.find(x=>x.id===sid)?.start_time&&s.end_time===slots.find(x=>x.id===sid)?.end_time);
+  window._prevAssignDays={};
+  siblingsOnOpen.forEach(sib=>{
+    window._prevAssignDays[sib.id]={};
+    Object.entries(_assignDays[sib.id]||{}).forEach(([bid,jrs])=>{window._prevAssignDays[sib.id][bid]=[...jrs];});
+    // Fusionner dans tmp
+    Object.entries(_assignDays[sib.id]||{}).forEach(([bid,jrs])=>{
+      if(!window._assignTmpDays[bid])window._assignTmpDays[bid]=[];
+      jrs.forEach(j=>{if(!window._assignTmpDays[bid].includes(j))window._assignTmpDays[bid].push(j);});
+    });
+  });
   const sec=secOfPos(sl.pid);const col=SCLR[sec]||'#94a3b8';const nec=POSTES_NEC[sl.pid]||2;
   document.getElementById('ma-ttl').textContent=sl.pid+' · '+sl.start_time+'–'+sl.end_time;
   document.getElementById('ma-info').innerHTML=`<b>${sl.pid}</b> · <span style="color:${col}">${sec}</span> · ${sl.start_time}–${sl.end_time} (${fmtH(durH(sl.start_time,sl.end_time))}) · ${sl.jours.map(j=>j.split(' ')[0]+'/06').join(', ')} · Besoin : <b>${nec}</b>`;
@@ -1529,7 +1541,12 @@ function filterBaList(){
 }
 
 function renderAssignList(sid,sl,focusBid){
-  const allDays=sl.jours;
+  // Trouver tous les slots du même poste + même horaire (cartes dupliquées sur d'autres jours)
+  const siblingsSlots=slots.filter(s=>s.pid===sl.pid&&s.start_time===sl.start_time&&s.end_time===sl.end_time);
+  // Fusionner tous leurs jours (dédupliqués, triés)
+  const allDaysSet=new Set();
+  siblingsSlots.forEach(s=>(s.jours||[]).forEach(j=>allDaysSet.add(j)));
+  const allDays=[...allDaysSet].sort((a,b)=>a.localeCompare(b));
   const sorted=[...bens].sort((a,b)=>{
     const aD=(a.dispos||[]).some(d=>allDays.includes(d));
     const bD=(b.dispos||[]).some(d=>allDays.includes(d));
@@ -1747,19 +1764,16 @@ function toggleDay(bid,jour,sid){
   const idx=window._assignTmpDays[bid].indexOf(jour);
   if(idx>=0)window._assignTmpDays[bid].splice(idx,1);else window._assignTmpDays[bid].push(jour);
   const sl=slots.find(x=>x.id===sid);
-  // Mettre à jour juste cet item sans tout re-rendre
+  // Tous les jours des slots siblings (même poste+horaire)
+  const siblings=slots.filter(s=>s.pid===sl.pid&&s.start_time===sl.start_time&&s.end_time===sl.end_time);
+  const allSibJours=new Set();siblings.forEach(s=>(s.jours||[]).forEach(j=>allSibJours.add(j)));
   const el=document.getElementById('ba-'+bid);if(!el)return;
   const days=window._assignTmpDays[bid]||[];
   el.classList.toggle('has-days',days.length>0);
-  // Mettre à jour les boutons jours
   el.querySelectorAll('.ba-day-btn').forEach(btn=>{
-    const j=btn.textContent.replace('/06','').trim()+' juin';
-    btn.classList.toggle('sel',days.includes(j)||days.includes(btn.textContent.trim().replace('/06',' juin')));
-    // Recalcul précis
-    const jLbl=sl.jours.find(jj=>jj.startsWith(btn.textContent.replace('/06','').trim()));
+    const jLbl=[...allSibJours].find(jj=>jj.startsWith(btn.textContent.replace('/06','').replace('·','').replace('⚠','').trim()));
     if(jLbl)btn.classList.toggle('sel',days.includes(jLbl));
   });
-  // Mettre à jour le summary
   const sumEl=el.querySelector('.ba-days-summary');
   if(days.length>0){
     const txt=days.map(d=>d.split(' ')[0]+'/06').join(', ');
@@ -1769,7 +1783,9 @@ function toggleDay(bid,jour,sid){
 
 function selectAllDays(bid,sid){
   const sl=slots.find(x=>x.id===sid);if(!sl)return;
-  window._assignTmpDays[bid]=[...sl.jours];
+  const siblings=slots.filter(s=>s.pid===sl.pid&&s.start_time===sl.start_time&&s.end_time===sl.end_time);
+  const allDays=new Set();siblings.forEach(s=>(s.jours||[]).forEach(j=>allDays.add(j)));
+  window._assignTmpDays[bid]=[...allDays];
   refreshBaItem(bid,sid);
 }
 function clearDays(bid,sid){
@@ -1800,32 +1816,39 @@ async function saveAssign(){
   if(!assignEditing)return;
   const sl=slots.find(x=>x.id===assignEditing);if(!sl)return;
   const tmp=window._assignTmpDays||{};
-  const prev=_assignDays[assignEditing]||{};
-  // Mettre à jour état local
-  _assignDays[assignEditing]={};
-  assigns[assignEditing]=[];
-  Object.entries(tmp).forEach(([bid,jrs])=>{
-    if(jrs.length>0){_assignDays[assignEditing][bid]=[...jrs];assigns[assignEditing].push(bid);}
+  // Trouver tous les slots siblings (même poste+horaire)
+  const siblings=slots.filter(s=>s.pid===sl.pid&&s.start_time===sl.start_time&&s.end_time===sl.end_time);
+  // Pour chaque bénévole, dispatcher ses jours vers le bon slot sibling
+  siblings.forEach(sib=>{
+    const prev=_assignDays[sib.id]||{};
+    _assignDays[sib.id]={};assigns[sib.id]=[];
+    Object.entries(tmp).forEach(([bid,jrs])=>{
+      const jrsForSib=jrs.filter(j=>(sib.jours||[]).includes(j));
+      if(jrsForSib.length>0){_assignDays[sib.id][bid]=jrsForSib;assigns[sib.id].push(bid);}
+    });
   });
   cm('m-assign');
   requestAnimationFrame(()=>{renderContent();updMq();});
   setSync('syncing','Sauvegarde...');
   try{
-    // Calculer les paires (ben_id, jour) à ajouter/supprimer
-    const prevPairs={};Object.entries(prev).forEach(([bid,jrs])=>jrs.forEach(j=>{prevPairs[bid+'|'+j]=true;}));
-    const nextPairs={};Object.entries(tmp).forEach(([bid,jrs])=>jrs.forEach(j=>{nextPairs[bid+'|'+j]=true;}));
-    const toAdd=Object.keys(nextPairs).filter(k=>!prevPairs[k]);
-    const toRemove=Object.keys(prevPairs).filter(k=>!nextPairs[k]);
-    for(const key of toAdd){
-      const[bid,jour]=key.split('|');
-      const b=bens.find(x=>x.id===bid);
-      const r=await apiPost('/assigns',{slot_id:assignEditing,ben_id:bid,ben_nom:b?b.nom+' '+b.prenom:'?',poste:sl.pid,jour});
-      if(r&&r.id)window._assignIds[assignEditing+'|'+bid+'|'+jour]=r.id;
-    }
-    for(const key of toRemove){
-      const[bid,jour]=key.split('|');
-      const aid=window._assignIds[assignEditing+'|'+bid+'|'+jour];
-      if(aid)await apiDel('/assigns/'+aid);
+    for(const sib of siblings){
+      const prev=window._prevAssignDays?.[sib.id]||{};
+      const next=_assignDays[sib.id]||{};
+      const prevPairs={};Object.entries(prev).forEach(([bid,jrs])=>jrs.forEach(j=>{prevPairs[bid+'|'+j]=true;}));
+      const nextPairs={};Object.entries(next).forEach(([bid,jrs])=>jrs.forEach(j=>{nextPairs[bid+'|'+j]=true;}));
+      const toAdd=Object.keys(nextPairs).filter(k=>!prevPairs[k]);
+      const toRemove=Object.keys(prevPairs).filter(k=>!nextPairs[k]);
+      for(const key of toAdd){
+        const[bid,jour]=key.split('|');
+        const b=bens.find(x=>x.id===bid);
+        const r=await apiPost('/assigns',{slot_id:sib.id,ben_id:bid,ben_nom:b?b.nom+' '+b.prenom:'?',poste:sib.pid,jour});
+        if(r&&r.id)window._assignIds[sib.id+'|'+bid+'|'+jour]=r.id;
+      }
+      for(const key of toRemove){
+        const[bid,jour]=key.split('|');
+        const aid=window._assignIds[sib.id+'|'+bid+'|'+jour];
+        if(aid)await apiDel('/assigns/'+aid);
+      }
     }
     setSync('ok','Synchronisé');
   }catch(err){setSync('err','Erreur');console.error(err);}
