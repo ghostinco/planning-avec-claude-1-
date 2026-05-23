@@ -1127,7 +1127,7 @@ function renderSemaine(){
   else if(semSort==='nom-za')sorted.sort((a,b)=>b.nom.localeCompare(a.nom,'fr'));
   h+=`<tr class="wk-sec"><td colspan="${joursVis.length+1}"><span class="wk-sec-lbl" style="color:${col}">● ${sec}</span></td></tr>`;
   sorted.forEach(b=>{const bc=bCol(b.id);
-  h+=`<tr><td class="wk-nm"><div class="nn">${semSort.startsWith('prenom')?b.prenom+' '+b.nom:b.nom+' '+b.prenom}</div><div class="np" style="color:${col}">${b.poste||sec}</div><span class="nty ${b.type==='fixe'?'nfix':'nrot'}">${b.type==='fixe'?'📌':'🔄'}</span>${isA()?`<button type="button" class="ned" onclick="openEditBen('${b.id}')">✏</button>`:''}</td>`;
+  h+=`<tr><td class="wk-nm" onclick="openEditBen('${b.id}')" style="cursor:pointer" title="Voir la fiche de ${b.prenom} ${b.nom}"><div class="nn">${semSort.startsWith('prenom')?b.prenom+' '+b.nom:b.nom+' '+b.prenom}</div><div class="np" style="color:${col}">${b.poste||sec}</div><span class="nty ${b.type==='fixe'?'nfix':'nrot'}">${b.type==='fixe'?'📌':'🔄'}</span>${isA()?`<button type="button" class="ned" onclick="openEditBen('${b.id}')">✏</button>`:''}</td>`;
   joursVis.forEach(j=>{const dis=(b.dispos||[]).includes(j.lbl);
   const mySlots=slots.filter(sl=>sl.jours.includes(j.lbl)&&assigns[sl.id]&&assigns[sl.id].includes(b.id)&&(_assignDays[sl.id]?.[b.id]||[]).includes(j.lbl));
   if(!dis){h+=`<td class="wk-td na"><div style="height:100%;display:flex;align-items:center;justify-content:center;opacity:.1">—</div></td>`;}
@@ -1201,7 +1201,7 @@ function renderJour(){
         h+=`<div class="slot-blk ${isEmpty?'empty':''}" style="left:${left}%;width:calc(${w}% - 3px);top:${top}px;height:${vigH-4}px;background:${cardBg};border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,.08)" onclick="openAssign('${sl.id}',event)">
           <div class="sl-row" style="padding:2px 5px;border-bottom:1px solid rgba(0,0,0,.2)"><div class="sl-time">${sl.start_time}–${sl.end_time} <span style="opacity:.7">${fmtH(dur)}</span></div><div style="font-size:11px;font-weight:800;color:#000;background:${rc};border-radius:3px;padding:0 4px">${nbJ}/${nec}</div></div>
           ${vigHtml}
-          ${isA()?`<div class="sl-sa"><button type="button" class="slab" onclick="openEditSlot('${sl.id}',event)">✏</button><button type="button" class="slab" onclick="delSlotQ('${sl.id}',event)">✕</button></div>`:''}
+          ${isA()?`<div class="sl-sa"><button type="button" class="slab" onclick="openEditSlot('${sl.id}',event)">✏</button><button type="button" class="slab" onclick="delSlotQ('${sl.id}',event,jour)">✕</button></div>`:''}
         </div>`;
       });
       laneTop+=laneHeights[li];
@@ -1432,9 +1432,55 @@ async function saveSlot(){
   requestAnimationFrame(()=>{renderContent();updMq();});
 }
 
-async function delSlotQ(sid,ev){if(ev)ev.stopPropagation();if(!confirm('Supprimer ce créneau ?'))return;await doDelSlot(sid);}
+async function delSlotQ(sid,ev,jourCtx){
+  if(ev)ev.stopPropagation();
+  const sl=slots.find(x=>x.id===sid);if(!sl)return;
+  const jour=jourCtx||null;
+  if(jour&&sl.jours&&sl.jours.length>1){
+    if(!confirm('Supprimer le créneau uniquement pour le '+jour+' ?'))return;
+    const newJours=sl.jours.filter(j=>j!==jour);
+    sl.jours=newJours;
+    if(_assignDays[sid]){Object.keys(_assignDays[sid]).forEach(bid=>{_assignDays[sid][bid]=(_assignDays[sid][bid]||[]).filter(j=>j!==jour);if(!_assignDays[sid][bid].length)delete _assignDays[sid][bid];});}
+    setSync('syncing','Sauvegarde...');
+    try{await apiPatch('/slots/'+sid,{jours:newJours});setSync('ok','Synchronisé');}
+    catch(err){setSync('err','Erreur');console.error(err);}
+    requestAnimationFrame(()=>{renderContent();updMq();});
+  } else {
+    if(!confirm('Supprimer ce créneau'+(sl.jours?.length>1?' pour tous les jours':'')+' ?'))return;
+    await doDelSlot(sid);
+  }
+}
 async function deleteSlotFromModal(){if(!eSlotId||!confirm('Supprimer ce créneau ?'))return;await doDelSlot(eSlotId);cm('m-slot');}
-async function deleteSlot(){if(!assignEditing||!confirm('Supprimer ce créneau ?'))return;await doDelSlot(assignEditing);cm('m-assign');}
+async function deleteSlot(){
+  if(!assignEditing)return;
+  const sl=slots.find(x=>x.id===assignEditing);if(!sl)return;
+  // Identifier le jour courant (depuis le contexte sidebar)
+  const jourCtx=window._sidebarJour||null;
+  if(jourCtx&&sl.jours&&sl.jours.length>1){
+    // Supprimer uniquement ce jour du slot
+    if(!confirm('Supprimer le créneau uniquement pour le '+jourCtx+' ?'))return;
+    const newJours=sl.jours.filter(j=>j!==jourCtx);
+    sl.jours=newJours;
+    // Retirer les assignations de ce jour
+    if(_assignDays[assignEditing]){
+      Object.keys(_assignDays[assignEditing]).forEach(bid=>{
+        _assignDays[assignEditing][bid]=(_assignDays[assignEditing][bid]||[]).filter(j=>j!==jourCtx);
+        if(!_assignDays[assignEditing][bid].length)delete _assignDays[assignEditing][bid];
+      });
+    }
+    setSync('syncing','Sauvegarde...');
+    try{
+      await apiPatch('/slots/'+assignEditing,{jours:newJours});
+      setSync('ok','Synchronisé');
+    }catch(err){setSync('err','Erreur');console.error(err);}
+    cm('m-assign');
+    requestAnimationFrame(()=>{renderContent();updMq();});
+  } else {
+    // Un seul jour ou pas de contexte : supprimer tout le slot
+    if(!confirm('Supprimer ce créneau'+(sl.jours?.length>1?' pour tous les jours':'')+' ?'))return;
+    await doDelSlot(assignEditing);cm('m-assign');
+  }
+}
 
 async function doDelSlot(sid){
   slots=slots.filter(x=>x.id!==sid);delete assigns[sid];delete _assignDays[sid];
