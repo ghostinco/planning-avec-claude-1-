@@ -652,7 +652,7 @@ textarea.mbe-inp{font-family:inherit}
   <div class="sht">
     <div class="sh-hdr"><div class="sh-ttl" id="msl-ttl">Nouveau créneau</div><button type="button" class="xb" onclick="cm('m-slot')">✕</button></div>
     <div class="fl"><label>Poste</label><select id="msl-pos"></select></div>
-    <div class="flrow"><div class="fl"><label>Début</label><input type="time" id="msl-s" value="15:00"/></div><div class="fl"><label>Fin</label><input type="time" id="msl-e" value="21:00"/></div></div>
+    <div class="flrow"><div class="fl"><label>Début</label><input type="time" id="msl-s" value="15:00"/></div><div class="fl"><label>Fin</label><input type="time" id="msl-e" value="21:00"/></div><div class="fl" style="max-width:100px"><label>Bén. requis</label><input type="number" id="msl-nec" value="2" min="1" max="20" style="width:100%;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:8px 10px;font-size:13px"/></div></div>
     <div class="dur-info" id="msl-dur"></div>
     <div class="fl"><label>Jour(s)</label><div class="dbtns" id="msl-jours"></div></div>
     <div class="fl"><label>Remarques</label><textarea id="msl-rmq" rows="2"></textarea></div>
@@ -976,6 +976,8 @@ async function loadAll(){
     ]);
     bens=bd.bens||[];
     slots=sd.slots||[];
+    // Mettre à jour POSTES_NEC depuis les slots (si nec stocké)
+    slots.forEach(s=>{if(s.nec&&s.pid)POSTES_NEC[s.pid]=s.nec;});
     // assigns[sid] = tableau de benIds (pour compatibilité vues)
     // _assignDays[sid][benId] = [jours]  (granularité par jour)
     assigns={};_assignDays={};_locks={};
@@ -1405,6 +1407,11 @@ function _prepSlot(pos,jour,start,end,sid,rmq){
   const allP=[];SECS.forEach(sec=>(POSTES_DEF[sec]||[]).forEach(p=>allP.push({sec,p})));
   document.getElementById('msl-pos').innerHTML=allP.map(({sec,p})=>`<option value="${p}"${p===pos?' selected':''}>${p} (${sec})</option>`).join('');
   document.getElementById('msl-s').value=start;document.getElementById('msl-e').value=end;document.getElementById('msl-rmq').value=rmq||'';
+  // Préremplir nec : depuis le slot existant ou depuis POSTES_NEC
+  const curNec=sid?(slots.find(x=>x.id===sid)?.nec||POSTES_NEC[pos]||2):(POSTES_NEC[pos]||2);
+  document.getElementById('msl-nec').value=curNec;
+  // Mettre à jour nec quand on change de poste
+  document.getElementById('msl-pos').onchange=function(){document.getElementById('msl-nec').value=POSTES_NEC[this.value]||2;};
   document.getElementById('msl-jours').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${j.lbl===jour?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel');chkSlotDur()">${j.k}/06</button>`).join('');
   document.getElementById('msl-extra').innerHTML=sid?`<button type="button" class="btn btn-d" style="margin-top:8px" onclick="deleteSlotFromModal()">Supprimer</button>`:'';
   hA('msl-e2');chkSlotDur();document.getElementById('m-slot').classList.add('open');
@@ -1413,17 +1420,20 @@ function chkSlotDur(){const s=document.getElementById('msl-s').value,e=document.
 
 async function saveSlot(){
   const pid=document.getElementById('msl-pos').value,s=document.getElementById('msl-s').value,e=document.getElementById('msl-e').value,rmq=document.getElementById('msl-rmq').value.trim();
+  const nec=parseInt(document.getElementById('msl-nec').value)||2;
   const jours=[...document.querySelectorAll('#msl-jours .dbtn.sel')].map(b=>b.dataset.j);
   hA('msl-e2');if(!pid){sA('msl-e2','Sélectionne un poste.');return;}if(!jours.length){sA('msl-e2','Sélectionne au moins un jour.');return;}if(s>=e){sA('msl-e2','Heure de fin doit être après le début.');return;}
+  // Mettre à jour POSTES_NEC localement
+  POSTES_NEC[pid]=nec;
   cm('m-slot');setSync('syncing','Sauvegarde...');
   try{
     const sec=secOfPos(pid);
     if(eSlotId){
-      const sl=slots.find(x=>x.id===eSlotId);if(sl){sl.pid=pid;sl.start_time=s;sl.end_time=e;sl.rmq=rmq;sl.jours=jours;}
-      await apiPatch('/slots/'+eSlotId,{pid,sec,start_time:s,end_time:e,jours,rmq});
+      const sl=slots.find(x=>x.id===eSlotId);if(sl){sl.pid=pid;sl.start_time=s;sl.end_time=e;sl.rmq=rmq;sl.jours=jours;sl.nec=nec;}
+      await apiPatch('/slots/'+eSlotId,{pid,sec,start_time:s,end_time:e,jours,rmq,nec});
     }else{
-      const r=await apiPost('/slots',{pid,sec,start_time:s,end_time:e,jours,rmq,event_id:currentEvent.id});
-      slots.push({id:r.id,pid,start_time:s,end_time:e,jours,rmq});assigns[r.id]=[];_assignDays[r.id]={};
+      const r=await apiPost('/slots',{pid,sec,start_time:s,end_time:e,jours,rmq,nec,event_id:currentEvent.id});
+      slots.push({id:r.id,pid,start_time:s,end_time:e,jours,rmq,nec});assigns[r.id]=[];_assignDays[r.id]={};
     }
     setSync('ok','Synchronisé');
   }catch(err){setSync('err','Erreur');console.error(err);}
@@ -1448,7 +1458,53 @@ async function delSlotQ(sid,ev,jourCtx){
     await doDelSlot(sid);
   }
 }
-async function deleteSlotFromModal(){if(!eSlotId||!confirm('Supprimer ce créneau ?'))return;await doDelSlot(eSlotId);cm('m-slot');}
+async function deleteSlotFromModal(){
+  if(!eSlotId)return;
+  const sl=slots.find(x=>x.id===eSlotId);if(!sl)return;
+  if(sl.jours&&sl.jours.length>1){
+    // Afficher une interface de sélection des jours
+    const jourCourant=window._sidebarJour||null;
+    const joursHTML=sl.jours.map(j=>`
+      <label style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(13,33,55,.6);border-radius:6px;cursor:pointer;border:1px solid rgba(56,189,248,.15)">
+        <input type="checkbox" data-j="${j}" ${j===jourCourant?'checked':''} style="accent-color:#f87171">
+        <span style="font-size:12px;color:#e2e8f0">${j.split(' ')[0]+' '+j.split(' ')[1]}/06${j===jourCourant?' <span style="color:#f87171;font-size:10px">(actuel)</span>':''}</span>
+      </label>`).join('');
+    const div=document.createElement('div');
+    div.innerHTML=`
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:10001;display:flex;align-items:center;justify-content:center">
+        <div style="background:#0f2540;border:1px solid rgba(248,113,113,.4);border-radius:14px;padding:20px;min-width:280px;max-width:360px">
+          <div style="font-size:14px;font-weight:700;color:#f87171;margin-bottom:12px">🗑 Supprimer pour quels jours ?</div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px">${joursHTML}</div>
+          <div style="display:flex;gap:8px">
+            <button id="del-confirm" style="flex:1;padding:8px;background:#f87171;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer">Supprimer</button>
+            <button id="del-cancel" style="flex:1;padding:8px;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);border-radius:8px;color:#7fb8d4;cursor:pointer">Annuler</button>
+          </div>
+        </div>
+      </div>`;
+    document.body.appendChild(div);
+    div.querySelector('#del-cancel').onclick=()=>div.remove();
+    div.querySelector('#del-confirm').onclick=async()=>{
+      const joursASuppr=[...div.querySelectorAll('input[data-j]:checked')].map(i=>i.dataset.j);
+      div.remove();
+      if(!joursASuppr.length)return;
+      const newJours=sl.jours.filter(j=>!joursASuppr.includes(j));
+      if(newJours.length===0){
+        // Supprimer tout le slot
+        await doDelSlot(eSlotId);cm('m-slot');
+      } else {
+        sl.jours=newJours;
+        if(_assignDays[eSlotId]){Object.keys(_assignDays[eSlotId]).forEach(bid=>{_assignDays[eSlotId][bid]=(_assignDays[eSlotId][bid]||[]).filter(j=>!joursASuppr.includes(j));if(!_assignDays[eSlotId][bid].length)delete _assignDays[eSlotId][bid];});}
+        setSync('syncing','Sauvegarde...');
+        try{await apiPatch('/slots/'+eSlotId,{jours:newJours});setSync('ok','Synchronisé');}
+        catch(err){setSync('err','Erreur');console.error(err);}
+        cm('m-slot');requestAnimationFrame(()=>{renderContent();updMq();});
+      }
+    };
+  } else {
+    if(!confirm('Supprimer ce créneau ?'))return;
+    await doDelSlot(eSlotId);cm('m-slot');
+  }
+}
 async function deleteSlot(){
   if(!assignEditing)return;
   const sl=slots.find(x=>x.id===assignEditing);if(!sl)return;
