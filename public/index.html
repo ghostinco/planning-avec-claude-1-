@@ -1433,7 +1433,11 @@ async function saveSlot(){
       await apiPatch('/slots/'+eSlotId,{pid,sec,start_time:s,end_time:e,jours,rmq,nec});
     }else{
       const r=await apiPost('/slots',{pid,sec,start_time:s,end_time:e,jours,rmq,nec,event_id:currentEvent.id});
-      slots.push({id:r.id,pid,start_time:s,end_time:e,jours,rmq,nec});assigns[r.id]=[];_assignDays[r.id]={};
+      const newId=r.id||r[0]?.id;
+      if(!newId)throw new Error('ID slot manquant');
+      const newSlot={id:newId,pid,sec,start_time:s,end_time:e,jours,rmq,nec};
+      slots.push(newSlot);
+      assigns[newId]=[];_assignDays[newId]={};_locks[newId]={};
     }
     setSync('ok','Synchronisé');
   }catch(err){setSync('err','Erreur');console.error(err);}
