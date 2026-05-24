@@ -75,7 +75,7 @@ body{background:rgba(12,25,41,.55);color:#e2e8f0;font-family:'Segoe UI',system-u
 .fw{position:relative}
 .filter-btn{background:rgba(12,25,41,.6);border:1px solid rgba(56,189,248,.18);border-radius:7px;padding:5px 12px;font-size:11px;font-weight:700;color:#7fb8d4;cursor:pointer;transition:all .15s}
 .filter-btn:hover{background:rgba(56,189,248,.1);color:#f0f9ff}
-.fdrop{position:absolute;top:calc(100% + 4px);left:0;background:#0f2540;border:1px solid rgba(56,189,248,.2);border-radius:10px;min-width:230px;z-index:9999;box-shadow:0 12px 32px rgba(0,0,0,.5);max-height:340px;overflow-y:auto}
+.fdrop{position:fixed;top:auto;left:auto;background:#0f2540;border:1px solid rgba(56,189,248,.2);border-radius:10px;min-width:230px;z-index:9999;box-shadow:0 12px 32px rgba(0,0,0,.5);max-height:400px;overflow-y:auto}
 .fd-sec{border-bottom:1px solid rgba(56,189,248,.08)}
 .fd-sec-hdr{padding:7px 14px 4px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:7px}
 .fd-item{padding:5px 14px 5px 22px;font-size:11px;color:#7fb8d4;display:flex;align-items:center;gap:8px;transition:background .12s}
@@ -1047,7 +1047,8 @@ function renderVbarR(){const r=document.getElementById('vbar-r');if(!isA()){r.in
 function renderContent(){if(curView==='sem')renderSemaine();else if(curView==='jour')renderJour();else renderSV();}
 
 // ═══ FILTRE ═══
-function toggleDrop(){dropOpen=!dropOpen;const d=document.getElementById('fdrop');d.style.display=dropOpen?'block':'none';if(dropOpen){renderDrop();document.addEventListener('click',closeDropOut,{once:true});}}
+function toggleDrop(){dropOpen=!dropOpen;const d=document.getElementById('fdrop');d.style.display=dropOpen?'block':'none';if(dropOpen){renderDrop();// Positionner sous le bouton filtre
+const btn=document.getElementById('fw');if(btn){const r=btn.getBoundingClientRect();d.style.top=(r.bottom+4)+'px';d.style.left=r.left+'px';}document.addEventListener('click',closeDropOut,{once:true});}}
 function closeDropOut(e){const fw=document.getElementById('fw');if(fw&&!fw.contains(e.target)){dropOpen=false;document.getElementById('fdrop').style.display='none';}}
 function renderDrop(){let h='';SECS.forEach(sec=>{const col=SCLR[sec];const sk='sec:'+sec;h+=`<div class="fd-sec"><div class="fd-sec-hdr" style="color:${col}"><input type="checkbox" id="ck-${sec}" ${sbSelected.has(sk)?'checked':''} onchange="toggleF('${sk}')"><label for="ck-${sec}" style="cursor:pointer;font-size:10px;font-weight:800;text-transform:uppercase">● ${sec}</label></div>`;(POSTES_DEF[sec]||[]).forEach(pos=>{const pk='pos:'+pos;const eid='ck-'+pos.replace(/[^a-z0-9]/gi,'-');h+=`<div class="fd-item"><input type="checkbox" id="${eid}" ${sbSelected.has(pk)?'checked':''} onchange="toggleF('${pk}')"><span class="fd-dot" style="background:${col}"></span><label for="${eid}" style="cursor:pointer">${pos}</label></div>`;});h+=`</div>`;});h+=`<div class="fd-footer"><button type="button" onclick="clearF()">Décocher tout</button><button type="button" class="pri" onclick="applyF()">Appliquer ✓</button></div>`;document.getElementById('fdrop').innerHTML=h;}
 function toggleF(k){if(sbSelected.has(k))sbSelected.delete(k);else sbSelected.add(k);}
