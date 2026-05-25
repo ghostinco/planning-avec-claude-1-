@@ -462,11 +462,20 @@ textarea.mbe-inp{font-family:inherit}
   <div style="font-size:46px;font-weight:900;color:#fff;text-align:center;margin-bottom:8px;letter-spacing:-.5px;text-shadow:0 2px 28px rgba(0,0,0,.9),0 2px 20px rgba(245,166,35,.4)"><b style="color:#f5a623">Planning</b> by LFMR</div>
   <div style="font-size:22px;font-weight:700;color:rgba(255,220,150,.95);text-align:center;margin-bottom:32px;letter-spacing:.5px;text-shadow:0 2px 16px rgba(0,0,0,.9)">Caribana 2026 · 17–20 juin</div>
   <div class="lcard" id="rc-admin" onclick="selR('admin')"><div class="ct">🔑 Administrateur</div><div class="cs">Accès complet</div></div>
-  <div class="lcard" id="rc-obs" onclick="selR('obs')"><div class="ct">👁 Observation</div><div class="cs">Lecture seule — sans code</div></div>
+  <div class="lcard" id="rc-ben" onclick="selR('ben')"><div class="ct">👤 Bénévole / Chef d'équipe</div><div class="cs">Mon planning personnel</div></div>
   <div class="lpin" id="pz">
     <div style="font-size:11px;color:#7fb8d4;text-align:center;margin-bottom:5px">Code administrateur</div>
     <input class="lpini" id="pi" type="password" maxlength="4" inputmode="numeric" placeholder="••••"/>
     <div class="lperr" id="pe">Code incorrect</div>
+  </div>
+  <div class="lpin" id="pz-ben" style="display:none">
+    <div style="font-size:11px;color:#7fb8d4;text-align:center;margin-bottom:8px">Identifiez-vous</div>
+    <div style="display:flex;gap:6px;margin-bottom:6px">
+      <input id="ben-login-prenom" type="text" placeholder="Prénom" style="flex:1;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:8px 10px;font-size:13px;outline:none"/>
+      <input id="ben-login-nom" type="text" placeholder="Nom" style="flex:1;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:8px 10px;font-size:13px;outline:none"/>
+    </div>
+    <input id="ben-login-ddn" type="text" placeholder="2 derniers chiffres de votre année de naissance (ex: 08)" maxlength="2" inputmode="numeric" style="width:100%;box-sizing:border-box;background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:8px 10px;font-size:13px;outline:none;margin-bottom:6px"/>
+    <div class="lperr" id="pe-ben" style="display:none">Identifiants incorrects ou accès non autorisé</div>
   </div>
   <button type="button" class="lgo" id="be" disabled onclick="goIn()">Entrer</button>
 </div>
@@ -808,6 +817,11 @@ textarea.mbe-inp{font-family:inherit}
               <button type="button" class="dbtn" data-r="direction" onclick="toggleRole(this)">🎯 Direction</button>
             </div>
           </div>
+          <div class="mbe-field" id="mb-chef-acces-wrap" style="display:none">
+            <label class="mbe-lbl">🔐 Accès planning (si Team Leader)</label>
+            <div style="font-size:11px;color:#4d7fa0;margin-bottom:8px">Coche les secteurs/postes que ce chef d'équipe peut voir</div>
+            <div id="mb-chef-acces" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto"></div>
+          </div>
         </div>
       </div>
       <div class="ae" id="mb-e2" style="margin-top:10px"></div>
@@ -902,7 +916,7 @@ textarea.mbe-inp{font-family:inherit}
 </div>
 
 <script>
-const PIN='1234';
+const PIN='0987';
 // Config dynamique — modifiable via l'onglet Paramètres
 // Valeurs par défaut Caribana 2026 (fallback si Supabase pas encore chargé)
 const DEFAULT_CFG={
@@ -941,12 +955,79 @@ async function apiDel(p){const r=await fetch(API+p,{method:'DELETE'});if(!r.ok)t
 function setSync(s,t){const d=document.getElementById('sdot'),tx=document.getElementById('stxt');if(d)d.className='sdot'+(s==='syncing'?' syncing':s==='err'?' err':'');if(tx)tx.textContent=t||'Sync';}
 
 // ═══ AUTH ═══
-function selR(r){rSel=r;document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('rc-'+r).classList.add('sel');if(r==='admin'){document.getElementById('pz').classList.add('show');document.getElementById('pi').value='';document.getElementById('pe').style.display='none';document.getElementById('be').disabled=true;setTimeout(()=>document.getElementById('pi').focus(),60);}else{document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=false;}}
+function selR(r){rSel=r;document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));const rc=document.getElementById('rc-'+r);if(rc)rc.classList.add('sel');
+  document.getElementById('pz').classList.remove('show');
+  document.getElementById('pz-ben').style.display='none';
+  document.getElementById('pe').style.display='none';
+  document.getElementById('pe-ben').style.display='none';
+  if(r==='admin'){
+    document.getElementById('pz').classList.add('show');
+    document.getElementById('pi').value='';
+    document.getElementById('be').disabled=true;
+    setTimeout(()=>document.getElementById('pi').focus(),60);
+  } else if(r==='ben'){
+    document.getElementById('pz-ben').style.display='block';
+    document.getElementById('be').disabled=false;
+    setTimeout(()=>document.getElementById('ben-login-prenom').focus(),60);
+  } else {
+    document.getElementById('be').disabled=false;
+  }
+}
 document.getElementById('pi').addEventListener('input',function(){const v=this.value;document.getElementById('pe').style.display='none';if(v.length===4){const ok=v===PIN;document.getElementById('be').disabled=!ok;if(!ok)document.getElementById('pe').style.display='block';}else document.getElementById('be').disabled=true;});
 document.getElementById('pi').addEventListener('keydown',e=>{if(e.key==='Enter'&&!document.getElementById('be').disabled)goIn();});
-function goIn(){if(!rSel)return;role=rSel;document.getElementById('login').style.display='none';document.getElementById('AP').className='vis';document.getElementById('rp').textContent=(role==='admin'?'Admin':'Vue')+' ↩';document.getElementById('btn-nb').style.display=isA()?'block':'none';document.getElementById('btn-import').style.display=isA()?'block':'none';document.getElementById('btn-sync-sheets').style.display=isA()?'block':'none';document.getElementById('btn-import-festival').style.display=isA()?'block':'none';document.getElementById('btn-exports').style.display=isA()?'flex':'none';if(isA()&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';loadAll();}
+async function goIn(){
+  if(!rSel)return;
+  if(rSel==='ben'){
+    // Vérifier les identifiants bénévole
+    const prenom=document.getElementById('ben-login-prenom').value.trim();
+    const nom=document.getElementById('ben-login-nom').value.trim();
+    const ddn2=document.getElementById('ben-login-ddn').value.trim();
+    const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(' ')[0]; // premier mot seulement
+    // Charger les bénévoles si pas encore chargés
+    if(!bens.length){
+      try{const bd=await apiGet('/bens?event_id='+currentEvent.id);bens=bd.bens||[];}catch(e){bens=[];}
+    }
+    const found=bens.find(b=>{
+      const prenomOk=norm(b.prenom)===norm(prenom);
+      const nomOk=norm(b.nom)===norm(nom);
+      // DDN : extraire les 2 derniers chiffres de l'année
+      const ddn=b.ddn||'';
+      const annee=ddn.includes('-')?ddn.split('-')[0]:ddn.split('/')[2]||ddn.split('.')[2]||'';
+      const ddn2Ben=annee.slice(-2);
+      const ddnOk=ddn2===ddn2Ben;
+      return prenomOk&&nomOk&&ddnOk;
+    });
+    if(!found){document.getElementById('pe-ben').style.display='block';return;}
+    window._currentBen=found;
+    // Vérifier si chef d'équipe
+    const isChef=(found.roles||[]).includes('team_leader');
+    role=isChef?'chef':'ben';
+  } else {
+    role=rSel;
+  }
+  document.getElementById('login').style.display='none';
+  document.getElementById('AP').className='vis';
+  document.getElementById('rp').textContent=(role==='admin'?'Admin':role==='chef'?'Chef':'Bénévole')+' ↩';
+  const isAdm=role==='admin';
+  document.getElementById('btn-nb').style.display=isAdm?'block':'none';
+  document.getElementById('btn-import').style.display=isAdm?'block':'none';
+  document.getElementById('btn-sync-sheets').style.display=isAdm?'block':'none';
+  document.getElementById('btn-import-festival').style.display=isAdm?'block':'none';
+  document.getElementById('btn-exports').style.display=isAdm?'flex':'none';
+  if(isAdm&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';
+  if(isBen()){
+    document.querySelector('.nt[onclick*="benevoles"]')?.style.setProperty('display','none');
+    document.querySelector('.nt[onclick*="stats"]')?.style.setProperty('display','none');
+  }
+  document.body.classList.add('plan-on');
+  await loadAll();
+  if(isBen())renderMonPlanning();
+}
 function deco(){role=null;rSel=null;document.getElementById('AP').className='';document.getElementById('AP').style.display='none';document.getElementById('login').style.display='flex';document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=true;}
 const isA=()=>role==='admin';
+const isBen=()=>role==='ben'||role==='chef';
+const isChef=()=>role==='chef';
+const isObs=()=>role==='ben'||role==='chef';
 function stab(n){
   ['planning','benevoles','stats','params'].forEach((tab,i)=>{
     const btn=document.querySelectorAll('.nt')[i];
@@ -976,8 +1057,6 @@ async function loadAll(){
     ]);
     bens=bd.bens||[];
     slots=sd.slots||[];
-    // Mettre à jour POSTES_NEC depuis les slots (si nec stocké)
-    slots.forEach(s=>{if(s.nec&&s.pid)POSTES_NEC[s.pid]=s.nec;});
     // assigns[sid] = tableau de benIds (pour compatibilité vues)
     // _assignDays[sid][benId] = [jours]  (granularité par jour)
     assigns={};_assignDays={};_locks={};
@@ -1268,7 +1347,7 @@ function renderSV(){
         if(posSlots.length>0){
           posSlots.forEach(sl=>{
             const slNbJ=_assignDays[sl.id]?Object.entries(_assignDays[sl.id]).filter(([bid,jrs])=>jrs.includes(j.lbl)).length:0;
-            const slNec=POSTES_NEC[sl.pid]||2;
+            const slNec=sl.nec||POSTES_NEC[sl.pid]||2;
             const slRc=slNbJ>=slNec?'full':slNbJ>0?'part':'empty';
             const borderCol=slNbJ>=slNec?'rgba(74,222,128,.3)':slNbJ>0?'rgba(251,191,36,.2)':'rgba(56,189,248,.18)';
             grid+=`<div class="sv2-shift-box" style="border-color:${borderCol}">`;
@@ -1423,8 +1502,6 @@ async function saveSlot(){
   const nec=parseInt(document.getElementById('msl-nec').value)||2;
   const jours=[...document.querySelectorAll('#msl-jours .dbtn.sel')].map(b=>b.dataset.j);
   hA('msl-e2');if(!pid){sA('msl-e2','Sélectionne un poste.');return;}if(!jours.length){sA('msl-e2','Sélectionne au moins un jour.');return;}if(s>=e){sA('msl-e2','Heure de fin doit être après le début.');return;}
-  // Mettre à jour POSTES_NEC localement
-  POSTES_NEC[pid]=nec;
   cm('m-slot');setSync('syncing','Sauvegarde...');
   try{
     const sec=secOfPos(pid);
@@ -1825,7 +1902,68 @@ function renderBenList(sl,focusBid,jour){
   benListEl.innerHTML=items+(nbExclus>0&&!showAll?`<button onclick="window._sidebarShowAll=!window._sidebarShowAll;renderBenList(slots.find(x=>x.id==='${sid}'),window._sidebarFocusBid,window._sidebarJour)" style="width:100%;margin-top:8px;padding:6px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:6px;color:#4d7fa0;font-size:11px;cursor:pointer">${btnLabel}</button>`:showAll?`<button onclick="window._sidebarShowAll=false;renderBenList(slots.find(x=>x.id==='${sid}'),window._sidebarFocusBid,window._sidebarJour)" style="width:100%;margin-top:8px;padding:6px;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.2);border-radius:6px;color:#4d7fa0;font-size:11px;cursor:pointer">▲ Disponibles seulement</button>`:'');
 }
 
-function toggleBenListAll(){}
+function renderMonPlanning(){
+  const b=window._currentBen;if(!b)return;
+  const chefAcces=b.chef_acces||[];
+  // Passer en vue semaine, filtrer sur ce bénévole
+  stab('planning');
+  const c=document.querySelector('.content');if(!c)return;
+  // Collecter tous les créneaux de ce bénévole
+  const mesCréneaux=[];
+  slots.forEach(sl=>{
+    // Chef : filtrer par poste autorisé
+    if(isChef()&&chefAcces.length>0){
+      const sec=secOfPos(sl.pid)||sl.sec||'';
+      const key1=sec+'|'+sl.pid;
+      if(!chefAcces.includes(key1)&&!chefAcces.some(k=>k.startsWith(sec+'|')))return;
+    }
+    (sl.jours||[]).forEach(jour=>{
+      const bidsJ=(_assignDays[sl.id]||{});
+      // Bénévole : uniquement ses propres créneaux
+      if(!isChef()&&!(bidsJ[b.id]||[]).includes(jour))return;
+      // Chef : tous les créneaux de ses postes
+      const equipe=Object.keys(bidsJ).filter(bid=>(bidsJ[bid]||[]).includes(jour)).map(bid=>bens.find(x=>x.id===bid)).filter(Boolean);
+      mesCréneaux.push({sl,jour,equipe,estMoi:!!(bidsJ[b.id]||[]).includes(jour)});
+    });
+  });
+  // Grouper par jour
+  const parJour={};
+  mesCréneaux.forEach(item=>{
+    if(!parJour[item.jour])parJour[item.jour]=[];
+    parJour[item.jour].push(item);
+  });
+  let h=`<div style="padding:16px;max-width:800px;margin:0 auto">`;
+  h+=`<div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:4px">👋 Bonjour ${b.prenom} !</div>`;
+  h+=`<div style="font-size:13px;color:#7fb8d4;margin-bottom:20px">Voici ton planning pour Caribana 2026</div>`;
+  if(!mesCréneaux.length){
+    h+=`<div style="color:#fbbf24;padding:16px;background:rgba(251,191,36,.08);border-radius:10px;border:1px solid rgba(251,191,36,.2)">Tu n'as pas encore de créneau assigné.</div>`;
+  } else {
+    JOURS.forEach(j=>{
+      const items=parJour[j.lbl];if(!items||!items.length)return;
+      h+=`<div style="margin-bottom:20px"><div style="font-size:16px;font-weight:800;color:#f5a623;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(245,166,35,.2)">${j.lbl}</div>`;
+      items.sort((a,b2)=>a.sl.start_time.localeCompare(b2.sl.start_time)).forEach(({sl,equipe,estMoi})=>{
+        const col=estMoi?'rgba(52,211,153,.15)':'rgba(56,189,248,.08)';
+        const border=estMoi?'rgba(52,211,153,.4)':'rgba(56,189,248,.2)';
+        h+=`<div style="background:${col};border:1px solid ${border};border-radius:10px;padding:12px 16px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+            <span style="font-size:14px;font-weight:800;color:#f0f9ff">${sl.start_time}–${sl.end_time}</span>
+            <span style="font-size:13px;font-weight:700;color:#7fb8d4">${sl.pid}</span>
+            ${estMoi?'<span style="font-size:10px;background:rgba(52,211,153,.2);color:#34d399;border-radius:20px;padding:2px 8px;font-weight:700">✓ Mon créneau</span>':''}
+          </div>
+          ${equipe.length?`<div style="font-size:11px;color:#4d7fa0;margin-bottom:4px">Équipe :</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">${equipe.map(eq=>`<div style="display:flex;align-items:center;gap:5px;background:rgba(13,33,55,.6);border-radius:6px;padding:3px 8px">
+            <div style="width:20px;height:20px;border-radius:50%;background:${bCol(eq.id)};display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:900;color:#fff">${init(eq)}</div>
+            <span style="font-size:11px;color:#e2e8f0">${eq.prenom} ${eq.nom}</span>
+          </div>`).join('')}</div>`:''}
+        </div>`;
+      });
+      h+=`</div>`;
+    });
+  }
+  h+=`</div>`;
+  // Remplacer le contenu de la vue planning
+  document.getElementById('pg-planning').innerHTML=`<div class="vbar" style="justify-content:space-between"><span style="font-size:13px;color:#7fb8d4">👤 ${b.prenom} ${b.nom} — ${isChef()?'Chef d\'équipe':'Bénévole'}</span></div><div class="content" style="overflow-y:auto">${h}</div>`;
+}
 
 function toggleBaPanel(bid,sid){
   const el=document.getElementById('ba-'+bid);if(!el)return;
@@ -1947,7 +2085,56 @@ function setTaille(t){document.querySelectorAll('#mb-taille .dbtn').forEach(b=>b
 function selType(t){bTypeCur=t;document.getElementById('t-rot').classList.toggle('sel',t==='rotatif');document.getElementById('t-fix').classList.toggle('sel',t==='fixe');}
 function toggleAcces(btn){btn.classList.toggle('sel');}
 function selTypeBen(btn){document.querySelectorAll('#mb-type-ben .dbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
-function toggleRole(btn){btn.classList.toggle('sel');}
+function toggleRole(btn){btn.classList.toggle('sel');
+  // Afficher/masquer la section accès chef si Team Leader sélectionné
+  const isChefSel=!!document.querySelector('#mb-role .dbtn[data-r="team_leader"].sel');
+  const wrap=document.getElementById('mb-chef-acces-wrap');
+  if(wrap)wrap.style.display=isChefSel?'block':'none';
+  if(isChefSel)renderChefAcces();
+}
+
+function renderChefAcces(){
+  const el=document.getElementById('mb-chef-acces');if(!el)return;
+  const curAcces=window._editBenChefAcces||[];
+  let h='';
+  SECS.forEach(sec=>{
+    const postes=POSTES_DEF[sec]||[];
+    const allSel=postes.every(p=>curAcces.includes(sec+'|'+p));
+    h+=`<div style="margin-bottom:6px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:700;color:#7fb8d4;font-size:11px;text-transform:uppercase">
+        <input type="checkbox" ${allSel?'checked':''} onchange="toggleChefSec('${sec}',this.checked)" style="accent-color:#f5a623"> ${sec}
+      </label>
+      <div style="margin-left:16px;display:flex;flex-wrap:wrap;gap:4px;margin-top:3px">
+        ${postes.map(p=>`<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:11px;color:#e2e8f0">
+          <input type="checkbox" ${curAcces.includes(sec+'|'+p)?'checked':''} onchange="toggleChefPoste('${sec}','${p}',this.checked)" style="accent-color:#38bdf8"> ${p}
+        </label>`).join('')}
+      </div>
+    </div>`;
+  });
+  el.innerHTML=h;
+}
+
+function toggleChefSec(sec,checked){
+  if(!window._editBenChefAcces)window._editBenChefAcces=[];
+  const postes=POSTES_DEF[sec]||[];
+  postes.forEach(p=>{
+    const key=sec+'|'+p;
+    if(checked&&!window._editBenChefAcces.includes(key))window._editBenChefAcces.push(key);
+    else if(!checked)window._editBenChefAcces=window._editBenChefAcces.filter(k=>k!==key);
+  });
+  renderChefAcces();
+}
+
+function toggleChefPoste(sec,p,checked){
+  if(!window._editBenChefAcces)window._editBenChefAcces=[];
+  const key=sec+'|'+p;
+  if(checked&&!window._editBenChefAcces.includes(key))window._editBenChefAcces.push(key);
+  else window._editBenChefAcces=window._editBenChefAcces.filter(k=>k!==key);
+  renderChefAcces();
+}
+
+function getChefAcces(){return window._editBenChefAcces||[];}
+function setChefAcces(acces){window._editBenChefAcces=[...(acces||[])];}
 function getAcces(){return[...document.querySelectorAll('#mb-acces .dbtn.sel')].map(b=>b.dataset.a);}
 function getTypeBen(){const sel=document.querySelector('#mb-type-ben .dbtn.sel');return sel?sel.dataset.tb:null;}
 function getRoles(){return[...document.querySelectorAll('#mb-role .dbtn.sel')].map(b=>b.dataset.r);}
@@ -1959,14 +2146,19 @@ function updMbSecs(selectedSec){
   sel.innerHTML=SECS.map(s=>`<option value="${s}"${s===selectedSec?' selected':''}>${s}</option>`).join('');
 }
 function updMbPostes(){const sec=document.getElementById('mb-sec')?.value||'';const ps=POSTES_DEF[sec]||[];document.getElementById('mb-pos').innerHTML=ps.map(p=>`<option>${p}</option>`).join('');}
-function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);updMbSecs('Parking');updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';setAcces([]);setTypeBen(null);setRoles([]);setTaille('');setGenre('');hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
-function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';updMbSecs(b.sec||'Parking');document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';setAcces(b.acces||[]);setTypeBen(b.type_ben||null);setRoles(b.roles||[]);setTaille(b.taille||'');setGenre(b.genre||detectGenre(b.prenom));hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);updMbSecs('Parking');updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';setAcces([]);setTypeBen(null);setRoles([]);setChefAcces([]);setTaille('');setGenre('');if(document.getElementById('mb-chef-acces-wrap'))document.getElementById('mb-chef-acces-wrap').style.display='none';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';updMbSecs(b.sec||'Parking');document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';setAcces(b.acces||[]);setTypeBen(b.type_ben||null);setRoles(b.roles||[]);setChefAcces(b.chef_acces||[]);setTaille(b.taille||'');setGenre(b.genre||detectGenre(b.prenom));
+  // Afficher section chef si team_leader
+  const isChefSel=(b.roles||[]).includes('team_leader');
+  if(document.getElementById('mb-chef-acces-wrap'))document.getElementById('mb-chef-acces-wrap').style.display=isChefSel?'block':'none';
+  if(isChefSel)renderChefAcces();
+  hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
 
 async function saveBen(){
   const nom=document.getElementById('mb-n').value.trim(),prenom=document.getElementById('mb-p').value.trim();
   if(!nom||!prenom){sA('mb-e2','Nom et prénom obligatoires.');return;}
   const dispos=[...document.querySelectorAll('#mb-dis .dbtn.sel')].map(b=>b.dataset.j);
-  const _secVal=document.getElementById('mb-sec').value;const _posVal=document.getElementById('mb-pos').value;const _existingBen=eBid?bens.find(x=>x.id===eBid):null;const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:_secVal||(_existingBen?.sec)||'Parking',poste:_posVal||(_existingBen?.poste)||'P1',type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value,acces:getAcces(),type_ben:getTypeBen(),roles:getRoles(),taille:getTaille(),genre:getGenre()};
+  const _secVal=document.getElementById('mb-sec').value;const _posVal=document.getElementById('mb-pos').value;const _existingBen=eBid?bens.find(x=>x.id===eBid):null;const d={nom,prenom,tel:document.getElementById('mb-t').value,email:document.getElementById('mb-e').value,ddn:document.getElementById('mb-ddn').value||'',sec:_secVal||(_existingBen?.sec)||'Parking',poste:_posVal||(_existingBen?.poste)||'P1',type:bTypeCur,dispos,rmq:document.getElementById('mb-rmq').value,acces:getAcces(),type_ben:getTypeBen(),roles:getRoles(),chef_acces:getChefAcces(),taille:getTaille(),genre:getGenre()};
   cm('m-ben');setSync('syncing','Sauvegarde...');
   try{
     if(eBid){Object.assign(bens.find(x=>x.id===eBid),d);await apiPatch('/bens/'+eBid,d);}
