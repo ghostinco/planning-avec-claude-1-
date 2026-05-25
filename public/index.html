@@ -983,10 +983,19 @@ async function goIn(){
     const nom=document.getElementById('ben-login-nom').value.trim();
     const ddn2=document.getElementById('ben-login-ddn').value.trim();
     const norm=s=>s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(' ')[0]; // premier mot seulement
-    // Charger les bénévoles si pas encore chargés
-    if(!bens.length){
-      try{const bd=await apiGet('/bens?event_id='+currentEvent.id);bens=bd.bens||[];}catch(e){bens=[];}
-    }
+    // Charger les bénévoles depuis l'API
+    try{
+      const eid=currentEvent.id;
+      if(!eid){
+        // Charger d'abord l'event
+        const ev=await apiGet('/events');
+        const evts=ev.events||[];
+        if(evts.length)currentEvent=evts[evts.length-1];
+      }
+      const bd=await apiGet('/bens?event_id='+currentEvent.id);
+      bens=bd.bens||[];
+    }catch(e){console.error(e);bens=[];}
+    if(!bens.length){document.getElementById('pe-ben').style.display='block';document.getElementById('pe-ben').textContent='Erreur de connexion, réessaie.';return;}
     const found=bens.find(b=>{
       const prenomOk=norm(b.prenom)===norm(prenom);
       const nomOk=norm(b.nom)===norm(nom);
