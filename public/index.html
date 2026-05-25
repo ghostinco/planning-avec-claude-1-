@@ -1965,8 +1965,8 @@ function renderMonPlanning(){
       const items=parJour[j.lbl];if(!items||!items.length)return;
       h+=`<div style="margin-bottom:20px"><div style="font-size:16px;font-weight:800;color:#f5a623;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid rgba(245,166,35,.2)">${j.lbl}</div>`;
       items.sort((a,b2)=>a.sl.start_time.localeCompare(b2.sl.start_time)).forEach(({sl,equipe,estMoi})=>{
-        const col=estMoi?'rgba(52,211,153,.15)':'rgba(56,189,248,.08)';
-        const border=estMoi?'rgba(52,211,153,.4)':'rgba(56,189,248,.2)';
+        const col=estMoi?'rgba(5,40,25,.85)':'rgba(5,20,40,.85)';
+        const border=estMoi?'rgba(52,211,153,.6)':'rgba(56,189,248,.35)';
         h+=`<div style="background:${col};border:1px solid ${border};border-radius:10px;padding:12px 16px;margin-bottom:8px">
           <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
             <span style="font-size:14px;font-weight:800;color:#f0f9ff">${sl.start_time}–${sl.end_time}</span>
