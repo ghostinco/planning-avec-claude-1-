@@ -1004,7 +1004,8 @@ async function goIn(){
       const annee=ddn.includes('-')?ddn.split('-')[0]:ddn.split('/')[2]||ddn.split('.')[2]||'';
       const ddn2Ben=annee.slice(-2);
       const ddnOk=ddn2===ddn2Ben;
-      return prenomOk&&nomOk&&ddnOk;
+      const aRempliFormulaire=!!(b.taille&&b.taille.trim());
+      return prenomOk&&nomOk&&ddnOk&&aRempliFormulaire;
     });
     if(!found){document.getElementById('pe-ben').style.display='block';return;}
     window._currentBen=found;
