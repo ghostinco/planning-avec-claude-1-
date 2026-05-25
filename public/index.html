@@ -813,8 +813,8 @@ textarea.mbe-inp{font-family:inherit}
           <div class="mbe-field"><label class="mbe-lbl">🏅 Rôle spécial</label>
             <div class="dbtns" id="mb-role">
               <button type="button" class="dbtn" data-r="team_leader" onclick="toggleRole(this)">👑 Team Leader</button>
+              <button type="button" class="dbtn" data-r="chef_equipe" onclick="toggleRole(this)">🎖 Chef d'équipe</button>
               <button type="button" class="dbtn" data-r="comite" onclick="toggleRole(this)">🎪 Comité</button>
-              <button type="button" class="dbtn" data-r="direction" onclick="toggleRole(this)">🎯 Direction</button>
             </div>
           </div>
           <div class="mbe-field" id="mb-chef-acces-wrap" style="display:none">
@@ -1000,14 +1000,21 @@ async function goIn(){
     if(!found){document.getElementById('pe-ben').style.display='block';return;}
     window._currentBen=found;
     // Vérifier si chef d'équipe
-    const isChef=(found.roles||[]).includes('team_leader');
-    role=isChef?'chef':'ben';
+    const roles=found.roles||[];
+    if(roles.includes('team_leader')) role='tl';
+    else if(roles.includes('comite')) role='comite';
+    else if(roles.includes('chef_equipe')) role='chef';
+    else role='ben';
   } else {
     role=rSel;
   }
   document.getElementById('login').style.display='none';
   document.getElementById('AP').className='vis';
-  document.getElementById('rp').textContent=(role==='admin'?'Admin':role==='chef'?'Chef':'Bénévole')+' ↩';
+  document.getElementById('rp').textContent=(
+    role==='admin'?'Admin':
+    role==='tl'?'Team Leader':
+    role==='comite'?'Comité':
+    role==='chef'?'Chef d\'équipe':'Bénévole')+' ↩';
   const isAdm=role==='admin';
   document.getElementById('btn-nb').style.display=isAdm?'block':'none';
   document.getElementById('btn-import').style.display=isAdm?'block':'none';
@@ -1015,19 +1022,26 @@ async function goIn(){
   document.getElementById('btn-import-festival').style.display=isAdm?'block':'none';
   document.getElementById('btn-exports').style.display=isAdm?'flex':'none';
   if(isAdm&&document.getElementById('nt-params'))document.getElementById('nt-params').style.display='';
-  if(isBen()){
+  if(!canSeeAll()){
     document.querySelector('.nt[onclick*="benevoles"]')?.style.setProperty('display','none');
     document.querySelector('.nt[onclick*="stats"]')?.style.setProperty('display','none');
   }
   document.body.classList.add('plan-on');
   await loadAll();
-  if(isBen())renderMonPlanning();
+  if(isBen()||isChef())renderMonPlanning();
+  else if(isComite()||isTL()){
+    // Vue complète lecture seule — planning normal mais sans boutons de modification
+    stab('planning');
+  }
 }
 function deco(){role=null;rSel=null;document.getElementById('AP').className='';document.getElementById('AP').style.display='none';document.getElementById('login').style.display='flex';document.querySelectorAll('.lcard').forEach(c=>c.classList.remove('sel'));document.getElementById('pz').classList.remove('show');document.getElementById('be').disabled=true;}
-const isA=()=>role==='admin';
-const isBen=()=>role==='ben'||role==='chef';
+const isA=()=>role==='admin'; // Seul à pouvoir modifier
+const isTL=()=>role==='tl';
+const isComite=()=>role==='comite';
 const isChef=()=>role==='chef';
-const isObs=()=>role==='ben'||role==='chef';
+const isBen=()=>role==='ben';
+const canEdit=()=>role==='admin'; // SEUL L'ADMIN MODIFIE
+const canSeeAll=()=>role==='admin'||role==='tl'||role==='comite';
 function stab(n){
   ['planning','benevoles','stats','params'].forEach((tab,i)=>{
     const btn=document.querySelectorAll('.nt')[i];
@@ -2086,11 +2100,11 @@ function selType(t){bTypeCur=t;document.getElementById('t-rot').classList.toggle
 function toggleAcces(btn){btn.classList.toggle('sel');}
 function selTypeBen(btn){document.querySelectorAll('#mb-type-ben .dbtn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');}
 function toggleRole(btn){btn.classList.toggle('sel');
-  // Afficher/masquer la section accès chef si Team Leader sélectionné
-  const isChefSel=!!document.querySelector('#mb-role .dbtn[data-r="team_leader"].sel');
+  const roles=[...document.querySelectorAll('#mb-role .dbtn.sel')].map(b=>b.dataset.r);
+  const needsAcces=roles.includes('team_leader')||roles.includes('chef_equipe');
   const wrap=document.getElementById('mb-chef-acces-wrap');
-  if(wrap)wrap.style.display=isChefSel?'block':'none';
-  if(isChefSel)renderChefAcces();
+  if(wrap)wrap.style.display=needsAcces?'block':'none';
+  if(needsAcces)renderChefAcces();
 }
 
 function renderChefAcces(){
@@ -2149,7 +2163,7 @@ function updMbPostes(){const sec=document.getElementById('mb-sec')?.value||'';co
 function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);updMbSecs('Parking');updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn sel" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='none';setAcces([]);setTypeBen(null);setRoles([]);setChefAcces([]);setTaille('');setGenre('');if(document.getElementById('mb-chef-acces-wrap'))document.getElementById('mb-chef-acces-wrap').style.display='none';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
 function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';updMbSecs(b.sec||'Parking');document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>`<button type="button" class="dbtn${(b.dispos||[]).includes(j.lbl)?' sel':''}" data-j="${j.lbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`).join('');document.getElementById('mb-del').style.display='block';setAcces(b.acces||[]);setTypeBen(b.type_ben||null);setRoles(b.roles||[]);setChefAcces(b.chef_acces||[]);setTaille(b.taille||'');setGenre(b.genre||detectGenre(b.prenom));
   // Afficher section chef si team_leader
-  const isChefSel=(b.roles||[]).includes('team_leader');
+  const isChefSel=(b.roles||[]).includes('team_leader')||(b.roles||[]).includes('chef_equipe');
   if(document.getElementById('mb-chef-acces-wrap'))document.getElementById('mb-chef-acces-wrap').style.display=isChefSel?'block':'none';
   if(isChefSel)renderChefAcces();
   hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
