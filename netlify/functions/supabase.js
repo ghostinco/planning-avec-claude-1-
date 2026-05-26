@@ -176,6 +176,7 @@ exports.handler = async (event) => {
         benMap[normStr(b.prenom)+' '+normStr(b.nom)]=b;
       });
       let added=0,updated=0,skipped=0;
+      const updatePromises=[];
       for (const row of rows.slice(1)) {
         const prenom=String(row[cP]||'').trim(); const nom=String(row[cN]||'').trim();
         if (!prenom&&!nom){skipped++;continue;}
@@ -184,28 +185,31 @@ exports.handler = async (event) => {
         const taille=cTa>=0?String(row[cTa]||'').trim():'';
         const dispos=cDi>=0?parseDispos(String(row[cDi]||'')):[];
         const rmq=cR>=0?String(row[cR]||'').trim():'';
+        const email=cE>=0?String(row[cE]||'').trim():'';
         const genre_raw=cGenre>=0?String(row[cGenre]||'').trim().toLowerCase():'';
-        const genre=genre_raw.includes('f')||genre_raw.includes('femme')||genre_raw.includes('female')?'F':genre_raw.includes('m')||genre_raw.includes('homme')||genre_raw.includes('male')?'M':'';
+        const genre=genre_raw.includes('f')||genre_raw.includes('femme')?'F':genre_raw.includes('m')||genre_raw.includes('homme')?'M':'';
         const key1=normStr(nom)+' '+normStr(prenom);
         const key2=normStr(prenom)+' '+normStr(nom);
         const b=benMap[key1]||benMap[key2];
-        try {
-          if (b) {
-            const upd={};
-            if(ddn&&(!b.ddn||b.ddn===''))upd.ddn=ddn;
-            if(tel&&(!b.tel||b.tel===''))upd.tel=tel;
-            if(taille)upd.taille=taille;
-            // Dispos : mettre à jour SEULEMENT si le Sheet a plus de dispos que la base
-            if(dispos.length>0&&dispos.length>=(b.dispos||[]).length)upd.dispos=dispos;
-            if(rmq&&(!b.rmq||b.rmq===''))upd.rmq=rmq;
-            if(genre&&!b.genre)upd.genre=genre;
-            if(Object.keys(upd).length>0){await supa(`bens?id=eq.${b.id}`,'PATCH',upd);updated++;}
-            else skipped++;
-          } else {
-            await supa('bens','POST',{prenom,nom,ddn,tel,taille,dispos,rmq,genre:genre||'',email:'',sec:'Non défini',poste:'SPF',type:'rotatif',acces:[],type_ben:null,roles:[],event_id});
-            added++;
-          }
-        } catch(e){console.error(e);skipped++;}
+        if (b) {
+          const upd={};
+          if(ddn&&(!b.ddn||b.ddn===''))upd.ddn=ddn;
+          if(tel&&(!b.tel||b.tel===''))upd.tel=tel;
+          if(email)upd.email=email;
+          if(taille)upd.taille=taille;
+          if(dispos.length>0&&dispos.length>=(b.dispos||[]).length)upd.dispos=dispos;
+          if(rmq&&(!b.rmq||b.rmq===''))upd.rmq=rmq;
+          if(genre&&!b.genre)upd.genre=genre;
+          if(Object.keys(upd).length>0){
+            updatePromises.push(supa(`bens?id=eq.${b.id}`,'PATCH',upd).then(()=>updated++).catch(()=>skipped++));
+          } else skipped++;
+        } else {
+          updatePromises.push(supa('bens','POST',{prenom,nom,ddn,tel,taille,dispos,rmq,email,genre:genre||'',sec:'Non défini',poste:'SPF',type:'rotatif',acces:[],type_ben:null,roles:[],event_id}).then(()=>added++).catch(()=>skipped++));
+        }
+      }
+      // Exécuter en parallèle par lots de 10
+      for(let i=0;i<updatePromises.length;i+=10){
+        await Promise.all(updatePromises.slice(i,i+10));
       }
       return ok({added,updated,skipped,total:rows.length-1});
     }
