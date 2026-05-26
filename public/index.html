@@ -542,6 +542,8 @@ textarea.mbe-inp{font-family:inherit}
           <div style="display:none" id="btn-exports">
             <button type="button" class="bpri" onclick="exportRH()" style="background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:#34d399;box-shadow:none">⬇ Export RH</button>
             <button type="button" class="bpri" onclick="exportComplet()" style="background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.3);color:#a78bfa;box-shadow:none">⬇ Export Complet</button>
+            <button type="button" class="bpri" onclick="exportTypes()" style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.3);color:#38bdf8;box-shadow:none">⬇ Types bénévoles</button>
+            <button type="button" class="bpri" onclick="exportListeFinale()" style="background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.3);color:#f5a623;box-shadow:none">⬇ Liste finale</button>
           </div>
           <button type="button" class="bpri" id="btn-nb" onclick="openNewBen()" style="display:none">+ Nouveau</button>
         </div>
@@ -3125,7 +3127,65 @@ function exportComplet(){
   XLSX.writeFile(wb,`${currentEvent.nom}_Complet_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-// ═══ IMPORT CSV/EXCEL ═══
+// ── Export Types bénévoles (calculé selon jours dispo) ──
+function exportTypes(){
+  // Calcul du type selon nb de jours de dispo
+  const getType=b=>{
+    const n=(b.dispos||[]).filter(d=>JOURS.some(j=>j.lbl===d)).length;
+    if(n>=4)return'Bénévole +';
+    if(n===3)return'Bénévole standard 3';
+    if(n===2)return'Bénévole standard 2';
+    if(n===1)return'Bénévole standard 1';
+    return'Bénévole standard 4';
+  };
+  const headers=['Prénom','Nom','Jours disponibles','Type bénévole','Secteur','Poste'];
+  const rows=bens.sort((a,b2)=>a.nom.localeCompare(b2.nom)).map(b=>{
+    const jours=(b.dispos||[]).filter(d=>JOURS.some(j=>j.lbl===d));
+    return[b.prenom,b.nom,jours.length,getType(b),b.sec||'',b.poste||''];
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  ws['!cols']=[{wch:15},{wch:20},{wch:18},{wch:22},{wch:15},{wch:15}];
+  XLSX.utils.book_append_sheet(wb,ws,'Types');
+  XLSX.writeFile(wb,`${currentEvent.nom}_Types_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+// ── Export Liste finale (format exact du fichier festival) ──
+function exportListeFinale(){
+  const getType=b=>{
+    const n=(b.dispos||[]).filter(d=>JOURS.some(j=>j.lbl===d)).length;
+    if(n>=4)return'  Bénévole +';
+    if(n===3)return'  Bénévole standard 3';
+    if(n===2)return'  Bénévole standard 2';
+    if(n===1)return'  Bénévole standard 1';
+    return'  Bénévole standard 4';
+  };
+  const headers=['Prénom','Nom','Courriel','Téléphone','Adresse','NPA','Ville','Date de naissance','2026','  3C','  B','  L','  P','  T','  V',' Circulation & Parking','  Bénévole +','  Bénévole standard 1','  Bénévole standard 2','  Bénévole standard 3','  Bénévole standard 4','  Bénévole Team Leader','  Comité'];
+  const rows=bens.sort((a,b2)=>a.nom.localeCompare(b2.nom)).map(b=>{
+    const ac=b.acces||[];const roles=b.roles||[];
+    const ddn=b.ddn?b.ddn.split('-').reverse().join('.'):'';
+    const type=getType(b);
+    return[
+      b.prenom,b.nom,b.email||'',b.tel||'',b.adresse||'',b.npa||'',b.ville||'',ddn,'2026',
+      ac.includes('3C')?'  3C':'',ac.includes('B')?'  B':'',ac.includes('L')?'  L':'',
+      ac.includes('P')?'  P':'',ac.includes('T')?'  T':'',ac.includes('V')?'  V':'',
+      ' Circulation & Parking',
+      type==='  Bénévole +'?'  Bénévole +':'',
+      type==='  Bénévole standard 1'?'  Bénévole standard 1':'',
+      type==='  Bénévole standard 2'?'  Bénévole standard 2':'',
+      type==='  Bénévole standard 3'?'  Bénévole standard 3':'',
+      type==='  Bénévole standard 4'?'  Bénévole standard 4':'',
+      roles.includes('team_leader')?'  Bénévole Team Leader':'',
+      roles.includes('comite')?'  Comité':''
+    ];
+  });
+  const wb=XLSX.utils.book_new();
+  const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
+  // Style header gras + fond
+  ws['!cols']=headers.map((_,i)=>({wch:i<8?18:16}));
+  XLSX.utils.book_append_sheet(wb,ws,'LISTE FINALE 2026');
+  XLSX.writeFile(wb,`LISTE_FINALE_${new Date().getFullYear()}.xlsx`);
+}
 let _importRows=[];let _importHeaders=[];
 
 function handleImportFile(input){
