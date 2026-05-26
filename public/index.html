@@ -3129,7 +3129,6 @@ function exportComplet(){
 
 // ── Export Types bénévoles (calculé selon jours dispo) ──
 function exportTypes(){
-  // Calcul du type selon nb de jours de dispo
   const getType=b=>{
     const n=(b.dispos||[]).filter(d=>JOURS.some(j=>j.lbl===d)).length;
     if(n>=4)return'Bénévole +';
@@ -3138,14 +3137,11 @@ function exportTypes(){
     if(n===1)return'Bénévole standard 1';
     return'Bénévole standard 4';
   };
-  const headers=['Prénom','Nom','Jours disponibles','Type bénévole','Secteur','Poste'];
-  const rows=bens.sort((a,b2)=>a.nom.localeCompare(b2.nom)).map(b=>{
-    const jours=(b.dispos||[]).filter(d=>JOURS.some(j=>j.lbl===d));
-    return[b.prenom,b.nom,jours.length,getType(b),b.sec||'',b.poste||''];
-  });
+  const headers=['Prénom','Nom','Type bénévole'];
+  const rows=bens.sort((a,b2)=>a.nom.localeCompare(b2.nom)).map(b=>[b.prenom,b.nom,getType(b)]);
   const wb=XLSX.utils.book_new();
   const ws=XLSX.utils.aoa_to_sheet([headers,...rows]);
-  ws['!cols']=[{wch:15},{wch:20},{wch:18},{wch:22},{wch:15},{wch:15}];
+  ws['!cols']=[{wch:15},{wch:20},{wch:22}];
   XLSX.utils.book_append_sheet(wb,ws,'Types');
   XLSX.writeFile(wb,`${currentEvent.nom}_Types_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
