@@ -57,7 +57,22 @@ function parseDispos(text) {
   if (!text) return [];
   const jourMap = {'lundi':'Lundi','mardi':'Mardi','mercredi':'Mercredi','jeudi':'Jeudi','vendredi':'Vendredi','samedi':'Samedi','dimanche':'Dimanche'};
   const moisMap = {'janvier':'janvier','fevrier':'février','mars':'mars','avril':'avril','mai':'mai','juin':'juin','juillet':'juillet','aout':'août','septembre':'septembre','octobre':'octobre','novembre':'novembre','decembre':'décembre','février':'février','août':'août'};
+  const moisNum = {'janvier':1,'fevrier':2,'mars':3,'avril':4,'mai':5,'juin':6,'juillet':7,'aout':8,'septembre':9,'octobre':10,'novembre':11,'decembre':12,'février':2,'août':8};
   const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+  // Jours du festival hardcodés pour matcher les plages
+  const FESTIVAL_DAYS = [
+    {day:17,month:6,lbl:'Mercredi 17 juin'},
+    {day:18,month:6,lbl:'Jeudi 18 juin'},
+    {day:19,month:6,lbl:'Vendredi 19 juin'},
+    {day:20,month:6,lbl:'Samedi 20 juin'},
+  ];
+  // Détecter format "du X au Y" ou "du X juin au Y juin"
+  const rangMatch = norm(text).match(/du\s+(\d+)\s*(?:(\w+))?\s+au\s+(\d+)\s*(?:(\w+))?/);
+  if (rangMatch) {
+    const d1=parseInt(rangMatch[1]), d2=parseInt(rangMatch[3]);
+    return FESTIVAL_DAYS.filter(j=>j.day>=d1&&j.day<=d2).map(j=>j.lbl);
+  }
+  // Format liste standard
   return text.split(',').map(s => s.trim()).filter(Boolean).map(s => {
     const parts = s.trim().split(/\s+/);
     let jourSem='', day=0, monthName='';
@@ -65,11 +80,13 @@ function parseDispos(text) {
       const n = norm(p);
       if (jourMap[n]) jourSem = jourMap[n];
       else if (!isNaN(parseInt(p)) && parseInt(p) > 0 && parseInt(p) <= 31) day = parseInt(p);
-      else if (moisMap[n]) monthName = moisMap[n]; // mois en minuscule, ex: "juin"
+      else if (moisMap[n]) monthName = moisMap[n];
     }
     if (day && monthName && jourSem) return `${jourSem} ${day} ${monthName}`;
     if (day && monthName) return `${day} ${monthName}`;
-    return null;
+    // Fallback : chercher si un jour du festival est mentionné
+    const found = FESTIVAL_DAYS.find(j=>s.includes(String(j.day)));
+    return found ? found.lbl : null;
   }).filter(Boolean);
 }
 
@@ -105,11 +122,24 @@ exports.handler = async (event) => {
     if (path === '/debug-sheets' && method === 'POST') {
       const { sheet_id } = body;
       const token = await getGoogleToken();
-      const sr = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheet_id}/values/A1:Z5?valueRenderOption=FORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`, {
+      const sr = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheet_id}/values/A1:Z10?valueRenderOption=FORMATTED_VALUE&dateTimeRenderOption=FORMATTED_STRING`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await sr.json();
-      return ok({ raw: data.values || [] });
+      const rows = data.values || [];
+      const headers = rows[0]||[];
+      // Trouver col dispos
+      const norm = h => String(h).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+      const cDi = headers.findIndex(h => ['disponible','dispo','present','quand'].some(k=>norm(h).includes(k)));
+      const cP = headers.findIndex(h => h==='Prénom'||norm(h).startsWith('prenom'));
+      const cN = headers.findIndex(h => norm(h)==='nom');
+      // Montrer les 3 premières lignes avec parseDispos
+      const samples = rows.slice(1,4).map(r=>({
+        prenom: r[cP], nom: r[cN],
+        raw_dispo: r[cDi],
+        parsed: parseDispos(String(r[cDi]||''))
+      }));
+      return ok({ headers, cDi, cP, cN, samples });
     }
 
     // SYNC GOOGLE SHEETS
