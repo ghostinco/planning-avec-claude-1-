@@ -3130,7 +3130,7 @@ function exportComplet(){
 // ── Export Types bénévoles (calculé selon jours dispo) ──
 function exportTypes(){
   const getType=b=>{
-    const n=(b.dispos||[]).filter(d=>JOURS.some(j=>j.lbl===d)).length;
+    const n=(b.dispos||[]).filter(d=>JOURS.some(j=>d.includes(j.lbl)||j.lbl.includes(d))).length;
     if(n>=4)return'Bénévole +';
     if(n===3)return'Bénévole standard 3';
     if(n===2)return'Bénévole standard 2';
@@ -3149,7 +3149,7 @@ function exportTypes(){
 // ── Export Liste finale (format exact du fichier festival) ──
 function exportListeFinale(){
   const getType=b=>{
-    const n=(b.dispos||[]).filter(d=>JOURS.some(j=>j.lbl===d)).length;
+    const n=(b.dispos||[]).filter(d=>JOURS.some(j=>d.includes(j.lbl)||j.lbl.includes(d))).length;
     if(n>=4)return'  Bénévole +';
     if(n===3)return'  Bénévole standard 3';
     if(n===2)return'  Bénévole standard 2';
