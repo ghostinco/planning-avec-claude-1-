@@ -166,6 +166,7 @@ exports.handler = async (event) => {
       const cD = col(['naissance','birth','ddn']); const cT = col(['telephone','tel','phone','mobile','+41']);
       const cTa = col(['taille','t-shirt','tshirt','shirt']); const cDi = col(['disponible','dispo','present','quand']);
       const cR = col(['remarque','comment','note']);
+      const cE = col(['email','mail','courriel']);
       if (cP===-1||cN===-1) return err('Colonnes Prenom/Nom introuvables');
       const existing = await supa(`bens?event_id=eq.${event_id}&select=*`);
       // Normaliser : minuscules + supprimer accents pour matching robuste
