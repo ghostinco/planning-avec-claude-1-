@@ -532,6 +532,13 @@ textarea.mbe-inp{font-family:inherit}
 
   <div id="pg-benevoles" style="display:none;overflow:auto">
     <div class="ben-pg">
+      <!-- Sous-onglets -->
+      <div style="display:flex;gap:0;border-bottom:1px solid rgba(56,189,248,.15);margin-bottom:14px">
+        <button type="button" id="btab-liste" onclick="setBenTab('liste')" style="padding:8px 20px;background:none;border:none;border-bottom:2px solid #38bdf8;color:#38bdf8;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;text-transform:uppercase">Liste</button>
+        <button type="button" id="btab-presences" onclick="setBenTab('presences')" style="padding:8px 20px;background:none;border:none;border-bottom:2px solid transparent;color:#4d7fa0;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;text-transform:uppercase">📅 Présences</button>
+      </div>
+      <!-- Vue Liste -->
+      <div id="ben-tab-liste">
       <div class="ben-hdr"><h2 id="ben-title">Bénévoles</h2>
         <div style="display:flex;gap:6px">
           <button type="button" class="bpri" id="btn-sync-sheets" onclick="openSyncSheets()" style="display:none;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.3);color:#34d399;box-shadow:none">🔄 Sync Sheets</button>
@@ -572,6 +579,65 @@ textarea.mbe-inp{font-family:inherit}
         <span class="ben-filter-count" id="ben-filter-count"></span>
       </div>
       <div id="ben-list"></div>
+      </div><!-- /ben-tab-liste -->
+
+      <!-- Vue Présences -->
+      <div id="ben-tab-presences" style="display:none">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 0 12px;border-bottom:1px solid rgba(56,189,248,.1);margin-bottom:14px">
+          <input id="pres-search" type="text" placeholder="🔍 Rechercher…" oninput="renderPresences()" style="background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 12px;font-size:12px;outline:none;width:160px"/>
+          <select id="pres-nb" onchange="renderPresences()" style="background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:12px;outline:none;cursor:pointer">
+            <option value="">Tous les jours</option>
+            <option value="4">4 jours</option>
+            <option value="3">3 jours</option>
+            <option value="2">2 jours</option>
+            <option value="1">1 jour</option>
+          </select>
+          <select id="pres-jour" onchange="renderPresences()" style="background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:12px;outline:none;cursor:pointer">
+            <option value="">Tous les jours</option>
+            <option value="Mercredi 17 juin">Mer 17</option>
+            <option value="Jeudi 18 juin">Jeu 18</option>
+            <option value="Vendredi 19 juin">Ven 19</option>
+            <option value="Samedi 20 juin">Sam 20</option>
+          </select>
+          <select id="pres-type" onchange="renderPresences()" style="background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:12px;outline:none;cursor:pointer">
+            <option value="">Tous types</option>
+            <option value="ben_plus">Bénévole+</option>
+            <option value="std3">Standard 3</option>
+            <option value="std2">Standard 2</option>
+            <option value="std1">Standard 1</option>
+          </select>
+          <select id="pres-genre" onchange="renderPresences()" style="background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:12px;outline:none;cursor:pointer">
+            <option value="">M + F</option>
+            <option value="F">F</option>
+            <option value="M">M</option>
+          </select>
+          <select id="pres-sort" onchange="renderPresences()" style="background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:12px;outline:none;cursor:pointer">
+            <option value="nom">Nom A→Z</option>
+            <option value="nb_desc">Jours ↓</option>
+            <option value="nb_asc">Jours ↑</option>
+            <option value="age_asc">Âge ↑</option>
+            <option value="age_desc">Âge ↓</option>
+          </select>
+          <div id="pres-stats" style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap"></div>
+        </div>
+        <div style="overflow-x:auto">
+          <table id="pres-table" style="width:100%;border-collapse:collapse;min-width:600px">
+            <thead>
+              <tr style="border-bottom:2px solid rgba(56,189,248,.15)">
+                <th style="padding:8px 12px;text-align:left;font-size:10px;color:#4d7fa0;text-transform:uppercase;letter-spacing:1px;white-space:nowrap">Nom</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;color:#4d7fa0;text-transform:uppercase;letter-spacing:1px">Présences</th>
+                <th style="padding:8px 12px;text-align:center;font-size:10px;color:#4d7fa0;text-transform:uppercase;letter-spacing:1px">Nb</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;color:#4d7fa0;text-transform:uppercase;letter-spacing:1px">Type</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;color:#4d7fa0;text-transform:uppercase;letter-spacing:1px">Âge</th>
+                <th style="padding:8px 12px;text-align:center;font-size:10px;color:#4d7fa0;text-transform:uppercase;letter-spacing:1px">G</th>
+                <th style="padding:8px 12px;text-align:left;font-size:10px;color:#4d7fa0;text-transform:uppercase;letter-spacing:1px">Rmq</th>
+              </tr>
+            </thead>
+            <tbody id="pres-tbody"></tbody>
+          </table>
+          <div id="pres-empty" style="display:none;padding:40px;text-align:center;color:#4d7fa0;font-size:13px">Aucun bénévole trouvé.</div>
+        </div>
+      </div><!-- /ben-tab-presences -->
     </div>
   </div>
   <div id="pg-stats" style="display:none;overflow:auto"><div class="sta-pg" id="stats-c"></div></div>
@@ -2222,6 +2288,100 @@ async function delBen(){
 let benFilterType='all';
 function setBenType(t){benFilterType=t;['all','rot','fix'].forEach(x=>document.getElementById('bft-'+x)?.classList.toggle('act',x===t));benFilterChange();}
 function benFilterChange(){renderBens();}
+
+// ═══ SOUS-ONGLETS BÉNÉVOLES ═══
+let _benTab = 'liste';
+function setBenTab(tab) {
+  _benTab = tab;
+  document.getElementById('ben-tab-liste').style.display = tab === 'liste' ? '' : 'none';
+  document.getElementById('ben-tab-presences').style.display = tab === 'presences' ? '' : 'none';
+  const actStyle = 'border-bottom:2px solid #38bdf8;color:#38bdf8';
+  const idleStyle = 'border-bottom:2px solid transparent;color:#4d7fa0';
+  document.getElementById('btab-liste').style.cssText = `padding:8px 20px;background:none;border:none;${tab==='liste'?actStyle:idleStyle};font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;text-transform:uppercase`;
+  document.getElementById('btab-presences').style.cssText = `padding:8px 20px;background:none;border:none;${tab==='presences'?actStyle:idleStyle};font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.5px;text-transform:uppercase`;
+  if (tab === 'presences') renderPresences();
+}
+
+function renderPresences() {
+  const JOURS = ['Mercredi 17 juin','Jeudi 18 juin','Vendredi 19 juin','Samedi 20 juin'];
+  const JOURS_SHORT = ['17 juin','18 juin','19 juin','20 juin'];
+  const TYPE_LBL = {'ben_plus':'Bénévole+','std3':'Standard 3','std2':'Standard 2','std1':'Standard 1'};
+  const TYPE_COL = {'ben_plus':'#f5a623','std3':'#a78bfa','std2':'#ec4899','std1':'#4d7fa0'};
+  const DOT_COL = ['#3b82f6','#8b5cf6','#ec4899','#f59e0b'];
+
+  const q = (document.getElementById('pres-search')?.value||'').toLowerCase().trim();
+  const fNb = document.getElementById('pres-nb')?.value||'';
+  const fJour = document.getElementById('pres-jour')?.value||'';
+  const fType = document.getElementById('pres-type')?.value||'';
+  const fGenre = document.getElementById('pres-genre')?.value||'';
+  const sort = document.getElementById('pres-sort')?.value||'nom';
+
+  const normD = d => { for(let i=0;i<JOURS_SHORT.length;i++) if(d===JOURS_SHORT[i]) return JOURS[i]; return d; };
+
+  let list = bens.map(b => {
+    const dn = (b.dispos||[]).map(normD).filter(d=>JOURS.includes(d));
+    const yr = b.ddn ? parseInt(String(b.ddn).slice(0,4)) : 0;
+    const age = (yr > 1940 && yr < 2020) ? 2026 - yr : null;
+    return {...b, dn, nb: dn.length, age};
+  });
+
+  list = list.filter(b => {
+    if (q && !(b.nom+' '+b.prenom).toLowerCase().includes(q)) return false;
+    if (fNb && b.nb !== parseInt(fNb)) return false;
+    if (fJour && !b.dn.includes(fJour)) return false;
+    if (fType && b.type_ben !== fType) return false;
+    if (fGenre && b.genre !== fGenre) return false;
+    return true;
+  });
+
+  list.sort((a,b) => {
+    if (sort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
+    if (sort==='nb_desc') return b.nb-a.nb || a.nom.localeCompare(b.nom);
+    if (sort==='nb_asc') return a.nb-b.nb || a.nom.localeCompare(b.nom);
+    if (sort==='age_asc') return (a.age||999)-(b.age||999);
+    if (sort==='age_desc') return (b.age||999)-(a.age||999);
+    return 0;
+  });
+
+  const tbody = document.getElementById('pres-tbody');
+  const empty = document.getElementById('pres-empty');
+  const stats = document.getElementById('pres-stats');
+
+  // Stats pills
+  const pillStyle = (col) => `padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;background:transparent;border:1px solid ${col};color:${col}`;
+  stats.innerHTML = [4,3,2,1].map((n,i) => {
+    const cols=['#22c55e','#8b5cf6','#ec4899','#4d7fa0'];
+    const c = list.filter(b=>b.nb===n).length;
+    return `<span style="${pillStyle(cols[i])}">${n}j: ${c}</span>`;
+  }).join('');
+
+  if (!list.length) { tbody.innerHTML=''; empty.style.display=''; return; }
+  empty.style.display = 'none';
+
+  tbody.innerHTML = list.map(b => {
+    const dots = JOURS.map((j,i) => {
+      const on = b.dn.includes(j);
+      const c = DOT_COL[i];
+      const lbl = ['17','18','19','20'][i];
+      return `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;font-size:10px;font-weight:700;border:1px solid ${c};background:${on?c+'33':'transparent'};color:${on?c:'transparent'};opacity:${on?1:.25}">${lbl}</span>`;
+    }).join(' ');
+
+    const nbCol = ['','#22c55e','#ec4899','#8b5cf6','#22c55e'][Math.min(b.nb,4)] || '#4d7fa0';
+    const tCol = TYPE_COL[b.type_ben] || '#4d7fa0';
+    const tLbl = TYPE_LBL[b.type_ben] || '—';
+    const rmqIcon = b.rmq ? `<span title="${(b.rmq||'').replace(/"/g,"'")}" style="cursor:help;opacity:.7">💬</span>` : '';
+
+    return `<tr style="border-bottom:1px solid rgba(56,189,248,.07);transition:background .15s" onmouseover="this.style.background='#0d1520'" onmouseout="this.style.background=''">
+      <td style="padding:8px 12px;font-size:12px;font-weight:600;white-space:nowrap">${b.nom} <span style="color:#4d7fa0;font-weight:400">${b.prenom}</span></td>
+      <td style="padding:8px 12px"><div style="display:flex;gap:4px">${dots}</div></td>
+      <td style="padding:8px 12px;text-align:center"><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:700;border:1px solid ${nbCol};color:${nbCol};background:${nbCol}22">${b.nb}</span></td>
+      <td style="padding:8px 12px"><span style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid ${tCol};color:${tCol}">${tLbl}</span></td>
+      <td style="padding:8px 12px;font-size:11px;color:#4d7fa0">${b.age?b.age+' ans':'—'}</td>
+      <td style="padding:8px 12px;text-align:center;font-size:11px;color:#4d7fa0">${b.genre||'—'}</td>
+      <td style="padding:8px 12px">${rmqIcon}</td>
+    </tr>`;
+  }).join('');
+}
 
 function applyBenFilters(list){
   const q=(document.getElementById('ben-search')?.value||'').toLowerCase();
