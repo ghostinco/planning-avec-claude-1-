@@ -176,7 +176,7 @@ exports.handler = async (event) => {
         benMap[normStr(b.prenom)+' '+normStr(b.nom)]=b;
       });
       let added=0,updated=0,skipped=0;
-      const updatePromises=[];
+      const ops=[];
       for (const row of rows.slice(1)) {
         const prenom=String(row[cP]||'').trim(); const nom=String(row[cN]||'').trim();
         if (!prenom&&!nom){skipped++;continue;}
@@ -197,19 +197,23 @@ exports.handler = async (event) => {
           if(tel&&(!b.tel||b.tel===''))upd.tel=tel;
           if(email)upd.email=email;
           if(taille)upd.taille=taille;
-          if(dispos.length>0&&dispos.length>=(b.dispos||[]).length)upd.dispos=dispos;
+          if(dispos.length>0)upd.dispos=dispos;
           if(rmq&&(!b.rmq||b.rmq===''))upd.rmq=rmq;
           if(genre&&!b.genre)upd.genre=genre;
-          if(Object.keys(upd).length>0){
-            updatePromises.push(supa(`bens?id=eq.${b.id}`,'PATCH',upd).then(()=>updated++).catch(()=>skipped++));
-          } else skipped++;
+          if(Object.keys(upd).length>0) ops.push({type:'patch',id:b.id,data:upd});
+          else skipped++;
         } else {
-          updatePromises.push(supa('bens','POST',{prenom,nom,ddn,tel,taille,dispos,rmq,email,genre:genre||'',sec:'Non défini',poste:'SPF',type:'rotatif',acces:[],type_ben:null,roles:[],event_id}).then(()=>added++).catch(()=>skipped++));
+          ops.push({type:'post',data:{prenom,nom,ddn,tel,taille,dispos,rmq,email,genre:genre||'',sec:'Non défini',poste:'SPF',type:'rotatif',acces:[],type_ben:null,roles:[],event_id}});
         }
       }
-      // Exécuter en parallèle par lots de 10
-      for(let i=0;i<updatePromises.length;i+=10){
-        await Promise.all(updatePromises.slice(i,i+10));
+      // Exécuter par vrais lots séquentiels de 5
+      for(let i=0;i<ops.length;i+=5){
+        await Promise.all(ops.slice(i,i+5).map(async op=>{
+          try{
+            if(op.type==='patch'){await supa(`bens?id=eq.${op.id}`,'PATCH',op.data);updated++;}
+            else{await supa('bens','POST',op.data);added++;}
+          }catch(e){console.error(e);skipped++;}
+        }));
       }
       return ok({added,updated,skipped,total:rows.length-1});
     }

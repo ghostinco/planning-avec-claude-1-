@@ -1140,6 +1140,20 @@ const totMq=()=>JOURS.reduce((t,j)=>t+mqJ(j.lbl),0);
 function computeLanes(shs){const lanes=[];shs.forEach(s=>{const sm=tToMin(s.start_time),em=tToMin(s.end_time);let placed=false;for(const lane of lanes){if(!lane.some(x=>tToMin(x.start_time)<em&&tToMin(x.end_time)>sm)){lane.push(s);placed=true;break;}}if(!placed)lanes.push([s]);});return lanes;}
 function filteredRows(){let rows=[];SECS.forEach(sec=>(POSTES_DEF[sec]||[]).forEach(p=>rows.push({sec,pos:p})));if(sbSelected.size>0)rows=rows.filter(({sec,pos})=>sbSelected.has('sec:'+sec)||sbSelected.has('pos:'+pos));return rows;}
 
+
+// Helper : construire le label complet d'un jour festival "Mercredi 17 juin"
+function fullJourLbl(j){
+  const jourComplet={'Lun':'Lundi','Mar':'Mardi','Mer':'Mercredi','Jeu':'Jeudi','Ven':'Vendredi','Sam':'Samedi','Dim':'Dimanche'};
+  const wd=j.wd?j.wd.replace('.',''):'';
+  const nom=jourComplet[wd]||'';
+  return nom?`${nom} ${j.k} juin`:j.lbl;
+}
+// Vérifier si un bénévole est dispo un jour (comparaison souple mais précise)
+function isDispo(dispos,jLbl){
+  if(!dispos||!dispos.length)return false;
+  const norm=s=>s.toLowerCase().trim();
+  return dispos.some(d=>norm(d)===norm(jLbl)||norm(d).includes(norm(jLbl))||norm(jLbl).includes(norm(d)));
+}
 function renderAll(){updMq();renderChips();renderContent();renderVbarR();if(JOURS[dayIdx])document.getElementById('dnl').textContent=JOURS[dayIdx].lbl;}
 function updMq(){const m=totMq();const b=document.getElementById('mqb');b.textContent=m+' manquant'+(m!==1?'s':'');b.className='mqb'+(m===0?' ok':'');}
 
@@ -1233,7 +1247,7 @@ function renderSemaine(){
   h+=`<tr class="wk-sec"><td colspan="${joursVis.length+1}"><span class="wk-sec-lbl" style="color:${col}">● ${sec}</span></td></tr>`;
   sorted.forEach(b=>{const bc=bCol(b.id);
   h+=`<tr><td class="wk-nm" onclick="openBenDetail('${b.id}')" style="cursor:pointer" title="Voir la fiche de ${b.prenom} ${b.nom}"><div class="nn">${semSort.startsWith('prenom')?b.prenom+' '+b.nom:b.nom+' '+b.prenom}</div><div class="np" style="color:${col}">${b.poste||sec}</div><span class="nty ${b.type==='fixe'?'nfix':'nrot'}">${b.type==='fixe'?'📌':'🔄'}</span>${isA()?`<button type="button" class="ned" onclick="openEditBen('${b.id}')">✏</button>`:''}</td>`;
-  joursVis.forEach(j=>{const dis=(b.dispos||[]).some(d=>d.includes(j.lbl)||j.lbl.includes(d)||d===j.lbl);
+  joursVis.forEach(j=>{const dis=isDispo(b.dispos||[],fullJourLbl(j));
   const mySlots=slots.filter(sl=>sl.jours.includes(j.lbl)&&assigns[sl.id]&&assigns[sl.id].includes(b.id)&&(_assignDays[sl.id]?.[b.id]||[]).includes(j.lbl));
   if(!dis){h+=`<td class="wk-td na"><div style="height:100%;display:flex;align-items:center;justify-content:center;opacity:.1">—</div></td>`;}
   else{h+=`<td class="wk-td">`;mySlots.forEach(sl=>{const nec=POSTES_NEC[sl.pid]||2;const nbJ=Object.entries(_assignDays[sl.id]||{}).filter(([bid,jrs])=>jrs.includes(j.lbl)).length;const rc=nbJ>=nec?'#34d399':nbJ>0?'#fbbf24':'#f87171';const emptyCard=nbJ===0?`<div style="font-size:10px;font-weight:800;color:#f87171;text-align:center;padding:2px 0">VIDE</div>`:'';h+=`<div class="wk-blk" style="background:${bc};${nbJ===0?'border:1.5px solid #f87171;background:rgba(248,113,113,.08)':''}" onclick="openAssign('${sl.id}',event)"><div class="bt">${sl.start_time}–${sl.end_time}</div><div class="bp">${sl.pid}</div><div class="bct" style="color:${rc}">${nbJ}/${nec}</div>${emptyCard}</div>`;});if(isA())h+=`<button type="button" class="wk-add" onclick="openNewSlotDay('${j.lbl}',event)">+ créneau</button>`;h+=`</td>`;}});
@@ -2172,17 +2186,8 @@ function updMbSecs(selectedSec){
   sel.innerHTML=SECS.map(s=>`<option value="${s}"${s===selectedSec?' selected':''}>${s}</option>`).join('');
 }
 function updMbPostes(){const sec=document.getElementById('mb-sec')?.value||'';const ps=POSTES_DEF[sec]||[];document.getElementById('mb-pos').innerHTML=ps.map(p=>`<option>${p}</option>`).join('');}
-function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);updMbSecs('Parking');updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>{const jourComplet={'Lun':'Lundi','Mar':'Mardi','Mer':'Mercredi','Jeu':'Jeudi','Ven':'Vendredi','Sam':'Samedi','Dim':'Dimanche'};const wd2=j.wd?j.wd.replace('.',''):'';const nomJour=jourComplet[wd2]||wd2;const fullLbl=nomJour?`${nomJour} ${j.k} juin`:j.lbl;return`<button type="button" class="dbtn sel" data-j="${fullLbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`;}).join('');document.getElementById('mb-del').style.display='none';setAcces([]);setTypeBen(null);setRoles([]);setChefAcces([]);setTaille('');setGenre('');if(document.getElementById('mb-chef-acces-wrap'))document.getElementById('mb-chef-acces-wrap').style.display='none';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
-function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';updMbSecs(b.sec||'Parking');document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>{
-    const lblComplet=j.wd?j.wd.replace('.','')+'redi '+j.k+' juin':j.lbl; // "Mercredi 17 juin"
-    // Reconstruire le label complet depuis wd
-    const jourComplet={'Lun':'Lundi','Mar':'Mardi','Mer':'Mercredi','Jeu':'Jeudi','Ven':'Vendredi','Sam':'Samedi','Dim':'Dimanche'};
-    const wd2=j.wd?j.wd.replace('.',''):'';
-    const nomJour=jourComplet[wd2]||wd2;
-    const fullLbl=nomJour?`${nomJour} ${j.k} juin`:j.lbl;
-    const sel=(b.dispos||[]).some(d=>d.includes(j.lbl)||j.lbl.includes(d));
-    return`<button type="button" class="dbtn${sel?' sel':''}" data-j="${fullLbl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`;
-  }).join('');document.getElementById('mb-del').style.display='block';setAcces(b.acces||[]);setTypeBen(b.type_ben||null);setRoles(b.roles||[]);setChefAcces(b.chef_acces||[]);setTaille(b.taille||'');setGenre(b.genre||detectGenre(b.prenom));
+function openNewBen(){eBid=null;bTypeCur='rotatif';document.getElementById('mb-ttl').textContent='Nouveau bénévole';['mb-n','mb-p','mb-t','mb-e','mb-rmq','mb-ddn'].forEach(id=>document.getElementById(id).value='');['mb-n','mb-p','mb-t','mb-e','mb-sec','mb-pos'].forEach(id=>document.getElementById(id).disabled=false);updMbSecs('Parking');updMbPostes();document.getElementById('t-rot').classList.add('sel');document.getElementById('t-fix').classList.remove('sel');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>{const fl=fullJourLbl(j);return`<button type="button" class="dbtn sel" data-j="${fl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`;}).join('');document.getElementById('mb-del').style.display='none';setAcces([]);setTypeBen(null);setRoles([]);setChefAcces([]);setTaille('');setGenre('');if(document.getElementById('mb-chef-acces-wrap'))document.getElementById('mb-chef-acces-wrap').style.display='none';hA('mb-e2');document.getElementById('m-ben').classList.add('open');}
+function openEditBen(id){const b=bens.find(x=>x.id===id);if(!b)return;eBid=id;bTypeCur=b.type||'rotatif';document.getElementById('mb-ttl').textContent='Modifier — '+b.nom+' '+b.prenom;document.getElementById('mb-n').value=b.nom;document.getElementById('mb-n').disabled=!isA();document.getElementById('mb-p').value=b.prenom;document.getElementById('mb-p').disabled=!isA();document.getElementById('mb-t').value=b.tel||'';document.getElementById('mb-t').disabled=!isA();document.getElementById('mb-e').value=b.email||'';document.getElementById('mb-e').disabled=!isA();document.getElementById('mb-ddn').value=b.ddn||'';document.getElementById('mb-rmq').value=b.rmq||'';updMbSecs(b.sec||'Parking');document.getElementById('mb-sec').disabled=!isA();updMbPostes();document.getElementById('mb-pos').value=b.poste||'';document.getElementById('mb-pos').disabled=!isA();document.getElementById('t-rot').classList.toggle('sel',bTypeCur==='rotatif');document.getElementById('t-fix').classList.toggle('sel',bTypeCur==='fixe');document.getElementById('mb-dis').innerHTML=JOURS.map(j=>{const fl=fullJourLbl(j);const sel=isDispo(b.dispos||[],fl);return`<button type="button" class="dbtn${sel?' sel':''}" data-j="${fl}" onclick="this.classList.toggle('sel')">${j.k}/06</button>`;}).join('');document.getElementById('mb-del').style.display='block';setAcces(b.acces||[]);setTypeBen(b.type_ben||null);setRoles(b.roles||[]);setChefAcces(b.chef_acces||[]);setTaille(b.taille||'');setGenre(b.genre||detectGenre(b.prenom));
   // Afficher section chef si team_leader
   const isChefSel=(b.roles||[]).includes('team_leader')||(b.roles||[]).includes('chef_equipe');
   if(document.getElementById('mb-chef-acces-wrap'))document.getElementById('mb-chef-acces-wrap').style.display=isChefSel?'block':'none';
