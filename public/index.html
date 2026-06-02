@@ -612,6 +612,7 @@ textarea.mbe-inp{font-family:inherit}
             <option value="M">M</option>
           </select>
           <select id="pres-sort" onchange="renderPresences()" style="background:#0c1929;border:1.5px solid rgba(56,189,248,.2);color:#f0f9ff;border-radius:8px;padding:7px 10px;font-size:12px;outline:none;cursor:pointer">
+            <option value="prenom" selected>Prénom A→Z</option>
             <option value="nom">Nom A→Z</option>
             <option value="nb_desc">Jours ↓</option>
             <option value="nb_asc">Jours ↑</option>
@@ -2314,7 +2315,7 @@ function renderPresences() {
   const fJour = document.getElementById('pres-jour')?.value||'';
   const fType = document.getElementById('pres-type')?.value||'';
   const fGenre = document.getElementById('pres-genre')?.value||'';
-  const sort = document.getElementById('pres-sort')?.value||'nom';
+  const sort = document.getElementById('pres-sort')?.value||'prenom';
 
   const normD = d => { for(let i=0;i<JOURS_SHORT.length;i++) if(d===JOURS_SHORT[i]) return JOURS[i]; return d; };
 
@@ -2335,6 +2336,7 @@ function renderPresences() {
   });
 
   list.sort((a,b) => {
+    if (sort==='prenom') return a.prenom.localeCompare(b.prenom,'fr') || a.nom.localeCompare(b.nom,'fr');
     if (sort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
     if (sort==='nb_desc') return b.nb-a.nb || a.nom.localeCompare(b.nom);
     if (sort==='nb_asc') return a.nb-b.nb || a.nom.localeCompare(b.nom);
