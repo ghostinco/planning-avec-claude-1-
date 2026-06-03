@@ -2319,70 +2319,108 @@ function renderPresences() {
 
   const normD = d => { for(let i=0;i<JOURS_SHORT.length;i++) if(d===JOURS_SHORT[i]) return JOURS[i]; return d; };
 
-  let list = bens.map(b => {
+  const allProcessed = bens.map(b => {
     const dn = (b.dispos||[]).map(normD).filter(d=>JOURS.includes(d));
     const yr = b.ddn ? parseInt(String(b.ddn).slice(0,4)) : 0;
     const age = (yr > 1940 && yr < 2020) ? 2026 - yr : null;
     return {...b, dn, nb: dn.length, age};
   });
 
-  list = list.filter(b => {
-    if (q && !(b.nom+' '+b.prenom).toLowerCase().includes(q)) return false;
+  const doSort = arr => {
+    return [...arr].sort((a,b) => {
+      if (sort==='prenom') return a.prenom.localeCompare(b.prenom,'fr') || a.nom.localeCompare(b.nom,'fr');
+      if (sort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom,'fr');
+      if (sort==='nb_desc') return b.nb-a.nb || a.prenom.localeCompare(b.prenom,'fr');
+      if (sort==='nb_asc') return a.nb-b.nb || a.prenom.localeCompare(b.prenom,'fr');
+      if (sort==='age_asc') return (a.age||999)-(b.age||999);
+      if (sort==='age_desc') return (b.age||999)-(a.age||999);
+      return 0;
+    });
+  };
+
+  // Filtre de base (hors filtre jour — géré séparément pour section absents)
+  const baseFilter = b => {
+    if (q && !(b.nom+' '+b.prenom).toLowerCase().includes(q) && !(b.prenom+' '+b.nom).toLowerCase().includes(q)) return false;
     if (fNb && b.nb !== parseInt(fNb)) return false;
-    if (fJour && !b.dn.includes(fJour)) return false;
     if (fType && b.type_ben !== fType) return false;
     if (fGenre && b.genre !== fGenre) return false;
     return true;
-  });
-
-  list.sort((a,b) => {
-    if (sort==='prenom') return a.prenom.localeCompare(b.prenom,'fr') || a.nom.localeCompare(b.nom,'fr');
-    if (sort==='nom') return (a.nom+a.prenom).localeCompare(b.nom+b.prenom);
-    if (sort==='nb_desc') return b.nb-a.nb || a.nom.localeCompare(b.nom);
-    if (sort==='nb_asc') return a.nb-b.nb || a.nom.localeCompare(b.nom);
-    if (sort==='age_asc') return (a.age||999)-(b.age||999);
-    if (sort==='age_desc') return (b.age||999)-(a.age||999);
-    return 0;
-  });
+  };
 
   const tbody = document.getElementById('pres-tbody');
   const empty = document.getElementById('pres-empty');
   const stats = document.getElementById('pres-stats');
 
-  // Stats pills
-  const pillStyle = (col) => `padding:4px 10px;border-radius:12px;font-size:11px;font-weight:700;background:transparent;border:1px solid ${col};color:${col}`;
-  stats.innerHTML = [4,3,2,1].map((n,i) => {
-    const cols=['#22c55e','#8b5cf6','#ec4899','#4d7fa0'];
-    const c = list.filter(b=>b.nb===n).length;
-    return `<span style="${pillStyle(cols[i])}">${n}j: ${c}</span>`;
+  // ── Compteurs par jour (sur tous les bénévoles, sans filtres) ──
+  const total = bens.length;
+  const jourCounts = JOURS.map((j,i) => {
+    const n = allProcessed.filter(b => b.dn.includes(j)).length;
+    const lbl = ['Mer 17','Jeu 18','Ven 19','Sam 20'][i];
+    const c = DOT_COL[i];
+    return `<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:8px;background:${c}18;border:1px solid ${c}44;font-size:12px;font-weight:700">
+      <span style="color:${c}">${lbl}</span>
+      <span style="color:#f0f9ff">${n}</span><span style="color:#4d7fa0;font-weight:400">/ ${total}</span>
+    </span>`;
   }).join('');
+  stats.innerHTML = `<div style="display:flex;gap:6px;flex-wrap:wrap;width:100%">${jourCounts}</div>`;
 
-  if (!list.length) { tbody.innerHTML=''; empty.style.display=''; return; }
+  // ── Listes présents / absents ──
+  let presents = allProcessed.filter(baseFilter);
+  let absents = [];
+
+  if (fJour) {
+    absents = doSort(presents.filter(b => !b.dn.includes(fJour)));
+    presents = presents.filter(b => b.dn.includes(fJour));
+  }
+  presents = doSort(presents);
+
+  if (!presents.length && !absents.length) {
+    tbody.innerHTML=''; empty.style.display=''; return;
+  }
   empty.style.display = 'none';
 
-  tbody.innerHTML = list.map(b => {
+  const makeRow = (b, gris) => {
     const dots = JOURS.map((j,i) => {
       const on = b.dn.includes(j);
-      const c = DOT_COL[i];
+      const c = gris ? '#3a3f4a' : DOT_COL[i];
       const lbl = ['17','18','19','20'][i];
-      return `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;font-size:10px;font-weight:700;border:1px solid ${c};background:${on?c+'33':'transparent'};color:${on?c:'transparent'};opacity:${on?1:.25}">${lbl}</span>`;
+      return `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:5px;font-size:10px;font-weight:700;border:1px solid ${c};background:${on?c+'33':'transparent'};color:${on?(gris?'#5a6070':c):'transparent'};opacity:${on?1:.2}">${lbl}</span>`;
     }).join(' ');
 
-    const nbCol = ['','#22c55e','#ec4899','#8b5cf6','#22c55e'][Math.min(b.nb,4)] || '#4d7fa0';
-    const tCol = TYPE_COL[b.type_ben] || '#4d7fa0';
+    const nbCol = gris ? '#3a3f4a' : (['','#4d7fa0','#ec4899','#8b5cf6','#22c55e'][Math.min(b.nb,4)] || '#4d7fa0');
+    const tCol = gris ? '#3a3f4a' : (TYPE_COL[b.type_ben] || '#4d7fa0');
     const tLbl = TYPE_LBL[b.type_ben] || '—';
-    const rmqIcon = b.rmq ? `<span title="${(b.rmq||'').replace(/"/g,"'")}" style="cursor:help;opacity:.7">💬</span>` : '';
+    const rmqIcon = b.rmq ? `<span title="${(b.rmq||'').replace(/"/g,"'")}" style="cursor:help;opacity:.5">💬</span>` : '';
+    const nameCol = gris ? '#3a4050' : '#f0f9ff';
+    const prenomCol = gris ? '#2e3340' : '#4d7fa0';
 
-    return `<tr style="border-bottom:1px solid rgba(56,189,248,.07);transition:background .15s" onmouseover="this.style.background='#0d1520'" onmouseout="this.style.background=''">
-      <td style="padding:8px 12px;font-size:12px;font-weight:600;white-space:nowrap">${b.nom} <span style="color:#4d7fa0;font-weight:400">${b.prenom}</span></td>
+    return `<tr style="border-bottom:1px solid rgba(56,189,248,.05);cursor:pointer;transition:background .15s"
+      onclick="openBenDetail('${b.id}')"
+      onmouseover="this.style.background='${gris?'#0c0e14':'#0d1520'}'"
+      onmouseout="this.style.background=''">
+      <td style="padding:8px 12px;font-size:12px;font-weight:600;white-space:nowrap;color:${nameCol}">${b.prenom} <span style="color:${prenomCol};font-weight:400">${b.nom}</span></td>
       <td style="padding:8px 12px"><div style="display:flex;gap:4px">${dots}</div></td>
       <td style="padding:8px 12px;text-align:center"><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;font-size:11px;font-weight:700;border:1px solid ${nbCol};color:${nbCol};background:${nbCol}22">${b.nb}</span></td>
       <td style="padding:8px 12px"><span style="font-size:10px;padding:2px 7px;border-radius:4px;border:1px solid ${tCol};color:${tCol}">${tLbl}</span></td>
-      <td style="padding:8px 12px;font-size:11px;color:#4d7fa0">${b.age?b.age+' ans':'—'}</td>
-      <td style="padding:8px 12px;text-align:center;font-size:11px;color:#4d7fa0">${b.genre||'—'}</td>
+      <td style="padding:8px 12px;font-size:11px;color:${gris?'#2e3340':'#4d7fa0'}">${b.age?b.age+' ans':'—'}</td>
+      <td style="padding:8px 12px;text-align:center;font-size:11px;color:${gris?'#2e3340':'#4d7fa0'}">${b.genre||'—'}</td>
       <td style="padding:8px 12px">${rmqIcon}</td>
     </tr>`;
-  }).join('');
+  };
+
+  let html = presents.map(b => makeRow(b, false)).join('');
+
+  if (absents.length) {
+    const jourLabel = fJour.replace(' juin','');
+    html += `<tr><td colspan="7" style="padding:16px 12px 8px;border-top:2px solid #1e2535">
+      <span style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#2e3a50">
+        Pas disponibles le ${jourLabel} — ${absents.length} bénévole${absents.length>1?'s':''}
+      </span>
+    </td></tr>`;
+    html += absents.map(b => makeRow(b, true)).join('');
+  }
+
+  tbody.innerHTML = html;
 }
 
 function applyBenFilters(list){
