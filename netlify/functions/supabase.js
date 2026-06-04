@@ -166,7 +166,6 @@ exports.handler = async (event) => {
       const cD = col(['naissance','birth','ddn']); const cT = col(['telephone','tel','phone','mobile','+41']);
       const cTa = col(['taille','t-shirt','tshirt','shirt']); const cDi = col(['disponible','dispo','present','quand']);
       const cR = col(['remarque','comment','note']);
-      const cE = col(['email','mail','courriel']);
       if (cP===-1||cN===-1) return err('Colonnes Prenom/Nom introuvables');
       const existing = await supa(`bens?event_id=eq.${event_id}&select=*`);
       // Normaliser : minuscules + supprimer accents pour matching robuste
@@ -201,6 +200,7 @@ exports.handler = async (event) => {
           if(dispos.length>0)upd.dispos=dispos;
           if(rmq&&(!b.rmq||b.rmq===''))upd.rmq=rmq;
           if(genre&&!b.genre)upd.genre=genre;
+          // Ne jamais écraser un type_ben défini manuellement
           if(Object.keys(upd).length>0) ops.push({type:'patch',id:b.id,data:upd});
           else skipped++;
         } else {
