@@ -109,8 +109,8 @@ function parseDDN(val) {
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers: corsHeaders, body: '' };
-  const ok = (data) => ({ statusCode: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
-  const err = (msg, code = 500) => ({ statusCode: code, headers: { ...corsHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ error: msg }) });
+  const ok = (data) => ({ statusCode: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store, no-cache, must-revalidate' }, body: JSON.stringify(data) });
+  const err = (msg, code = 500) => ({ statusCode: code, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, body: JSON.stringify({ error: msg }) });
 
   try {
     const path = event.path.replace('/.netlify/functions/supabase','').replace('/api/supabase','');
